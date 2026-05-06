@@ -19,7 +19,7 @@ export default function Page() {
         <div className="glow-orb glow-orb-2" style={{ bottom: '20%', right: '15%' }}></div>
         
         <div className="relative z-10 fade-in">
-          <SignUp path="/sign-up" routing="path" signInUrl="/sign-in" />
+          <SignUp path="/sign-up" routing="path" signInUrl="/sign-in" fallbackRedirectUrl="/dashboard" />
         </div>
       </div>
     </>

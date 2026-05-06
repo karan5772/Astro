@@ -47,7 +47,7 @@ export default function DashboardPage() {
             <span>Astro AI</span>
           </Link>
           <div className="nav-actions">
-            <UserButton afterSignOutUrl="/" />
+            <UserButton />
           </div>
         </div>
       </nav>

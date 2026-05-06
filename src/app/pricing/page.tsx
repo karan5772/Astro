@@ -105,7 +105,7 @@ export default function PricingPage() {
             <Link href="/dashboard">Dashboard</Link>
           </div>
           <div className="nav-actions">
-            <UserButton afterSignOutUrl="/" />
+            <UserButton />
           </div>
         </div>
       </nav>

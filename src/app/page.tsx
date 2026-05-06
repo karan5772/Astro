@@ -35,7 +35,7 @@ export default function LandingPage() {
             {userId ? (
               <>
                 <Link href="/dashboard" className="btn btn-outline" style={{ padding: '0.5rem 1rem' }}>Dashboard</Link>
-                <UserButton afterSignOutUrl="/" />
+                <UserButton />
               </>
             ) : (
               <>
