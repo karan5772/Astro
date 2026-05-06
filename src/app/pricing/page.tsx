@@ -2,12 +2,24 @@
 
 import Link from 'next/link';
 import { UserButton } from '@clerk/nextjs';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Check, Sparkles, Star, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function PricingPage() {
   const [loading, setLoading] = useState(false);
+  const [proUntil, setProUntil] = useState<Date | null>(null);
+
+  useEffect(() => {
+    fetch('/api/user')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.isPro && data.proUntil) {
+          setProUntil(new Date(data.proUntil));
+        }
+      })
+      .catch(console.error);
+  }, []);
 
   const loadRazorpayScript = () => {
     return new Promise((resolve) => {
@@ -23,7 +35,7 @@ export default function PricingPage() {
     });
   };
 
-  const handleSubscribe = async (plan: string, amount: number) => {
+  const handleSubscribe = async (plan: string, amount: number, durationInMinutes: number) => {
     setLoading(true);
     try {
       const isLoaded = await loadRazorpayScript();
@@ -48,7 +60,7 @@ export default function PricingPage() {
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID, // Enter the Key ID generated from the Dashboard
         amount: data.amount,
-        currency: "INR",
+        currency: data.currency || "INR",
         name: "Astro AI",
         description: `Subscription to ${plan} Plan`,
         order_id: data.orderId,
@@ -61,7 +73,8 @@ export default function PricingPage() {
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_signature: response.razorpay_signature,
-                amount: amount
+                amount: amount,
+                durationInMinutes: durationInMinutes
               })
             });
             
@@ -121,94 +134,102 @@ export default function PricingPage() {
           <p className="text-muted" style={{ fontSize: '1.2rem', maxWidth: '600px', margin: '0 auto' }}>
             Unlock infinite memory and voice agents with a premium plan.
           </p>
+          {proUntil && proUntil > new Date() && (
+            <div className="mt-6 p-4 glass-card" style={{ display: 'inline-block', border: '1px solid #f39c12' }}>
+              <p className="text-yellow-500 font-semibold m-0">
+                You currently have an active Cosmic Session!
+              </p>
+              <p className="text-muted text-sm m-0 mt-1">
+                Your Pro access expires on: {proUntil.toLocaleString()}
+              </p>
+              <p className="text-muted text-xs m-0 mt-1 opacity-75">
+                Purchasing another pass will add to your remaining time.
+              </p>
+            </div>
+          )}
         </div>
         
         <div className="flex flex-col md:flex-row justify-center gap-8 items-center md:items-stretch">
-          
-          {/* Basic Plan */}
+          {/* 10 Min Plan */}
           <motion.div 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1 }}
             className="glass-card flex flex-col" 
-            style={{ width: '100%', maxWidth: '380px' }}
+            style={{ width: '100%', maxWidth: '300px' }}
           >
             <div className="flex items-center gap-3 mb-2">
-              <Star className="text-muted" size={24} />
-              <h3 style={{ fontSize: '1.5rem', margin: 0 }}>Stargazer</h3>
+               <Star className="text-muted" size={24} />
+              <h3 style={{ fontSize: '1.5rem', margin: 0 }}>Quick Peek</h3>
             </div>
-            <div style={{ fontSize: '3rem', fontWeight: '800', margin: '1rem 0' }}>
-              ₹0<span className="text-muted" style={{ fontSize: '1.2rem', fontWeight: '500' }}>/mo</span>
+            <div style={{ fontSize: '2.5rem', fontWeight: '800', margin: '1rem 0' }}>
+              $1<span className="text-muted" style={{ fontSize: '1.2rem', fontWeight: '500' }}></span>
             </div>
-            <p className="text-muted mb-6">Perfect for seeking occasional guidance from the cosmos.</p>
-            
-            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 2rem 0', flex: 1 }}>
-              <li className="flex items-center gap-3 mb-4">
-                <Check size={20} className="text-primary" />
-                <span>10 text messages/day</span>
-              </li>
-              <li className="flex items-center gap-3 mb-4">
-                <Check size={20} className="text-primary" />
-                <span>Standard AI Astrologer</span>
-              </li>
-              <li className="flex items-center gap-3 mb-4 text-muted opacity-50">
-                <span style={{ width: '20px', textAlign: 'center' }}>-</span>
-                <span>Voice Agents</span>
-              </li>
-              <li className="flex items-center gap-3 mb-4 text-muted opacity-50">
-                <span style={{ width: '20px', textAlign: 'center' }}>-</span>
-                <span>Long-term AI Memory</span>
-              </li>
-            </ul>
-            <button className="btn btn-outline" style={{ width: '100%' }}>Current Plan</button>
+            <p className="text-muted mb-6">5 minutes of Pro access.</p>
+            <button 
+              className="btn btn-outline" 
+              style={{ width: '100%', marginTop: 'auto' }}
+              onClick={() => handleSubscribe('5 Min Pass', 1, 5)}
+              disabled={loading}
+            >
+              {loading ? 'Processing...' : 'Buy 5 Mins'}
+            </button>
           </motion.div>
 
-          {/* Premium Plan */}
+          {/* 30 Min Plan */}
           <motion.div 
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             className="glass-card flex flex-col relative" 
-            style={{ width: '100%', maxWidth: '380px', border: '1px solid rgba(157, 78, 221, 0.5)', boxShadow: '0 0 30px rgba(157, 78, 221, 0.15)' }}
+            style={{ width: '100%', maxWidth: '300px', border: '1px solid rgba(157, 78, 221, 0.5)', boxShadow: '0 0 30px rgba(157, 78, 221, 0.15)' }}
           >
             <div className="absolute top-0 right-0 bg-primary text-white text-xs font-bold px-3 py-1" style={{ borderBottomLeftRadius: '1rem', borderTopRightRadius: '1rem' }}>
-              MOST POPULAR
+              POPULAR
             </div>
             
             <div className="flex items-center gap-3 mb-2">
               <Zap className="text-primary" size={24} />
-              <h3 className="text-gradient" style={{ fontSize: '1.5rem', margin: 0 }}>Cosmic Oracle</h3>
+              <h3 className="text-gradient" style={{ fontSize: '1.5rem', margin: 0 }}>Cosmic Session</h3>
             </div>
             <div style={{ fontSize: '3rem', fontWeight: '800', margin: '1rem 0' }}>
-              ₹999<span className="text-muted" style={{ fontSize: '1.2rem', fontWeight: '500' }}>/mo</span>
+              $3<span className="text-muted" style={{ fontSize: '1.2rem', fontWeight: '500' }}></span>
             </div>
-            <p className="text-muted mb-6">Unlock the full power of real-time AI and infinite memory.</p>
+            <p className="text-muted mb-6">30 minutes of Pro access.</p>
             
-            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 2rem 0', flex: 1 }}>
-              <li className="flex items-center gap-3 mb-4">
-                <Check size={20} className="text-primary" />
-                <span className="font-medium">Unlimited messages</span>
-              </li>
-              <li className="flex items-center gap-3 mb-4">
-                <Check size={20} className="text-primary" />
-                <span className="font-medium">Voice & Realtime Agents</span>
-              </li>
-              <li className="flex items-center gap-3 mb-4">
-                <Check size={20} className="text-primary" />
-                <span className="font-medium">Mem0 Infinite Memory</span>
-              </li>
-              <li className="flex items-center gap-3 mb-4">
-                <Check size={20} className="text-primary" />
-                <span className="font-medium">Advanced AI Models</span>
-              </li>
-            </ul>
             <button 
               className="btn btn-primary" 
-              style={{ width: '100%' }}
-              onClick={() => handleSubscribe('Cosmic Oracle', 999)}
+              style={{ width: '100%', marginTop: 'auto' }}
+              onClick={() => handleSubscribe('30 Min Pass', 3, 30)}
               disabled={loading}
             >
-              {loading ? 'Processing...' : 'Upgrade Now'}
+              {loading ? 'Processing...' : 'Buy 30 Mins'}
+            </button>
+          </motion.div>
+
+          {/* 60 Min Plan */}
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3 }}
+            className="glass-card flex flex-col" 
+            style={{ width: '100%', maxWidth: '300px' }}
+          >
+            <div className="flex items-center gap-3 mb-2">
+               <Sparkles className="text-muted" size={24} />
+              <h3 style={{ fontSize: '1.5rem', margin: 0 }}>Deep Dive</h3>
+            </div>
+            <div style={{ fontSize: '2.5rem', fontWeight: '800', margin: '1rem 0' }}>
+              $5<span className="text-muted" style={{ fontSize: '1.2rem', fontWeight: '500' }}></span>
+            </div>
+            <p className="text-muted mb-6">60 minutes of Pro access.</p>
+            <button 
+              className="btn btn-outline" 
+              style={{ width: '100%', marginTop: 'auto' }}
+              onClick={() => handleSubscribe('60 Min Pass', 5, 60)}
+              disabled={loading}
+            >
+              {loading ? 'Processing...' : 'Buy 60 Mins'}
             </button>
           </motion.div>
           

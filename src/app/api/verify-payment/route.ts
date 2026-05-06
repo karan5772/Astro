@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { razorpay_payment_id, razorpay_order_id, razorpay_signature, amount } = body;
+    const { razorpay_payment_id, razorpay_order_id, razorpay_signature, amount, durationInMinutes = 10 } = body;
 
     const secret = process.env.RAZORPAY_KEY_SECRET;
     
@@ -35,26 +35,35 @@ export async function POST(req: NextRequest) {
     // Connect to DB and update the user's isPro status & payment details
     await connectToDatabase();
     
+    const currentUserDoc = await User.findOne({ clerkId: userId });
+    if (!currentUserDoc) {
+      return new NextResponse('User not found in DB', { status: 404 });
+    }
+
+    const now = new Date();
+    const currentProUntil = currentUserDoc.proUntil && new Date(currentUserDoc.proUntil) > now 
+      ? new Date(currentUserDoc.proUntil) 
+      : now;
+      
+    const newProUntil = new Date(currentProUntil.getTime() + durationInMinutes * 60000);
+
     const dbUser = await User.findOneAndUpdate(
       { clerkId: userId },
       { 
-        $set: { isPro: true },
+        $set: { isPro: true, proUntil: newProUntil },
         $push: { 
           payments: { 
             paymentId: razorpay_payment_id, 
             orderId: razorpay_order_id, 
-            amount: amount || 999 
+            amount: amount || 999,
+            durationInMinutes
           } 
         } 
       },
       { new: true }
     );
 
-    if (!dbUser) {
-      return new NextResponse('User not found in DB', { status: 404 });
-    }
-
-    return NextResponse.json({ success: true, isPro: dbUser.isPro });
+    return NextResponse.json({ success: true, isPro: dbUser.isPro, proUntil: dbUser.proUntil });
   } catch (error) {
     console.error('Payment verification error:', error);
     return new NextResponse('Internal Server Error', { status: 500 });

@@ -6,10 +6,12 @@ const UserSchema = new mongoose.Schema({
   firstName: { type: String },
   lastName: { type: String },
   isPro: { type: Boolean, default: false },
+  proUntil: { type: Date },
   payments: [{
     paymentId: String,
     orderId: String,
     amount: Number,
+    durationInMinutes: Number,
     date: { type: Date, default: Date.now }
   }],
 }, { timestamps: true });

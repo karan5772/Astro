@@ -16,8 +16,12 @@ export async function POST(req: NextRequest) {
       key_secret: process.env.RAZORPAY_KEY_SECRET || 'dummy_key_secret',
     });
 
+    // Convert USD to INR (approximate exchange rate)
+    const EXCHANGE_RATE = 83;
+    const amountInInr = amount * EXCHANGE_RATE;
+
     const options = {
-      amount: (amount * 100).toString(), // amount in smallest currency unit (paise)
+      amount: Math.round(amountInInr * 100).toString(), // amount in smallest currency unit (paise)
       currency: 'INR',
       receipt: `rcpt_${Math.random().toString(36).substring(7)}`,
       notes: {

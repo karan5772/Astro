@@ -29,10 +29,17 @@ export async function GET() {
       });
     }
 
+    // Check if pro membership expired
+    if (dbUser.isPro && dbUser.proUntil && new Date(dbUser.proUntil) < new Date()) {
+      dbUser.isPro = false;
+      await dbUser.save();
+    }
+
     return NextResponse.json({
       clerkId: dbUser.clerkId,
       email: dbUser.email,
-      isPro: dbUser.isPro
+      isPro: dbUser.isPro,
+      proUntil: dbUser.proUntil
     });
   } catch (error) {
     console.error('Error fetching user:', error);

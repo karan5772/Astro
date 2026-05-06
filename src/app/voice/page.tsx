@@ -20,15 +20,32 @@ export default function VoicePage() {
   // Safety check to ensure non-pro users can't easily stay here
   useEffect(() => {
     if (isLoaded && user) {
-      fetch('/api/user')
-        .then(res => res.json())
-        .then(data => {
-          if (!data || !data.isPro) {
-            // For testing purposes we allow it or we could redirect:
-            // router.push('/pricing');
-          }
-        })
-        .catch(console.error);
+      const checkProStatus = () => {
+        fetch('/api/user')
+          .then(res => res.json())
+          .then(data => {
+            if (!data || !data.isPro) {
+              stopSession();
+              alert("Your cosmic session has expired. Please recharge to continue.");
+              router.push('/pricing');
+            } else if (data.proUntil) {
+              const timeRemaining = new Date(data.proUntil).getTime() - Date.now();
+              if (timeRemaining <= 0) {
+                stopSession();
+                alert("Your cosmic session has expired. Please recharge to continue.");
+                router.push('/pricing');
+              }
+            }
+          })
+          .catch(console.error);
+      };
+
+      // Check immediately
+      checkProStatus();
+
+      // And check every 30 seconds
+      const interval = setInterval(checkProStatus, 30000);
+      return () => clearInterval(interval);
     }
   }, [isLoaded, user, router]);
 
