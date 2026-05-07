@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Send, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 
@@ -11,6 +11,16 @@ export default function ChatPage() {
   const [localInput, setLocalInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const onFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -116,10 +126,11 @@ export default function ChatPage() {
               <strong>Error:</strong> {error || 'Something went wrong. Please check your API keys.'}
             </div>
           )}
+          <div ref={messagesEndRef} />
         </div>
 
         <div style={{ paddingBottom: '1.5rem', paddingTop: '1rem' }}>
-          <form onSubmit={onFormSubmit} className="chat-input-wrapper glass-card" style={{ padding: '0.75rem', borderRadius: '9999px', display: 'flex' }}>
+          <form onSubmit={onFormSubmit} className="chat-input-wrapper" style={{ padding: '0.75rem', display: 'flex' }}>
             <input
               className="chat-input"
               value={localInput}
