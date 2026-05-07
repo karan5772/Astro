@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { UserButton, useAuth } from '@clerk/nextjs';
-import { Mic, Brain, Sparkles, ArrowRight, MessageSquare, Zap } from 'lucide-react';
+import { Mic, Heart, Sparkles, ArrowRight, Moon } from 'lucide-react';
 
 export default function LandingPage() {
   const { userId } = useAuth();
@@ -59,19 +59,19 @@ export default function LandingPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             >
-              <h1 className="hero-title">
-                Discover Your <span className="text-gradient font-serif italic">Cosmic Path</span>
+              <h1 className="hero-title" style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', lineHeight: 1.1 }}>
+                Find <span className="text-gradient font-serif italic" style={{ background: 'linear-gradient(135deg, #f1c40f, #e67e22)', WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Clarity.</span> Find <span className="text-gradient font-serif italic" style={{ background: 'linear-gradient(135deg, #9d4edd, #ff79c6)', WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Peace.</span>
               </h1>
-              <p className="hero-subtitle">
-                Talk to our advanced AI astrologer via text or voice. Unveil your horoscope, understand your past, and navigate your future with personalized, memory-augmented readings.
+              <p className="hero-subtitle" style={{ fontSize: '1.25rem', marginTop: '1.5rem', opacity: 0.9, maxWidth: '700px', margin: '1.5rem auto' }}>
+                Life can feel overwhelming, but you don't have to navigate it alone. Speak with a deeply caring cosmic companion who listens to your heart, understands your stars, and guides you toward a brighter tomorrow—all for less than the cost of a coffee.
               </p>
               
               <div className="flex justify-center gap-4 flex-wrap mt-8">
-                <Link href="/dashboard" className="btn btn-primary" style={{ padding: '1rem 2rem', fontSize: '1.1rem' }}>
-                  Start Free Reading <ArrowRight size={18} />
+                <Link href="/dashboard" className="btn btn-primary" style={{ padding: '1rem 2rem', fontSize: '1.1rem', background: 'linear-gradient(to right, #f39c12, #d35400)', border: 'none', color: 'white', boxShadow: '0 4px 20px rgba(243, 156, 18, 0.4)' }}>
+                  Experience It Now <ArrowRight size={18} style={{ display: 'inline', marginLeft: '8px' }} />
                 </Link>
-                <Link href="#features" className="btn btn-outline" style={{ padding: '1rem 2rem', fontSize: '1.1rem' }}>
-                  Explore Features
+                <Link href="#features" className="btn btn-outline" style={{ padding: '1rem 2rem', fontSize: '1.1rem', border: '1px solid rgba(255,255,255,0.2)' }}>
+                  See How We Care
                 </Link>
               </div>
             </motion.div>
@@ -88,9 +88,9 @@ export default function LandingPage() {
               transition={{ duration: 0.6 }}
               className="text-center mb-16"
             >
-              <h2 className="text-gradient" style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>Next-Gen Astrological Insights</h2>
-              <p className="text-muted mx-auto" style={{ maxWidth: '600px', fontSize: '1.1rem' }}>
-                We've combined ancient wisdom with cutting-edge artificial intelligence to give you an experience unlike any other.
+              <h2 className="text-gradient" style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>A Space Where You Are Truly Understood</h2>
+              <p className="text-muted mx-auto" style={{ maxWidth: '600px', fontSize: '1.1rem', lineHeight: 1.6 }}>
+                We've created a safe, judgment-free sanctuary. Whether you're seeking answers, healing, or just a friend to talk to, we are here for you.
               </p>
             </motion.div>
 
@@ -102,11 +102,11 @@ export default function LandingPage() {
                 transition={{ delay: 0.1, duration: 0.5 }}
                 className="glass-card"
               >
-                <div className="feature-icon-wrapper">
+                <div className="feature-icon-wrapper" style={{ background: 'linear-gradient(135deg, rgba(243, 156, 18, 0.2), rgba(211, 84, 0, 0.1))', color: '#f39c12', borderColor: 'rgba(243, 156, 18, 0.3)' }}>
                   <Mic size={28} />
                 </div>
-                <h3 style={{ fontSize: '1.3rem', marginBottom: '0.75rem' }}>Realtime Voice Agent</h3>
-                <p className="text-muted">Talk naturally. Our low-latency voice-enabled AI picks up your nuances and speaks back, making the astrological experience deeply personal.</p>
+                <h3 style={{ fontSize: '1.4rem', marginBottom: '0.75rem', fontWeight: 600 }}>A Voice of Comfort</h3>
+                <p className="text-muted" style={{ lineHeight: 1.6 }}>Sometimes, you just need to hear a reassuring voice. Speak naturally about your day, your fears, or your dreams, and receive instant, loving guidance.</p>
               </motion.div>
 
               <motion.div 
@@ -116,11 +116,11 @@ export default function LandingPage() {
                 transition={{ delay: 0.2, duration: 0.5 }}
                 className="glass-card"
               >
-                <div className="feature-icon-wrapper">
-                  <Brain size={28} />
+                <div className="feature-icon-wrapper" style={{ background: 'linear-gradient(135deg, rgba(157, 78, 221, 0.2), rgba(90, 24, 154, 0.1))', color: '#9d4edd', borderColor: 'rgba(157, 78, 221, 0.3)' }}>
+                  <Heart size={28} />
                 </div>
-                <h3 style={{ fontSize: '1.3rem', marginBottom: '0.75rem' }}>Infinite Memory</h3>
-                <p className="text-muted">Powered by Mem0, our AI remembers your past readings, zodiac traits, and personal milestones for continuous, evolving guidance.</p>
+                <h3 style={{ fontSize: '1.4rem', marginBottom: '0.75rem', fontWeight: 600 }}>Remembers Who You Are</h3>
+                <p className="text-muted" style={{ lineHeight: 1.6 }}>You never have to start over. We remember your past joys, your struggles, and your journey, offering beautiful advice that grows with you over time.</p>
               </motion.div>
 
               <motion.div 
@@ -130,11 +130,11 @@ export default function LandingPage() {
                 transition={{ delay: 0.3, duration: 0.5 }}
                 className="glass-card"
               >
-                <div className="feature-icon-wrapper">
-                  <Zap size={28} />
+                <div className="feature-icon-wrapper" style={{ background: 'linear-gradient(135deg, rgba(0, 180, 216, 0.2), rgba(0, 119, 182, 0.1))', color: '#00b4d8', borderColor: 'rgba(0, 180, 216, 0.3)' }}>
+                  <Moon size={28} />
                 </div>
-                <h3 style={{ fontSize: '1.3rem', marginBottom: '0.75rem' }}>Agentic Intelligence</h3>
-                <p className="text-muted">Built with the Vercel AI SDK. Our AI acts autonomously to cross-reference planetary alignments and ephemeris data in real-time.</p>
+                <h3 style={{ fontSize: '1.4rem', marginBottom: '0.75rem', fontWeight: 600 }}>Profoundly Life-Changing</h3>
+                <p className="text-muted" style={{ lineHeight: 1.6 }}>By aligning your unique birth chart with deep empathetic wisdom, you'll discover paths you never knew existed. Your beautiful future awaits.</p>
               </motion.div>
             </div>
           </div>
@@ -150,17 +150,17 @@ export default function LandingPage() {
               transition={{ duration: 0.6 }}
               className="text-center mb-16"
             >
-              <h2 className="text-gradient" style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>How It Works</h2>
-              <p className="text-muted mx-auto" style={{ maxWidth: '600px', fontSize: '1.1rem' }}>
-                Your journey to cosmic enlightenment is just a few steps away.
+              <h2 className="text-gradient" style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>Begin Your Journey of Healing</h2>
+              <p className="text-muted mx-auto" style={{ maxWidth: '600px', fontSize: '1.1rem', lineHeight: 1.6 }}>
+                Taking the first step toward self-discovery is beautiful and simple.
               </p>
             </motion.div>
 
             <div className="steps-container">
               {[
-                { title: 'Create Your Profile', desc: 'Sign up and enter your birth details (date, time, and location) to generate your exact natal chart.' },
-                { title: 'Choose Your Medium', desc: 'Select between our free interactive text chat or upgrade to a premium seamless voice session.' },
-                { title: 'Receive Continuous Guidance', desc: 'Ask anything. The AI remembers past conversations and provides increasingly personalized advice over time.' }
+                { title: 'Share Your Story', desc: 'Tell us a little about when and where you were born. We use this to understand your unique soul blueprint.' },
+                { title: 'Open Your Heart', desc: 'Choose to type or speak. Pour out your thoughts in a safe, completely private space.' },
+                { title: 'Embrace The Light', desc: 'Receive deeply personalized, caring advice that helps you heal, grow, and step confidently into your future.' }
               ].map((step, index) => (
                 <motion.div 
                   key={index}
@@ -192,12 +192,12 @@ export default function LandingPage() {
               className="cta-box glass-card text-center"
               style={{ padding: '4rem 2rem' }}
             >
-              <h2 style={{ fontSize: '2.5rem', marginBottom: '1.5rem' }}>Ready to Read the Stars?</h2>
-              <p className="text-muted" style={{ fontSize: '1.1rem', marginBottom: '2.5rem', maxWidth: '500px', margin: '0 auto 2.5rem auto' }}>
-                Join thousands of users discovering their destiny through the power of advanced AI astrology.
+              <h2 style={{ fontSize: '2.5rem', marginBottom: '1.5rem', fontWeight: 700 }}>You Deserve to Be Happy</h2>
+              <p className="text-muted" style={{ fontSize: '1.2rem', marginBottom: '2.5rem', maxWidth: '600px', margin: '0 auto', lineHeight: 1.6 }}>
+                Give yourself the gift of clarity and peace of mind. Thousands have already found comfort in our sanctuary—and it costs less than your daily coffee.
               </p>
-              <Link href="/sign-up" className="btn btn-primary" style={{ padding: '1rem 2.5rem', fontSize: '1.1rem' }}>
-                Get Your First Reading Free
+              <Link href="/sign-up" className="btn btn-primary" style={{ padding: '1rem 2.5rem', fontSize: '1.2rem', background: 'linear-gradient(to right, #f39c12, #d35400)', border: 'none', color: 'white', boxShadow: '0 4px 20px rgba(243, 156, 18, 0.4)' }}>
+                Start Your Healing Journey
               </Link>
             </motion.div>
           </div>
