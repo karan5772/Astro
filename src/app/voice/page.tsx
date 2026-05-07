@@ -94,7 +94,7 @@ export default function VoicePage() {
       await pc.setLocalDescription(offer);
 
       const baseUrl = "https://api.openai.com/v1/realtime";
-      const model = "gpt-4o-realtime-preview-2024-12-17";
+      const model = "gpt-realtime-mini";
       const sdpResponse = await fetch(`${baseUrl}?model=${model}`, {
         method: "POST",
         body: offer.sdp,
@@ -164,67 +164,79 @@ export default function VoicePage() {
           </div>
         </div>
       </nav>
-
-      <main className="container fade-in relative z-10" style={{ paddingTop: '120px', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <main className="chat-container fade-in relative z-10" style={{ paddingTop: '10px', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         <div className="glow-orb glow-orb-1" style={{ top: '20%', left: '10%', background: '#f39c12', opacity: 0.2 }}></div>
         <div className="glow-orb glow-orb-2" style={{ bottom: '20%', right: '10%', background: '#d35400', opacity: 0.2 }}></div>
 
-        <div className="text-center mb-12">
-          <h1 className="hero-title" style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', marginBottom: '1rem' }}>
-            <span className="text-gradient font-serif italic" style={{ background: 'linear-gradient(135deg, #f1c40f, #e67e22)', WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Live Voice Reading</span>
-          </h1>
-          <p className="text-muted" style={{ fontSize: '1.2rem', maxWidth: '600px', margin: '0 auto' }}>
-            Speak directly with your AI astrologer in real-time. No typing required. The cosmic connection flows instantly.
-          </p>
-        </div>
-
-        <div className="glass-card text-center relative" style={{ width: '100%', maxWidth: '600px', padding: '3rem 2rem', border: isSessionActive ? '1px solid rgba(243, 156, 18, 0.5)' : '1px solid var(--card-border)', boxShadow: isSessionActive ? '0 0 40px rgba(243, 156, 18, 0.2)' : 'none' }}>
+        <div style={{ textAlign: 'center', margin: 'auto', padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: '600px' }}>
+        
           <div 
             style={{ 
-              width: '150px', 
-              height: '150px', 
+              width: '180px', 
+              height: '180px', 
               borderRadius: '50%', 
-              background: isSessionActive ? 'rgba(243, 156, 18, 0.2)' : 'rgba(255,255,255,0.03)',
-              border: `2px solid ${isSessionActive ? '#f39c12' : 'var(--card-border)'}`,
+              background: isSessionActive ? 'rgba(243, 156, 18, 0.15)' : 'rgba(255,255,255,0.02)',
+              border: `2px solid ${isSessionActive ? 'rgba(243, 156, 18, 0.8)' : 'rgba(255,255,255,0.1)'}`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              margin: '0 auto 2.5rem',
-              transition: 'all 0.3s ease',
-              boxShadow: isSessionActive ? '0 0 30px rgba(243, 156, 18, 0.4)' : 'none',
+              marginBottom: '3rem',
+              transition: 'all 0.4s ease',
+              boxShadow: isSessionActive ? '0 0 50px rgba(243, 156, 18, 0.5)' : '0 0 30px rgba(0,0,0,0.3)',
               animation: isSessionActive ? 'pulse 2s infinite' : 'none'
             }}
           >
             {isLoading ? (
-              <Loader2 size={48} className="spin" color="#f39c12" />
+              <Loader2 size={64} className="spin" color="#f39c12" />
             ) : isSessionActive ? (
-              <Mic size={48} color="#f39c12" />
+              <Mic size={64} color="#f39c12" />
             ) : (
-              <Mic size={48} className="text-muted" />
+              <Mic size={64} className="text-muted" />
             )}
           </div>
 
-          <div style={{ marginBottom: '2.5rem', minHeight: '30px', color: isSessionActive ? '#f39c12' : 'var(--muted)', fontWeight: isSessionActive ? '600' : '500', fontSize: '1.1rem' }}>
+          <h2 className="text-gradient" style={{ fontSize: 'clamp(2.5rem, 6vw, 3.5rem)', marginBottom: '1rem', background: 'linear-gradient(135deg, #f1c40f, #e67e22)', WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 700 }}>
+            Deep Vocal Connection
+          </h2>
+          
+          <p className="text-muted" style={{ fontSize: '1.2rem', maxWidth: '500px', margin: '0 auto 2rem', lineHeight: 1.6 }}>
+            {isSessionActive 
+              ? "Your cosmic guide is listening. Speak naturally and feel heard." 
+              : "Close your eyes, relax your mind, and prepare to connect with the universe."}
+          </p>
+
+          <div style={{ 
+            marginBottom: '3rem', 
+            minHeight: '30px', 
+            color: status.startsWith('Error') ? '#ff4757' : 
+                   status.includes('Connected') ? '#2ed573' :
+                   isLoading ? '#00b4d8' :
+                   'var(--muted)',
+            fontWeight: '600', 
+            fontSize: '1.1rem', 
+            letterSpacing: '0.05em', 
+            textTransform: 'uppercase' 
+          }}>
             {status}
           </div>
 
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', width: '100%' }}>
             {!isSessionActive ? (
               <button 
                 onClick={startSession} 
-                className="btn btn-primary" 
-                style={{ background: 'linear-gradient(to right, #f39c12, #d35400)', border: 'none', width: '100%', maxWidth: '250px' }}
+                className="btn btn-primary hover-lift" 
+                style={{ background: 'linear-gradient(to right, #f39c12, #d35400)', border: 'none', width: '100%', maxWidth: '300px', padding: '1.2rem', fontSize: '1.2rem', boxShadow: '0 4px 20px rgba(243, 156, 18, 0.4)' }}
                 disabled={isLoading}
               >
-                {isLoading ? 'Connecting...' : 'Start Session'}
+                {isLoading ? 'Connecting...' : 'Start Healing Session'}
               </button>
             ) : (
               <button 
                 onClick={stopSession} 
-                className="btn btn-outline" 
-                style={{ borderColor: '#ff4757', color: '#ff4757', width: '100%', maxWidth: '250px', background: 'rgba(255, 71, 87, 0.1)' }}
+                className="btn btn-outline hover-lift" 
+                style={{ borderColor: '#ff4757', color: '#ff4757', width: '100%', maxWidth: '300px', padding: '1.2rem', fontSize: '1.2rem', background: 'rgba(255, 71, 87, 0.1)', boxShadow: '0 4px 20px rgba(255, 71, 87, 0.2)' }}
               >
-                <Square size={16} style={{ display: 'inline', marginRight: '8px' }} />
+                <Square size={20} style={{ display: 'inline', marginRight: '8px' }} />
                 End Session
               </button>
             )}
@@ -233,7 +245,7 @@ export default function VoicePage() {
           <style dangerouslySetInnerHTML={{__html: `
             @keyframes pulse {
               0% { box-shadow: 0 0 0 0 rgba(243, 156, 18, 0.4); }
-              70% { box-shadow: 0 0 0 20px rgba(243, 156, 18, 0); }
+              70% { box-shadow: 0 0 0 30px rgba(243, 156, 18, 0); }
               100% { box-shadow: 0 0 0 0 rgba(243, 156, 18, 0); }
             }
             .spin {
