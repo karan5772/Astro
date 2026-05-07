@@ -8,15 +8,32 @@ import mem0Client from '@/lib/mem0';
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
 
+import connectToDatabase from '@/lib/mongodb';
+import User from '@/lib/models/User';
+
 export async function POST(req: NextRequest) {
   try {
     const { userId } = await auth();
     
-    // In production, enforce authentication
-    // if (!userId) {
-    //   return new Response('Unauthorized', { status: 401 });
-    // }
-    const actualUserId = userId || 'anonymous_user';
+    if (!userId) {
+      return new Response('Unauthorized', { status: 401 });
+    }
+
+    await connectToDatabase();
+    let dbUser = await User.findOne({ clerkId: userId });
+
+    // Enforce Pro trial limit for text chat
+    if (dbUser && !dbUser.isPro) {
+      if (dbUser.messageCount >= 15) {
+        return new Response('TRIAL_LIMIT_REACHED', { status: 403 });
+      }
+      
+      // Increment message count for free user
+      dbUser.messageCount += 1;
+      await dbUser.save();
+    }
+
+    const actualUserId = userId;
 
     const { messages } = await req.json();
     const lastMessage = messages[messages.length - 1];

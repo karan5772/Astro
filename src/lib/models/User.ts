@@ -7,6 +7,7 @@ const UserSchema = new mongoose.Schema({
   lastName: { type: String },
   isPro: { type: Boolean, default: false },
   proUntil: { type: Date },
+  messageCount: { type: Number, default: 0 },
   payments: [{
     paymentId: String,
     orderId: String,

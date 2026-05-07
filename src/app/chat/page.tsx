@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send, Sparkles } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 
 type Message = { id: string; role: 'user' | 'assistant'; content: string };
 
@@ -11,6 +13,7 @@ export default function ChatPage() {
   const [localInput, setLocalInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -42,6 +45,12 @@ export default function ChatPage() {
       });
 
       if (!res.ok) {
+        if (res.status === 403) {
+          const errText = await res.text();
+          if (errText === 'TRIAL_LIMIT_REACHED') {
+            throw new Error('TRIAL_LIMIT_REACHED');
+          }
+        }
         throw new Error(`Server returned ${res.status}`);
       }
 
@@ -63,7 +72,12 @@ export default function ChatPage() {
         }
       }
     } catch (e: any) {
-      setError(e.message);
+      if (e.message === 'TRIAL_LIMIT_REACHED') {
+        toast.error("Your free 15-message trial has ended. Please upgrade to continue.");
+        router.push('/pricing');
+      } else {
+        setError(e.message);
+      }
     } finally {
       setIsLoading(false);
     }
