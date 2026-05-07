@@ -1,11 +1,31 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import mem0Client from '@/lib/mem0';
+import connectToDatabase from '@/lib/mongodb';
+import User from '@/lib/models/User';
 
 export async function GET() {
   try {
     const { userId } = await auth();
-    const actualUserId = userId || 'anonymous_user';
+    
+    if (!userId) {
+      return new NextResponse('Unauthorized', { status: 401 });
+    }
+
+    await connectToDatabase();
+    const dbUser = await User.findOne({ clerkId: userId });
+
+    if (!dbUser || !dbUser.isPro) {
+      return new NextResponse('Payment Required', { status: 402 });
+    }
+
+    if (dbUser.proUntil && new Date(dbUser.proUntil) < new Date()) {
+      dbUser.isPro = false;
+      await dbUser.save();
+      return new NextResponse('Payment Required', { status: 402 });
+    }
+
+    const actualUserId = userId;
 
     let memoryContext = '';
     try {
