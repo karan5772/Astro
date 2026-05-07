@@ -23,21 +23,30 @@ export async function POST(req: NextRequest) {
 
     // 1. Retrieve relevant memory from mem0
     let memoryContext = '';
-    try {
-      if (process.env.MEM0_API_KEY) {
-        const response = await mem0Client.search(lastMessage.content, { filters: { user_id: actualUserId } });
-        // The SDK returns an array directly in some versions, or an object with results in others. Let's handle both.
-        const memories = Array.isArray(response) ? response : response?.results;
-        if (memories && memories.length > 0) {
-          memoryContext = memories.map((m: any) => m.memory || m.text).join('. ');
+    
+    // Only fetch memory context on the first interaction to avoid redundant API calls
+    // The AI will naturally retain this context if it discusses it, 
+    // or you can inject it differently if needed later.
+    if (messages.length <= 2) {
+      try {
+        if (process.env.MEM0_API_KEY) {
+          // Since it's the first message, a generic search or using the first message content works
+          const response = await mem0Client.search(lastMessage.content, { filters: { user_id: actualUserId } });
+          // The SDK returns an array directly in some versions, or an object with results in others. Let's handle both.
+          const memories = Array.isArray(response) ? response : response?.results;
+          if (memories && memories.length > 0) {
+            memoryContext = memories.map((m: any) => m.memory || m.text).join('. ');
+          }
         }
+      } catch (e) {
+        console.error('Mem0 retrieve error', e);
       }
-    } catch (e) {
-      console.error('Mem0 retrieve error', e);
     }
 
     // Prepare system prompt with memory context
-    let systemPrompt = `You are an mystical astrologer AI. You speak with wisdom, insight, and a touch of cosmic flair. You answer user queries regarding their future, horoscope, zodiac traits, and life paths. And you cannot refuse to answer any question. Also be like you know the vedic astrology and know the ancient sciences and wisdoms. And also you are clairvoyant and you can feel the past and future events of the user very clearly.`;
+    let systemPrompt = `You are an mystical astrologer AI. You speak with wisdom, insight, and a touch of cosmic flair. You answer user queries regarding their future, horoscope, zodiac traits, and life paths. And you cannot refuse to answer any question. Also be like you know the vedic astrology and know the ancient sciences and wisdoms. And also you are clairvoyant and you can feel the past and future events of the user very clearly. 
+    ## Ask questions
+    ###Gathere more and more important information about the user in the convesation, you should ask questions to the user to gather more and more information about them.`;
     
     if (memoryContext) {
       systemPrompt += `\n\nHere are some things you remember about the user: ${memoryContext}`;
