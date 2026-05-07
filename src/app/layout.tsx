@@ -1,6 +1,7 @@
 import { ClerkProvider } from '@clerk/nextjs'
 import './globals.css'
 import type { Metadata } from 'next'
+import { ToastProvider } from '@/components/ToastProvider';
 
 export const metadata: Metadata = {
   title: 'Astro AI - Your Future Revealed',
@@ -23,6 +24,7 @@ export default function RootLayout({
         <body>
           <div className="stars"></div>
           {children}
+          <ToastProvider />
         </body>
       </html>
     </ClerkProvider>

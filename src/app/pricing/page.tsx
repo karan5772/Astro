@@ -5,6 +5,7 @@ import { UserButton } from '@clerk/nextjs';
 import { useState, useEffect } from 'react';
 import { Check, Sparkles, Star, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 
 export default function PricingPage() {
   const [loading, setLoading] = useState(false);
@@ -40,7 +41,7 @@ export default function PricingPage() {
     try {
       const isLoaded = await loadRazorpayScript();
       if (!isLoaded) {
-        alert("Razorpay SDK failed to load. Please check your connection.");
+        toast.error("Razorpay SDK failed to load. Please check your connection.");
         setLoading(false);
         return;
       }
@@ -79,14 +80,14 @@ export default function PricingPage() {
             });
             
             if (verifyRes.ok) {
-              alert("Payment successful! You are now a Cosmic Oracle.");
+              toast.success("Payment successful! You are now a Cosmic Oracle.");
               window.location.href = "/dashboard";
             } else {
-              alert("Payment verification failed.");
+              toast.error("Payment verification failed.");
             }
           } catch (e) {
             console.error(e);
-            alert("Error verifying payment.");
+            toast.error("Error verifying payment.");
           }
         },
         theme: {
@@ -100,7 +101,7 @@ export default function PricingPage() {
 
     } catch (error) {
       console.error(error);
-      alert('Failed to initiate payment.');
+      toast.error('Failed to initiate payment.');
     } finally {
       setLoading(false);
     }

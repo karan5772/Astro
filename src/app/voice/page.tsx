@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Mic, Square, Loader2, Sparkles } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 
 export default function VoicePage() {
   const [isSessionActive, setIsSessionActive] = useState(false);
@@ -26,13 +27,13 @@ export default function VoicePage() {
           .then(data => {
             if (!data || !data.isPro) {
               stopSession();
-              alert("Your cosmic session has expired. Please recharge to continue.");
+              toast.error("Your cosmic session has expired. Please recharge to continue.");
               router.push('/pricing');
             } else if (data.proUntil) {
               const timeRemaining = new Date(data.proUntil).getTime() - Date.now();
               if (timeRemaining <= 0) {
                 stopSession();
-                alert("Your cosmic session has expired. Please recharge to continue.");
+                toast.error("Your cosmic session has expired. Please recharge to continue.");
                 router.push('/pricing');
               }
             }

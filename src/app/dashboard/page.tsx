@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { MessageSquare, Mic, CreditCard, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 
 export default function DashboardPage() {
   const { user, isLoaded } = useUser();
@@ -31,10 +32,17 @@ export default function DashboardPage() {
     if (isPro) {
       router.push('/voice');
     } else {
-      const confirmUpgrade = window.confirm("Premium Voice Reading is available only on the Premium plan. Would you like to upgrade now?");
-      if (confirmUpgrade) {
-        router.push('/pricing');
-      }
+      toast((t) => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center', textAlign: 'center' }}>
+          <span>Premium Voice Reading is available only on the Premium plan. Would you like to upgrade now?</span>
+          <button 
+            onClick={() => { toast.dismiss(t.id); router.push('/pricing'); }}
+            style={{ padding: '8px 16px', background: '#f39c12', color: '#111', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 600 }}
+          >
+            Upgrade Now
+          </button>
+        </div>
+      ), { duration: 6000, style: { minWidth: '300px' } });
     }
   };
 
