@@ -196,7 +196,7 @@ export default function LandingPage() {
               <p className="text-muted" style={{ fontSize: '1.2rem', marginBottom: '2.5rem', maxWidth: '600px', margin: '0 auto', lineHeight: 1.6 }}>
                 Give yourself the gift of clarity and peace of mind. Thousands have already found comfort in our sanctuary—and it costs less than your daily coffee.
               </p>
-              <Link href="/sign-up" className="btn btn-primary" style={{ padding: '1rem 2.5rem', fontSize: '1.2rem', background: 'linear-gradient(to right, #f39c12, #d35400)', border: 'none', color: 'white', boxShadow: '0 4px 20px rgba(243, 156, 18, 0.4)' }}>
+              <Link href="/sign-up" className="btn btn-primary pt-200" style={{ padding: '1rem 2.5rem', fontSize: '1.2rem', background: 'linear-gradient(to right, #f39c12, #d35400)', border: 'none', color: 'white', boxShadow: '0 4px 20px rgba(243, 156, 18, 0.4)' }}>
                 Start Your Healing Journey
               </Link>
             </motion.div>
@@ -218,6 +218,15 @@ export default function LandingPage() {
             </div>
             
             <div>
+              {/* <h4 className="footer-heading">Resources</h4>
+              <div className="footer-links">
+                <Link href="#">Horoscopes</Link>
+                <Link href="#">Astrology Blog</Link>
+                <Link href="#">API Documentation</Link>
+                <Link href="#">Help Center</Link>
+              </div> */}
+            </div>
+            <div>
               <h4 className="footer-heading">Platform</h4>
               <div className="footer-links">
                 <Link href="/features">Features</Link>
@@ -227,22 +236,14 @@ export default function LandingPage() {
               </div>
             </div>
             
-            <div>
-              <h4 className="footer-heading">Resources</h4>
-              <div className="footer-links">
-                <Link href="#">Horoscopes</Link>
-                <Link href="#">Astrology Blog</Link>
-                <Link href="#">API Documentation</Link>
-                <Link href="#">Help Center</Link>
-              </div>
-            </div>
             
             <div>
               <h4 className="footer-heading">Legal</h4>
               <div className="footer-links">
-                <Link href="#">Privacy Policy</Link>
-                <Link href="#">Terms of Service</Link>
-                <Link href="#">Cookie Policy</Link>
+                <Link href="/privacy">Privacy Policy</Link>
+                <Link href="/terms">Terms &amp; Conditions</Link>
+                <Link href="/cancellation">Cancellation &amp; Refund Policy</Link>
+                <a href="mailto:karankumar8239@gmail.com" className="text-muted hover:text-primary transition-colors" target="_blank" rel="noopener noreferrer">Contact Us</a>
               </div>
             </div>
           </div>
