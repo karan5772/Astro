@@ -6,8 +6,8 @@ export default function Footer() {
     <footer className="footer">
       <div className="container">
         <div className="footer-grid">
-          <div>
-            <Link href="/" className="nav-brand mb-6">
+          <div className="footer-brand-block">
+            <Link href="/" className="nav-brand mb-6" style={{ display: 'inline-flex' }}>
               <Sparkles className="text-primary" size={24} />
               <span>Astro AI</span>
             </Link>
@@ -15,12 +15,12 @@ export default function Footer() {
               Pioneering the future of astrological guidance with empathetic, memory-augmented artificial intelligence.
             </p>
           </div>
-          
-          <div>
+
+          <div className="desktop-only">
             {/* Space left for alignment, mirroring original */}
           </div>
-          
-          <div>
+
+          <div className="footer-links-block">
             <h4 className="footer-heading">Platform</h4>
             <div className="footer-links">
               <Link href="/#features">Features</Link>
@@ -29,8 +29,8 @@ export default function Footer() {
               <Link href="/voice">Voice Agents</Link>
             </div>
           </div>
-          
-          <div>
+
+          <div className="footer-links-block">
             <h4 className="footer-heading">Legal</h4>
             <div className="footer-links">
               <Link href="/privacy">Privacy Policy</Link>
@@ -40,15 +40,8 @@ export default function Footer() {
             </div>
           </div>
         </div>
-        
-        <div className="footer-bottom">
-          <p>&copy; {new Date().getFullYear()} Astro AI Inc. All rights reserved.</p>
-          <div className="social-links">
-            <Link href="#" aria-label="Twitter">Twitter</Link>
-            <Link href="#" aria-label="GitHub">GitHub</Link>
-            <Link href="#" aria-label="Discord">Discord</Link>
-          </div>
-        </div>
+
+
       </div>
     </footer>
   );
