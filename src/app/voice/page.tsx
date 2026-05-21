@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import Link from "next/link";
-import { Mic, Square, Loader2, Sparkles } from "lucide-react";
+import { Mic, Square, Loader2 } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import Navbar from "@/components/Navbar";
 
 export default function VoicePage() {
   const [isSessionActive, setIsSessionActive] = useState(false);
@@ -142,8 +142,9 @@ export default function VoicePage() {
         };
         dc.send(JSON.stringify(event));
       };
-    } catch (e: any) {
-      setStatus("Error: " + e.message);
+    } catch (e) {
+      const errMsg = e instanceof Error ? e.message : String(e);
+      setStatus("Error: " + errMsg);
       console.error(e);
       stopSession();
     } finally {
@@ -151,7 +152,7 @@ export default function VoicePage() {
     }
   };
 
-  const stopSession = () => {
+  function stopSession() {
     if (pcRef.current) {
       pcRef.current.close();
       pcRef.current = null;
@@ -161,39 +162,12 @@ export default function VoicePage() {
     }
     setIsSessionActive(false);
     setStatus("Session ended. The portal is closed.");
-  };
+  }
 
   return (
     <>
-      <nav className="navbar scrolled">
-        <div className="nav-container">
-          <Link
-            href="/dashboard"
-            className="nav-brand text-muted"
-            style={{ fontSize: "1rem", fontWeight: "500" }}
-          >
-            &larr; Back to Dashboard
-          </Link>
-          <div className="flex items-center gap-2">
-            <Mic className="text-yellow-500" size={20} color="#f39c12" />
-            <span
-              className="font-semibold text-yellow-500"
-              style={{ color: "#f39c12" }}
-            >
-              PRO TIER
-            </span>
-          </div>
-        </div>
-      </nav>
-      <main
-        className="chat-container fade-in relative z-10"
-        style={{
-          paddingTop: "10px",
-          minHeight: "100vh",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
+      <Navbar variant="voice" />
+      <main className="voice-container fade-in relative z-10">
         <div
           className="glow-orb glow-orb-1"
           style={{
@@ -217,7 +191,7 @@ export default function VoicePage() {
           style={{
             textAlign: "center",
             margin: "auto",
-            padding: "2rem",
+            padding: "clamp(1rem, 5vw, 2rem)",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -227,8 +201,8 @@ export default function VoicePage() {
         >
           <div
             style={{
-              width: "180px",
-              height: "180px",
+              width: "clamp(140px, 30vw, 180px)",
+              height: "clamp(140px, 30vw, 180px)",
               borderRadius: "50%",
               background: isSessionActive
                 ? "rgba(243, 156, 18, 0.15)"
@@ -237,7 +211,7 @@ export default function VoicePage() {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              marginBottom: "3rem",
+              marginBottom: "clamp(1.5rem, 5vw, 3rem)",
               transition: "all 0.4s ease",
               boxShadow: isSessionActive
                 ? "0 0 50px rgba(243, 156, 18, 0.5)"

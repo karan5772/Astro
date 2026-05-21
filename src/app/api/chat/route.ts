@@ -1,6 +1,5 @@
 import { openai } from '@ai-sdk/openai';
-import { streamText, tool } from 'ai';
-import { z } from 'zod';
+import { streamText } from 'ai';
 import { auth } from '@clerk/nextjs/server';
 import { NextRequest } from 'next/server';
 import mem0Client from '@/lib/mem0';
@@ -20,7 +19,7 @@ export async function POST(req: NextRequest) {
     }
 
     await connectToDatabase();
-    let dbUser = await User.findOne({ clerkId: userId });
+    const dbUser = await User.findOne({ clerkId: userId });
 
     // Enforce Pro trial limit for text chat
     if (dbUser && !dbUser.isPro) {
@@ -52,7 +51,7 @@ export async function POST(req: NextRequest) {
           // The SDK returns an array directly in some versions, or an object with results in others. Let's handle both.
           const memories = Array.isArray(response) ? response : response?.results;
           if (memories && memories.length > 0) {
-            memoryContext = memories.map((m: any) => m.memory || m.text).join('. ');
+            memoryContext = memories.map((m: { memory?: string; text?: string }) => m.memory || m.text).join('. ');
           }
         }
       } catch (e) {
@@ -103,8 +102,9 @@ export async function POST(req: NextRequest) {
     });
 
     return result.toTextStreamResponse();
-  } catch (error: any) {
-    console.error(error);
-    return new Response(error.message || 'Internal Server Error', { status: 500 });
+  } catch (error) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    console.error(err);
+    return new Response(err.message || 'Internal Server Error', { status: 500 });
   }
 }

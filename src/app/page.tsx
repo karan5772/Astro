@@ -1,51 +1,16 @@
 "use client";
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { UserButton, useAuth } from '@clerk/nextjs';
-import { Mic, Heart, Sparkles, ArrowRight, Moon } from 'lucide-react';
+import { Mic, Heart, ArrowRight, Moon } from 'lucide-react';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
 export default function LandingPage() {
-  const { userId } = useAuth();
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   return (
     <>
-      <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
-        <div className="nav-container">
-          <Link href="/" className="nav-brand">
-            <Sparkles className="text-primary" size={24} />
-            <span>Astro AI</span>
-          </Link>
-          <div className="nav-links">
-            <Link href="#features">Features</Link>
-            <Link href="#how-it-works">How it Works</Link>
-            <Link href="/pricing">Pricing</Link>
-          </div>
-          <div className="nav-actions">
-            {userId ? (
-              <>
-                <Link href="/dashboard" className="btn btn-outline" style={{ padding: '0.5rem 1rem' }}>Dashboard</Link>
-                <UserButton />
-              </>
-            ) : (
-              <>
-                <Link href="/sign-in" className="btn btn-outline" style={{ padding: '0.5rem 1rem' }}>Sign In</Link>
-                <Link href="/sign-up" className="btn btn-primary" style={{ padding: '0.5rem 1rem' }}>Get Started</Link>
-              </>
-            )}
-          </div>
-        </div>
-      </nav>
+      <Navbar variant="landing" />
 
       <main>
         {/* Hero Section */}
@@ -63,7 +28,7 @@ export default function LandingPage() {
                 Find <span className="text-gradient font-serif italic" style={{ background: 'linear-gradient(135deg, #f1c40f, #e67e22)', WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Clarity.</span> Find <span className="text-gradient font-serif italic" style={{ background: 'linear-gradient(135deg, #9d4edd, #ff79c6)', WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Peace.</span>
               </h1>
               <p className="hero-subtitle" style={{ fontSize: '1.25rem', marginTop: '1.5rem', opacity: 0.9, maxWidth: '700px', margin: '1.5rem auto' }}>
-                Life can feel overwhelming, but you don't have to navigate it alone. Speak with a deeply caring cosmic companion who listens to your heart, understands your stars, and guides you toward a brighter tomorrow—all for less than the cost of a coffee.
+                Life can feel overwhelming, but you don&apos;t have to navigate it alone. Speak with a deeply caring cosmic companion who listens to your heart, understands your stars, and guides you toward a brighter tomorrow—all for less than the cost of a coffee.
               </p>
               
               <div className="flex justify-center gap-4 flex-wrap mt-8">
@@ -90,7 +55,7 @@ export default function LandingPage() {
             >
               <h2 className="text-gradient" style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>A Space Where You Are Truly Understood</h2>
               <p className="text-muted mx-auto" style={{ maxWidth: '600px', fontSize: '1.1rem', lineHeight: 1.6 }}>
-                We've created a safe, judgment-free sanctuary. Whether you're seeking answers, healing, or just a friend to talk to, we are here for you.
+                We&apos;ve created a safe, judgment-free sanctuary. Whether you&apos;re seeking answers, healing, or just a friend to talk to, we are here for you.
               </p>
             </motion.div>
 
@@ -134,7 +99,7 @@ export default function LandingPage() {
                   <Moon size={28} />
                 </div>
                 <h3 style={{ fontSize: '1.4rem', marginBottom: '0.75rem', fontWeight: 600 }}>Profoundly Life-Changing</h3>
-                <p className="text-muted" style={{ lineHeight: 1.6 }}>By aligning your unique birth chart with deep empathetic wisdom, you'll discover paths you never knew existed. Your beautiful future awaits.</p>
+                <p className="text-muted" style={{ lineHeight: 1.6 }}>By aligning your unique birth chart with deep empathetic wisdom, you&apos;ll discover paths you never knew existed. Your beautiful future awaits.</p>
               </motion.div>
             </div>
           </div>
@@ -204,60 +169,7 @@ export default function LandingPage() {
         </section>
       </main>
 
-      <footer className="footer">
-        <div className="container">
-          <div className="footer-grid">
-            <div>
-              <Link href="/" className="nav-brand mb-6">
-                <Sparkles className="text-primary" size={24} />
-                <span>Astro AI</span>
-              </Link>
-              <p className="text-muted" style={{ maxWidth: '300px', lineHeight: '1.6' }}>
-                Pioneering the future of astrological guidance with empathetic, memory-augmented artificial intelligence.
-              </p>
-            </div>
-            
-            <div>
-              {/* <h4 className="footer-heading">Resources</h4>
-              <div className="footer-links">
-                <Link href="#">Horoscopes</Link>
-                <Link href="#">Astrology Blog</Link>
-                <Link href="#">API Documentation</Link>
-                <Link href="#">Help Center</Link>
-              </div> */}
-            </div>
-            <div>
-              <h4 className="footer-heading">Platform</h4>
-              <div className="footer-links">
-                <Link href="/features">Features</Link>
-                <Link href="/pricing">Pricing</Link>
-                <Link href="/dashboard">Dashboard</Link>
-                <Link href="/voice">Voice Agents</Link>
-              </div>
-            </div>
-            
-            
-            <div>
-              <h4 className="footer-heading">Legal</h4>
-              <div className="footer-links">
-                <Link href="/privacy">Privacy Policy</Link>
-                <Link href="/terms">Terms &amp; Conditions</Link>
-                <Link href="/cancellation">Cancellation &amp; Refund Policy</Link>
-                <a href="mailto:karankumar8239@gmail.com" className="text-muted hover:text-primary transition-colors" target="_blank" rel="noopener noreferrer">Contact Us</a>
-              </div>
-            </div>
-          </div>
-          
-          <div className="footer-bottom">
-            <p>&copy; {new Date().getFullYear()} Astro AI Inc. All rights reserved.</p>
-            <div className="social-links">
-              <Link href="#" aria-label="Twitter">Twitter</Link>
-              <Link href="#" aria-label="GitHub">GitHub</Link>
-              <Link href="#" aria-label="Discord">Discord</Link>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </>
   );
 }

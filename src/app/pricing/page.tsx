@@ -1,11 +1,11 @@
 "use client";
 
-import Link from 'next/link';
-import { UserButton } from '@clerk/nextjs';
 import { useState, useEffect } from 'react';
 import { Check, Sparkles, Star, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
 export default function PricingPage() {
   const [loading, setLoading] = useState(false);
@@ -24,7 +24,7 @@ export default function PricingPage() {
 
   const loadRazorpayScript = () => {
     return new Promise((resolve) => {
-      if (typeof window !== 'undefined' && (window as any).Razorpay) {
+      if (typeof window !== 'undefined' && (window as Window & { Razorpay?: unknown }).Razorpay) {
         resolve(true);
         return;
       }
@@ -65,7 +65,11 @@ export default function PricingPage() {
         name: "Astro AI",
         description: `Subscription to ${plan} Plan`,
         order_id: data.orderId,
-        handler: async function (response: any) {
+        handler: async function (response: {
+          razorpay_payment_id: string;
+          razorpay_order_id: string;
+          razorpay_signature: string;
+        }) {
           try {
             const verifyRes = await fetch('/api/verify-payment', {
               method: 'POST',
@@ -95,8 +99,7 @@ export default function PricingPage() {
         }
       };
 
-      // @ts-ignore
-      const rzp1 = new window.Razorpay(options);
+      const rzp1 = new (window as unknown as { Razorpay: new (options: unknown) => { open: () => void } }).Razorpay(options);
       rzp1.open();
 
     } catch (error) {
@@ -109,22 +112,9 @@ export default function PricingPage() {
 
   return (
     <>
-      <nav className="navbar scrolled">
-        <div className="nav-container">
-          <Link href="/" className="nav-brand">
-            <Sparkles className="text-primary" size={24} />
-            <span>Astro AI</span>
-          </Link>
-          <div className="nav-links">
-            <Link href="/dashboard">Dashboard</Link>
-          </div>
-          <div className="nav-actions">
-            <UserButton />
-          </div>
-        </div>
-      </nav>
+      <Navbar variant="pricing" />
 
-      <main className="container fade-in" style={{ paddingTop: '120px', paddingBottom: '4rem' }}>
+      <main className="container fade-in main-content">
         <div className="glow-orb glow-orb-1" style={{ top: '20%', left: '10%' }}></div>
         <div className="glow-orb glow-orb-2" style={{ bottom: '20%', right: '10%' }}></div>
 
@@ -133,7 +123,7 @@ export default function PricingPage() {
             Invest in Your <span className="text-gradient font-serif italic" style={{ background: 'linear-gradient(135deg, #f1c40f, #e67e22)', WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Healing Journey</span>
           </h1>
           <p className="text-muted" style={{ fontSize: '1.2rem', maxWidth: '600px', margin: '0 auto', lineHeight: 1.6 }}>
-            Your first 15 text messages are completely free. When you're ready for deep, uninterrupted voice guidance, choose a cosmic pass below.
+            Your first 15 text messages are completely free. When you&apos;re ready for deep, uninterrupted voice guidance, choose a cosmic pass below.
           </p>
           {proUntil && proUntil > new Date() && (
             <div className="mt-6 p-4 glass-card" style={{ display: 'inline-block', border: '1px solid #f39c12' }}>
@@ -157,7 +147,7 @@ export default function PricingPage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1 }}
             className="glass-card flex flex-col hover-lift" 
-            style={{ width: '100%', maxWidth: '320px', padding: '2.5rem 2rem' }}
+            style={{ width: '100%', maxWidth: '320px' }}
           >
             <div className="flex items-center gap-3 mb-2">
                <Star className="text-muted" size={24} />
@@ -189,8 +179,8 @@ export default function PricingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="glass-card flex flex-col relative hover-lift" 
-            style={{ width: '100%', maxWidth: '340px', padding: '3rem 2rem', border: '1px solid rgba(243, 156, 18, 0.5)', boxShadow: '0 0 40px rgba(243, 156, 18, 0.15)', transform: 'scale(1.05)', zIndex: 10 }}
+            className="glass-card flex flex-col relative pricing-card-featured hover-lift" 
+            style={{ width: '100%', maxWidth: '340px' }}
           >
             <div className="absolute top-0 right-0 text-white text-xs font-bold px-4 py-1" style={{ background: 'linear-gradient(to right, #f39c12, #d35400)', borderBottomLeftRadius: '1rem', borderTopRightRadius: '1rem', letterSpacing: '1px' }}>
               MOST LOVED
@@ -227,7 +217,7 @@ export default function PricingPage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3 }}
             className="glass-card flex flex-col hover-lift" 
-            style={{ width: '100%', maxWidth: '320px', padding: '2.5rem 2rem' }}
+            style={{ width: '100%', maxWidth: '320px' }}
           >
             <div className="flex items-center gap-3 mb-2">
                <Sparkles className="text-muted" size={24} />
@@ -256,6 +246,7 @@ export default function PricingPage() {
           
         </div>
       </main>
+      <Footer />
     </>
   );
 }

@@ -1,12 +1,14 @@
 "use client";
 
 import Link from 'next/link';
-import { UserButton, useUser } from '@clerk/nextjs';
+import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { MessageSquare, Mic, CreditCard, Sparkles } from 'lucide-react';
+import { MessageSquare, Mic, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
 export default function DashboardPage() {
   const { user, isLoaded } = useUser();
@@ -48,19 +50,9 @@ export default function DashboardPage() {
 
   return (
     <>
-      <nav className="navbar scrolled">
-        <div className="nav-container">
-          <Link href="/" className="nav-brand">
-            <Sparkles className="text-primary" size={24} />
-            <span>Astro AI</span>
-          </Link>
-          <div className="nav-actions">
-            <UserButton />
-          </div>
-        </div>
-      </nav>
+      <Navbar variant="dashboard" />
 
-      <main className="container fade-in" style={{ paddingTop: '120px', paddingBottom: '4rem' }}>
+      <main className="container fade-in main-content">
         <div className="glow-orb glow-orb-1" style={{ top: '10%', left: '10%' }}></div>
         
         <div className="text-center mb-16">
@@ -121,10 +113,12 @@ export default function DashboardPage() {
             <button onClick={handleVoiceClick} className="btn" style={{ width: '100%', marginTop: 'auto', background: 'linear-gradient(to right, #f39c12, #d35400)', color: 'white', border: 'none', boxShadow: '0 4px 20px rgba(243, 156, 18, 0.4)' }}>
               Start Voice Call
             </button>
+            {/* Premium Voice Chat ends */}
           </motion.div>
 
         </div>
       </main>
+      <Footer />
     </>
   );
 }

@@ -5,6 +5,7 @@ import { Send, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import Navbar from '@/components/Navbar';
 
 type Message = { id: string; role: 'user' | 'assistant'; content: string };
 
@@ -71,12 +72,13 @@ export default function ChatPage() {
           );
         }
       }
-    } catch (e: any) {
-      if (e.message === 'TRIAL_LIMIT_REACHED') {
+    } catch (e) {
+      const err = e instanceof Error ? e : new Error(String(e));
+      if (err.message === 'TRIAL_LIMIT_REACHED') {
         toast.error("Your free 15-message trial has ended. Please upgrade to continue.");
         router.push('/pricing');
       } else {
-        setError(e.message);
+        setError(err.message);
       }
     } finally {
       setIsLoading(false);
@@ -85,19 +87,9 @@ export default function ChatPage() {
 
   return (
     <>
-      <nav className="navbar scrolled">
-        <div className="nav-container">
-          <Link href="/dashboard" className="nav-brand text-muted" style={{ fontSize: '1rem', fontWeight: '500' }}>
-            &larr; Back to Dashboard
-          </Link>
-          <div className="flex items-center gap-2">
-            <Sparkles className="text-primary" size={20} />
-            <span className="font-semibold">Text Reading</span>
-          </div>
-        </div>
-      </nav>
+      <Navbar variant="chat" />
 
-      <main className="chat-container fade-in relative z-10" style={{ paddingTop: '80px', height: '100vh', marginTop: 0 }}>
+      <main className="chat-container fade-in relative z-10">
         <div className="glow-orb glow-orb-1" style={{ top: '20%', left: '10%' }}></div>
         <div className="glow-orb glow-orb-2" style={{ bottom: '20%', right: '10%' }}></div>
 

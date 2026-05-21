@@ -34,7 +34,7 @@ export async function GET() {
         const response = await mem0Client.search("user astrological profile, traits, and preferences", { filters: { user_id: actualUserId } });
         const memories = Array.isArray(response) ? response : response?.results;
         if (memories && memories.length > 0) {
-          memoryContext = memories.map((m: any) => m.memory || m.text).join('. ');
+          memoryContext = memories.map((m: { memory?: string; text?: string }) => m.memory || m.text).join('. ');
         }
       }
     } catch (e) {
