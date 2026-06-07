@@ -1,175 +1,380 @@
 "use client";
 
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Mic, Heart, ArrowRight, Moon } from 'lucide-react';
+import { useAuth } from '@clerk/nextjs';
+import { Sparkles, MessageSquare, Mic, Stars, Briefcase, Heart, Users, HeartHandshake } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import './astraeus.css';
 
 export default function LandingPage() {
+  const { userId } = useAuth();
+
+  useEffect(() => {
+    document.body.classList.add('astraeus-active');
+    return () => {
+      document.body.classList.remove('astraeus-active');
+    };
+  }, []);
+
+  // Animation constants for reusable transitions
+  const fadeInUp = {
+    initial: { opacity: 0, y: 30 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] }
+  } as const;
+
+  const staggerContainer = {
+    animate: {
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  } as const;
+
+  const cardHover = {
+    hover: {
+      y: -4,
+      transition: { duration: 0.3, ease: 'easeOut' }
+    }
+  } as const;
 
   return (
-    <>
+    <div className="theme-astraeus selection:bg-[#e9c349]/30 selection:text-[#ffe088]">
+      {/* Top Navigation */}
       <Navbar variant="landing" />
 
-      <main>
+      <main className="relative z-10 pt-32 pb-24 overflow-x-hidden">
+
         {/* Hero Section */}
-        <section className="hero-section">
-          <div className="glow-orb glow-orb-1"></div>
-          <div className="glow-orb glow-orb-2"></div>
-          
-          <div className="container relative z-10">
-            <motion.div 
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        <section className="astral-container astral-hero-section">
+
+          {/* Decorative half-wheel image anchored to right */}
+          <div className="astral-hero-wheel-container">
+            <motion.img
+              alt="Background decorative wheel"
+              className="w-full h-full object-contain rounded-full"
+              src="/logo.png"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 180, repeat: Infinity, ease: 'linear' }}
+            />
+          </div>
+
+          {/* Hero Text Content */}
+          <motion.div
+            className="astral-hero-content"
+            initial="initial"
+            animate="animate"
+            variants={staggerContainer}
+          >
+            <motion.div
+              className="astral-chip font-label-caps"
+              variants={fadeInUp}
             >
-              <h1 className="hero-title" style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', lineHeight: 1.1 }}>
-                Find <span className="text-gradient font-serif italic" style={{ background: 'linear-gradient(135deg, #f1c40f, #e67e22)', WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Clarity.</span> Find <span className="text-gradient font-serif italic" style={{ background: 'linear-gradient(135deg, #9d4edd, #ff79c6)', WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Peace.</span>
-              </h1>
-              <p className="hero-subtitle" style={{ fontSize: '1.25rem', marginTop: '1.5rem', opacity: 0.9, maxWidth: '700px', margin: '1.5rem auto' }}>
-                Life can feel overwhelming, but you don&apos;t have to navigate it alone. Speak with a deeply caring cosmic companion who listens to your heart, understands your stars, and guides you toward a brighter tomorrow—all for less than the cost of a coffee.
-              </p>
-              
-              <div className="flex justify-center gap-4 flex-wrap mt-8">
-                <Link href="/dashboard" className="btn btn-primary" style={{ padding: '1rem 2rem', fontSize: '1.1rem', background: 'linear-gradient(to right, #f39c12, #d35400)', border: 'none', color: 'white', boxShadow: '0 4px 20px rgba(243, 156, 18, 0.4)' }}>
-                  Experience It Now <ArrowRight size={18} style={{ display: 'inline', marginLeft: '8px' }} />
-                </Link>
-                <Link href="#features" className="btn btn-outline" style={{ padding: '1rem 2rem', fontSize: '1.1rem', border: '1px solid rgba(255,255,255,0.2)' }}>
-                  See How We Care
-                </Link>
+              <Stars size={16} className="text-[#e9c349]" fill="currentColor" />
+              <span>Cosmic Guidance Awaits</span>
+            </motion.div>
+
+            <motion.h1
+              className="astral-hero-title hero-title-gradient font-display"
+              variants={fadeInUp}
+            >
+              Your Future, Written in the Stars
+            </motion.h1>
+
+            <motion.p
+              className="astral-hero-desc"
+              variants={fadeInUp}
+            >
+              Unlock the mysteries of your path. Our expert astrologers and advanced celestial algorithms provide profound clarity on love, career, and your spiritual journey.
+            </motion.p>
+
+            <motion.div
+              className="astral-hero-buttons"
+              variants={fadeInUp}
+            >
+              <Link href={userId ? "/chat" : "/sign-up"} className="no-underline">
+                <button className="glow-button-primary cursor-pointer">
+
+                  Start Chat
+                </button>
+              </Link>
+              <Link href={userId ? "/voice" : "/sign-up"} className="no-underline">
+                <button className="glow-button-secondary cursor-pointer">
+
+                  Voice Talk
+                </button>
+              </Link>
+            </motion.div>
+          </motion.div>
+        </section>
+
+        {/* Insights Grid (Bento style) */}
+        <section className="astral-container astral-bento-section">
+          <h2 className="astral-bento-title font-display">
+            Unveil the Hidden Aspects of Your Life
+          </h2>
+
+          <div className="astral-bento-grid">
+            {/* Future & Spirits (Large Card) */}
+            <motion.div
+              className="glass-panel astral-card astral-card-large group cursor-pointer"
+              whileHover="hover"
+              variants={cardHover}
+            >
+              {/* Premium generated image background */}
+              <div
+                className="absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity duration-700 bg-cover bg-center"
+                style={{
+                  backgroundImage: "url('/future_spirits.png')",
+                  mixBlendMode: 'screen'
+                }}
+              />
+              <div className="astral-card-large-icon-bg">
+                <Sparkles size={120} className="text-[#e9c349] drop-shadow-[0_0_15px_rgba(233,195,73,0.5)]" />
+              </div>
+              <div className="relative z-10">
+                <h3 className="astral-card-headline-lg font-display">
+                  Future &amp; Spirits
+                </h3>
+                <p className="astral-card-desc-lg">
+                  Peer into the celestial timeline. Understand the spiritual forces guiding your journey and anticipate the cosmic shifts ahead.
+                </p>
+              </div>
+            </motion.div>
+
+            {/* Career Path */}
+            <motion.div
+              className="glass-panel astral-card group cursor-pointer"
+              whileHover="hover"
+              variants={cardHover}
+            >
+              <div className="absolute -right-4 -top-4 w-32 h-32 bg-[#4e2da6]/10 rounded-full blur-2xl group-hover:bg-[#4e2da6]/20 transition-colors" />
+              <div className="astral-card-icon bg-[#4e2da6]/20 border border-[#cebdff]/20 shadow-[0_0_15px_rgba(206,189,255,0.1)]">
+                <Briefcase size={24} className="text-[#cebdff]" />
+              </div>
+              <div className="relative z-10">
+                <h3 className="astral-card-headline">
+                  Career Path
+                </h3>
+                <p className="astral-card-desc">
+                  Align your professional ambitions with your natal chart placements.
+                </p>
+              </div>
+            </motion.div>
+
+            {/* Love & Romance */}
+            <motion.div
+              className="glass-panel astral-card group cursor-pointer"
+              whileHover="hover"
+              variants={cardHover}
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-[#93000a]/5 to-transparent opacity-50" />
+              <div className="astral-card-icon bg-[#93000a]/20 border border-[#ffb4ab]/20 shadow-[0_0_15px_rgba(255,180,171,0.1)]">
+                <Heart size={24} className="text-[#ffb4ab]" />
+              </div>
+              <div className="relative z-10">
+                <h3 className="astral-card-headline">
+                  Love &amp; Romance
+                </h3>
+                <p className="astral-card-desc">
+                  Discover Venusian influences shaping your desires and attractions.
+                </p>
+              </div>
+            </motion.div>
+
+            {/* Relationships */}
+            <motion.div
+              className="glass-panel astral-card group cursor-pointer"
+              whileHover="hover"
+              variants={cardHover}
+            >
+              <div className="absolute -left-4 -bottom-4 w-32 h-32 bg-[#e9c349]/5 rounded-full blur-2xl group-hover:bg-[#e9c349]/10 transition-colors" />
+              <div className="astral-card-icon bg-[#100b00]/30 border border-[#e9c349]/20 shadow-[0_0_15px_rgba(233,195,73,0.1)]">
+                <Users size={24} className="text-[#e9c349]" />
+              </div>
+              <div className="relative z-10">
+                <h3 className="astral-card-headline">
+                  Relationships
+                </h3>
+                <p className="astral-card-desc">
+                  Navigate interpersonal dynamics through synastry and element compatibility.
+                </p>
+              </div>
+            </motion.div>
+
+            {/* Marriage & Union (Wide Card) */}
+            <motion.div
+              className="glass-panel astral-card astral-card-wide group cursor-pointer"
+              whileHover="hover"
+              variants={cardHover}
+            >
+              {/* Premium generated image background */}
+              <div
+                className="absolute inset-0 opacity-15 bg-cover bg-center"
+                style={{
+                  backgroundImage: "url('/marriage_union.png')",
+                  mixBlendMode: 'screen'
+                }}
+              />
+              <div className="w-16 h-16 shrink-0 rounded-full bg-[#050b1a] border border-[#c0c6db]/20 flex items-center justify-center relative z-10 shadow-[0_0_20px_rgba(192,198,219,0.1)] group-hover:scale-110 transition-transform">
+                <HeartHandshake size={30} className="text-[#c0c6db]" />
+              </div>
+              <div className="relative z-10">
+                <h3 className="astral-card-headline font-display" style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem' }}>
+                  Marriage &amp; Union
+                </h3>
+                <p className="astral-card-desc">
+                  Explore long-term partnerships and seventh-house significations to build a foundation written in the stars.
+                </p>
               </div>
             </motion.div>
           </div>
         </section>
 
-        {/* Features Section */}
-        <section id="features" className="py-24 relative z-10 bg-black/40">
-          <div className="container">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16"
-            >
-              <h2 className="text-gradient" style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>A Space Where You Are Truly Understood</h2>
-              <p className="text-muted mx-auto" style={{ maxWidth: '600px', fontSize: '1.1rem', lineHeight: 1.6 }}>
-                We&apos;ve created a safe, judgment-free sanctuary. Whether you&apos;re seeking answers, healing, or just a friend to talk to, we are here for you.
-              </p>
-            </motion.div>
+        {/* Cosmic Signature Section */}
+        <section id="birth-chart" className="astral-container astral-sig-section">
+          <div className="relative">
+            <div className="absolute left-1/2 -top-10 -translate-x-1/2 w-64 h-64 bg-[#e9c349]/10 blur-[100px] rounded-full pointer-events-none" />
+            <h2 className="astral-sig-title font-display">
+              Your Cosmic Signature
+            </h2>
+            <p className="astral-sig-desc">
+              A glimpse into the celestial alignment at the moment of your arrival. Your birth chart is a unique map of the heavens, whispering the secrets of your soul&apos;s journey.
+            </p>
+          </div>
 
-            <div className="features-grid">
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.1, duration: 0.5 }}
-                className="glass-card"
-              >
-                <div className="feature-icon-wrapper" style={{ background: 'linear-gradient(135deg, rgba(243, 156, 18, 0.2), rgba(211, 84, 0, 0.1))', color: '#f39c12', borderColor: 'rgba(243, 156, 18, 0.3)' }}>
-                  <Mic size={28} />
-                </div>
-                <h3 style={{ fontSize: '1.4rem', marginBottom: '0.75rem', fontWeight: 600 }}>A Voice of Comfort</h3>
-                <p className="text-muted" style={{ lineHeight: 1.6 }}>Sometimes, you just need to hear a reassuring voice. Speak naturally about your day, your fears, or your dreams, and receive instant, loving guidance.</p>
-              </motion.div>
+          <div className="sig-container mb-16">
+            {/* Constellation lines SVG overlay (Desktop Only) */}
+            <svg className="astral-svg-lines" viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg">
+              {/* Sun in Leo to Wheel */}
+              <line stroke="rgba(233, 195, 73, 0.4)" strokeDasharray="4 4" strokeWidth="1" x1="150" y1="80" x2="300" y2="180" />
+              {/* Moon in Scorpio to Wheel */}
+              <line stroke="rgba(233, 195, 73, 0.4)" strokeDasharray="4 4" strokeWidth="1" x1="180" y1="490" x2="310" y2="390" />
+              {/* Rising in Aquarius to Wheel */}
+              <line stroke="rgba(233, 195, 73, 0.4)" strokeDasharray="4 4" strokeWidth="1" x1="740" y1="110" x2="590" y2="210" />
+              {/* Venus in Libra to Wheel */}
+              <line stroke="rgba(233, 195, 73, 0.4)" strokeDasharray="4 4" strokeWidth="1" x1="720" y1="450" x2="590" y2="380" />
+            </svg>
 
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.2, duration: 0.5 }}
-                className="glass-card"
-              >
-                <div className="feature-icon-wrapper" style={{ background: 'linear-gradient(135deg, rgba(157, 78, 221, 0.2), rgba(90, 24, 154, 0.1))', color: '#9d4edd', borderColor: 'rgba(157, 78, 221, 0.3)' }}>
-                  <Heart size={28} />
-                </div>
-                <h3 style={{ fontSize: '1.4rem', marginBottom: '0.75rem', fontWeight: 600 }}>Remembers Who You Are</h3>
-                <p className="text-muted" style={{ lineHeight: 1.6 }}>You never have to start over. We remember your past joys, your struggles, and your journey, offering beautiful advice that grows with you over time.</p>
-              </motion.div>
+            {/* Decorative alignment text & indicators */}
+            <div className="sig-indicators">
+              <div className="sig-indicator indicator-sun animate-pulse">
+                <span className="font-label-caps text-[#e9c349] block drop-shadow-[0_0_5px_rgba(233,195,73,0.5)]">
+                  Sun in Leo
+                </span>
+                <div className="sig-line-r" />
+              </div>
 
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.3, duration: 0.5 }}
-                className="glass-card"
-              >
-                <div className="feature-icon-wrapper" style={{ background: 'linear-gradient(135deg, rgba(0, 180, 216, 0.2), rgba(0, 119, 182, 0.1))', color: '#00b4d8', borderColor: 'rgba(0, 180, 216, 0.3)' }}>
-                  <Moon size={28} />
-                </div>
-                <h3 style={{ fontSize: '1.4rem', marginBottom: '0.75rem', fontWeight: 600 }}>Profoundly Life-Changing</h3>
-                <p className="text-muted" style={{ lineHeight: 1.6 }}>By aligning your unique birth chart with deep empathetic wisdom, you&apos;ll discover paths you never knew existed. Your beautiful future awaits.</p>
-              </motion.div>
+              <div className="sig-indicator indicator-moon animate-pulse-slow">
+                <span className="font-label-caps text-[#e9c349] block drop-shadow-[0_0_5px_rgba(233,195,73,0.5)]">
+                  Moon in Scorpio
+                </span>
+                <div className="sig-line-r" style={{ width: '6rem' }} />
+              </div>
+
+              <div className="sig-indicator indicator-rising animate-pulse-slow">
+                <span className="font-label-caps text-[#e9c349] block drop-shadow-[0_0_5px_rgba(233,195,73,0.5)]">
+                  Rising in Aquarius
+                </span>
+                <div className="sig-line-l" />
+              </div>
+
+              <div className="sig-indicator indicator-venus animate-pulse">
+                <span className="font-label-caps text-[#e9c349] block drop-shadow-[0_0_5px_rgba(233,195,73,0.5)]">
+                  Venus in Libra
+                </span>
+                <div className="sig-line-l" style={{ width: '5rem' }} />
+              </div>
             </div>
+
+            {/* Central Birth Chart Wheel */}
+            <div className="astral-wheel-image-container">
+              <div className="absolute inset-0 rounded-full border border-[#e9c349]/10 animate-spin-slow-reverse" style={{ position: 'absolute' }} />
+              <motion.img
+                alt="Intricate gold and blue astrology birth chart wheel"
+                className="w-full h-full object-contain rounded-full opacity-100 drop-shadow-[0_0_30px_rgba(233,195,73,0.3)]"
+                src="/logo.png"
+                whileHover={{ scale: 1.05 }}
+                transition={{ duration: 0.5 }}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Link href={userId ? "/chat" : "/sign-up"} className="no-underline">
+              <button className="glow-button-primary cursor-pointer" style={{ padding: '1.25rem 2.5rem' }}>
+                Generate Full Chart
+              </button>
+            </Link>
           </div>
         </section>
 
         {/* How It Works */}
-        <section id="how-it-works" className="py-24">
-          <div className="container">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16"
-            >
-              <h2 className="text-gradient" style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>Begin Your Journey of Healing</h2>
-              <p className="text-muted mx-auto" style={{ maxWidth: '600px', fontSize: '1.1rem', lineHeight: 1.6 }}>
-                Taking the first step toward self-discovery is beautiful and simple.
+        <section className="astral-steps-section">
+          <div className="absolute inset-0 opacity-5 bg-cover bg-center pointer-events-none" style={{ backgroundImage: "url('/future_spirits.png')", mixBlendMode: 'screen' }} />
+          <div className="astral-container">
+            <div className="text-center" style={{ marginBottom: '4rem' }}>
+              <h2 className="astral-steps-title font-display">
+                The Process of Discovery
+              </h2>
+              <p className="astral-steps-desc">
+                Three steps to align yourself with cosmic wisdom.
               </p>
-            </motion.div>
+            </div>
 
-            <div className="steps-container">
-              {[
-                { title: 'Share Your Story', desc: 'Tell us a little about when and where you were born. We use this to understand your unique soul blueprint.' },
-                { title: 'Open Your Heart', desc: 'Choose to type or speak. Pour out your thoughts in a safe, completely private space.' },
-                { title: 'Embrace The Light', desc: 'Receive deeply personalized, caring advice that helps you heal, grow, and step confidently into your future.' }
-              ].map((step, index) => (
-                <motion.div 
-                  key={index}
-                  initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.2, duration: 0.5 }}
-                  className="step-item"
-                >
-                  <div className="step-number">{index + 1}</div>
-                  <div className="step-content">
-                    <h3>{step.title}</h3>
-                    <p>{step.desc}</p>
-                  </div>
-                </motion.div>
-              ))}
+            <div className="astral-steps-layout">
+              {/* Connecting line */}
+              <div className="hidden md:block absolute top-10 left-[15%] right-[15%] h-px bg-gradient-to-r from-transparent via-[#e9c349]/40 to-transparent z-0 shadow-[0_0_10px_rgba(233,195,73,0.5)]" />
+
+              {/* Step 1 */}
+              <div className="astral-step-item">
+                <div className="step-badge">
+                  <span className="step-badge-text">01</span>
+                </div>
+                <h3 className="step-headline">
+                  Provide Birth Data
+                </h3>
+                <p className="step-desc">
+                  Enter your exact birth time, date, and location to generate an accurate celestial map.
+                </p>
+              </div>
+
+              {/* Step 2 */}
+              <div className="astral-step-item">
+                <div className="step-badge">
+                  <span className="step-badge-text">02</span>
+                </div>
+                <h3 className="step-headline">
+                  Select a Medium
+                </h3>
+                <p className="step-desc">
+                  Choose between instant live chat or a deep-dive voice consultation with our experts.
+                </p>
+              </div>
+
+              {/* Step 3 */}
+              <div className="astral-step-item">
+                <div className="step-badge">
+                  <span className="step-badge-text">03</span>
+                </div>
+                <h3 className="step-headline">
+                  Receive Insight
+                </h3>
+                <p className="step-desc">
+                  Gain profound clarity on your life&apos;s path, challenges, and upcoming opportunities.
+                </p>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* CTA Section */}
-        <section className="cta-section">
-          <div className="container">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="cta-box glass-card text-center"
-              style={{ padding: '4rem 2rem' }}
-            >
-              <h2 style={{ fontSize: '2.5rem', marginBottom: '1.5rem', fontWeight: 700 }}>You Deserve to Be Happy</h2>
-              <p className="text-muted" style={{ fontSize: '1.2rem', marginBottom: '2.5rem', maxWidth: '600px', margin: '0 auto', lineHeight: 1.6 }}>
-                Give yourself the gift of clarity and peace of mind. Thousands have already found comfort in our sanctuary—and it costs less than your daily coffee.
-              </p>
-              <Link href="/sign-up" className="btn btn-primary pt-200" style={{ padding: '1rem 2.5rem', fontSize: '1.2rem', background: 'linear-gradient(to right, #f39c12, #d35400)', border: 'none', color: 'white', boxShadow: '0 4px 20px rgba(243, 156, 18, 0.4)' }}>
-                Start Your Healing Journey
-              </Link>
-            </motion.div>
-          </div>
-        </section>
       </main>
 
+      {/* Footer component */}
       <Footer />
-    </>
+    </div>
   );
 }

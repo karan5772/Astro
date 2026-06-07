@@ -8,8 +8,7 @@ export default function Page() {
       <nav className="navbar scrolled">
         <div className="nav-container">
           <Link href="/" className="nav-brand">
-            <Sparkles className="text-primary" size={24} />
-            <span>Astro AI</span>
+            <span>Astraeus</span>
           </Link>
         </div>
       </nav>
@@ -19,7 +18,7 @@ export default function Page() {
         <div className="glow-orb glow-orb-2" style={{ bottom: '20%', right: '15%' }}></div>
         
         <div className="relative z-10 fade-in">
-          <SignIn path="/sign-in" routing="path" signUpUrl="/sign-up" fallbackRedirectUrl="/dashboard" />
+          <SignIn path="/sign-in" routing="path" signUpUrl="/sign-up" fallbackRedirectUrl="/" />
         </div>
       </div>
     </>

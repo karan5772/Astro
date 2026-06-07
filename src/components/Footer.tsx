@@ -1,47 +1,71 @@
+"use client";
+
 import Link from 'next/link';
-import { Sparkles } from 'lucide-react';
+import { useAuth } from '@clerk/nextjs';
+import { MessageSquare } from 'lucide-react';
 
 export default function Footer() {
+  const { userId } = useAuth();
+
   return (
-    <footer className="footer">
-      <div className="container">
+    <footer className="footer footer-custom">
+      <div className="container footer-container">
         <div className="footer-grid">
+
+          {/* Brand Block */}
           <div className="footer-brand-block">
-            <Link href="/" className="nav-brand mb-6" style={{ display: 'inline-flex' }}>
-              <Sparkles className="text-primary" size={24} />
-              <span>Astro AI</span>
-            </Link>
-            <p className="text-muted" style={{ maxWidth: '300px', lineHeight: '1.6' }}>
-              Pioneering the future of astrological guidance with empathetic, memory-augmented artificial intelligence.
+            <div className="footer-logo" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <img src="/logo.png" alt="Astraeus Logo" style={{ height: '32px', width: '32px', objectFit: 'contain' }} />
+              <span>Astraeus</span>
+            </div>
+            <p className="footer-desc">
+              Celestial Modernism for the seeking soul. Connect with the cosmos.
             </p>
-          </div>
-
-          <div className="desktop-only">
-            {/* Space left for alignment, mirroring original */}
-          </div>
-
-          <div className="footer-links-block">
-            <h4 className="footer-heading">Platform</h4>
-            <div className="footer-links">
-              <Link href="/#features">Features</Link>
-              <Link href="/pricing">Pricing</Link>
-              <Link href="/dashboard">Dashboard</Link>
-              <Link href="/voice">Voice Agents</Link>
+            <div className="footer-copyright">
+              © 2026 Astraeus Celestial Insights. Aligned with the Cosmos.
             </div>
           </div>
 
+          {/* Column 2: Elements */}
+          <div className="footer-links-block">
+            <h4 className="footer-heading">The Elements</h4>
+            <div className="footer-links">
+              <Link href="#birth-chart">Fire Signs</Link>
+              <Link href="#birth-chart">Earth Signs</Link>
+              <Link href="#birth-chart">Air Signs</Link>
+              <Link href="#birth-chart">Water Signs</Link>
+            </div>
+          </div>
+
+          {/* Column 3: Legal */}
           <div className="footer-links-block">
             <h4 className="footer-heading">Legal</h4>
             <div className="footer-links">
               <Link href="/privacy">Privacy Policy</Link>
               <Link href="/terms">Terms &amp; Conditions</Link>
               <Link href="/cancellation">Cancellation &amp; Refund Policy</Link>
-              <a href="mailto:karankumar8239@gmail.com" className="text-muted" target="_blank" rel="noopener noreferrer">Contact Us</a>
+              <a href="mailto:karankumar8239@gmail.com">Contact Us</a>
             </div>
           </div>
+
+          {/* Column 4: Start Chat CTA */}
+          <div className="footer-cta-block">
+            <Link href={userId ? "/chat" : "/sign-up"} className="no-underline">
+              <button className="glow-button-primary cursor-pointer">
+                Start Chat
+              </button>
+            </Link>
+          </div>
+
         </div>
+      </div>
 
-
+      {/* Faint constellation background */}
+      <div className="footer-bg-glow">
+        <img
+          alt=""
+          src="/logo.png"
+        />
       </div>
     </footer>
   );

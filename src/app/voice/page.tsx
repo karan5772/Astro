@@ -6,6 +6,7 @@ import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import Navbar from "@/components/Navbar";
+import "../astraeus.css";
 
 export default function VoicePage() {
   const [isSessionActive, setIsSessionActive] = useState(false);
@@ -17,6 +18,13 @@ export default function VoicePage() {
 
   const { user, isLoaded } = useUser();
   const router = useRouter();
+
+  useEffect(() => {
+    document.body.classList.add('astraeus-active');
+    return () => {
+      document.body.classList.remove('astraeus-active');
+    };
+  }, []);
 
   // Safety check to ensure non-pro users can't easily stay here
   useEffect(() => {
@@ -165,7 +173,7 @@ export default function VoicePage() {
   }
 
   return (
-    <>
+    <div className="theme-astraeus min-h-screen">
       <Navbar variant="voice" />
       <main className="voice-container fade-in relative z-10">
         <div
@@ -173,8 +181,6 @@ export default function VoicePage() {
           style={{
             top: "20%",
             left: "10%",
-            background: "#f39c12",
-            opacity: 0.2,
           }}
         ></div>
         <div
@@ -182,8 +188,6 @@ export default function VoicePage() {
           style={{
             bottom: "20%",
             right: "10%",
-            background: "#d35400",
-            opacity: 0.2,
           }}
         ></div>
 
@@ -205,35 +209,35 @@ export default function VoicePage() {
               height: "clamp(140px, 30vw, 180px)",
               borderRadius: "50%",
               background: isSessionActive
-                ? "rgba(243, 156, 18, 0.15)"
-                : "rgba(255,255,255,0.02)",
-              border: `2px solid ${isSessionActive ? "rgba(243, 156, 18, 0.8)" : "rgba(255,255,255,0.1)"}`,
+                ? "rgba(233, 195, 73, 0.15)"
+                : "rgba(255, 255, 255, 0.02)",
+              border: `2px solid ${isSessionActive ? "rgba(233, 195, 73, 0.8)" : "rgba(255, 255, 255, 0.1)"}`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               marginBottom: "clamp(1.5rem, 5vw, 3rem)",
               transition: "all 0.4s ease",
               boxShadow: isSessionActive
-                ? "0 0 50px rgba(243, 156, 18, 0.5)"
-                : "0 0 30px rgba(0,0,0,0.3)",
+                ? "0 0 50px rgba(233, 195, 73, 0.5)"
+                : "0 0 30px rgba(0, 0, 0, 0.3)",
               animation: isSessionActive ? "pulse 2s infinite" : "none",
             }}
           >
             {isLoading ? (
-              <Loader2 size={64} className="spin" color="#f39c12" />
+              <Loader2 size={64} className="spin" color="#e9c349" />
             ) : isSessionActive ? (
-              <Mic size={64} color="#f39c12" />
+              <Mic size={64} color="#e9c349" />
             ) : (
-              <Mic size={64} className="text-muted" />
+              <Mic size={64} className="text-on-surface-variant" style={{ color: "var(--on-surface-variant)" }} />
             )}
           </div>
 
           <h2
-            className="text-gradient"
+            className="text-gradient font-display"
             style={{
               fontSize: "clamp(2.5rem, 6vw, 3.5rem)",
               marginBottom: "1rem",
-              background: "linear-gradient(135deg, #f1c40f, #e67e22)",
+              background: "linear-gradient(135deg, var(--on-bg-color) 20%, var(--tertiary) 80%)",
               WebkitBackgroundClip: "text",
               backgroundClip: "text",
               WebkitTextFillColor: "transparent",
@@ -262,12 +266,12 @@ export default function VoicePage() {
               marginBottom: "3rem",
               minHeight: "30px",
               color: status.startsWith("Error")
-                ? "#ff4757"
+                ? "var(--error)"
                 : status.includes("Connected")
-                  ? "#2ed573"
+                  ? "var(--tertiary)"
                   : isLoading
-                    ? "#00b4d8"
-                    : "var(--muted)",
+                    ? "var(--secondary)"
+                    : "var(--primary)",
               fontWeight: "600",
               fontSize: "1.1rem",
               letterSpacing: "0.05em",
@@ -288,15 +292,13 @@ export default function VoicePage() {
             {!isSessionActive ? (
               <button
                 onClick={startSession}
-                className="btn btn-primary hover-lift"
+                className="glow-button-primary cursor-pointer"
                 style={{
-                  background: "linear-gradient(to right, #f39c12, #d35400)",
-                  border: "none",
                   width: "100%",
                   maxWidth: "300px",
                   padding: "1.2rem",
-                  fontSize: "1.2rem",
-                  boxShadow: "0 4px 20px rgba(243, 156, 18, 0.4)",
+                  fontSize: "1rem",
+                  letterSpacing: "0.1em",
                 }}
                 disabled={isLoading}
               >
@@ -305,20 +307,28 @@ export default function VoicePage() {
             ) : (
               <button
                 onClick={stopSession}
-                className="btn btn-outline hover-lift"
+                className="cursor-pointer"
                 style={{
-                  borderColor: "#ff4757",
-                  color: "#ff4757",
+                  background: "rgba(255, 180, 171, 0.1)",
+                  border: "1px solid rgba(255, 180, 171, 0.4)",
+                  color: "var(--error)",
+                  borderRadius: "9999px",
                   width: "100%",
                   maxWidth: "300px",
                   padding: "1.2rem",
-                  fontSize: "1.2rem",
-                  background: "rgba(255, 71, 87, 0.1)",
-                  boxShadow: "0 4px 20px rgba(255, 71, 87, 0.2)",
+                  fontSize: "1rem",
+                  fontWeight: 600,
+                  letterSpacing: "0.15em",
+                  textTransform: "uppercase",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: "0 0 15px rgba(255, 180, 171, 0.1)",
+                  transition: "all 0.3s ease",
                 }}
               >
                 <Square
-                  size={20}
+                  size={16}
                   style={{ display: "inline", marginRight: "8px" }}
                 />
                 End Session
@@ -330,9 +340,9 @@ export default function VoicePage() {
             dangerouslySetInnerHTML={{
               __html: `
             @keyframes pulse {
-              0% { box-shadow: 0 0 0 0 rgba(243, 156, 18, 0.4); }
-              70% { box-shadow: 0 0 0 30px rgba(243, 156, 18, 0); }
-              100% { box-shadow: 0 0 0 0 rgba(243, 156, 18, 0); }
+              0% { box-shadow: 0 0 0 0 rgba(233, 195, 73, 0.4); }
+              70% { box-shadow: 0 0 0 30px rgba(233, 195, 73, 0); }
+              100% { box-shadow: 0 0 0 0 rgba(233, 195, 73, 0); }
             }
             .spin {
               animation: spin 1s linear infinite;
@@ -345,6 +355,6 @@ export default function VoicePage() {
           />
         </div>
       </main>
-    </>
+    </div>
   );
 }

@@ -44,105 +44,84 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
     setMobileMenuOpen(false);
   };
 
-  const isBackVariant = variant === 'chat' || variant === 'voice';
   const isNavbarScrolled = variant === 'landing' ? scrolled : true;
 
   return (
     <>
       <nav className={`navbar ${isNavbarScrolled ? 'scrolled' : ''}`}>
         <div className="nav-container">
-          {isBackVariant ? (
-            <Link href="/dashboard" className="nav-brand text-muted" style={{ fontSize: '1rem', fontWeight: '500' }}>
-              &larr; Back to Dashboard
-            </Link>
-          ) : (
-            <Link href="/" className="nav-brand" onClick={closeMobileMenu}>
-              <Sparkles className="text-primary" size={24} />
-              <span>Astro AI</span>
-            </Link>
-          )}
+          <Link href="/" className="nav-brand" onClick={closeMobileMenu} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
+            <img src="/logo.png" alt="Astraeus Logo" style={{ height: '36px', width: '36px', objectFit: 'contain' }} />
+            <span className="nav-logo">Astraeus</span>
+          </Link>
 
           {/* Desktop Nav Links */}
-          {variant === 'landing' && (
-            <div className="nav-links">
-              <Link href="#features">Features</Link>
-              <Link href="#how-it-works">How it Works</Link>
-              <Link href="/pricing">Pricing</Link>
-            </div>
-          )}
-
-          {variant === 'pricing' && (
-            <div className="nav-links">
-              <Link href="/dashboard">Dashboard</Link>
-            </div>
-          )}
-
-          {variant === 'legal' && (
-            <div className="nav-links">
-              <Link href="/">Home</Link>
-              <Link href="/pricing">Pricing</Link>
-              {userId && <Link href="/dashboard">Dashboard</Link>}
-            </div>
-          )}
+          <div className="nav-links">
+            <Link href="/#birth-chart">Birth Chart</Link>
+            <Link href="/chat">Live Chat</Link>
+            <Link href="/voice">Voice</Link>
+            <Link href="/pricing">Pricing</Link>
+          </div>
 
           {/* Right actions (Desktop and Mobile) */}
           <div className="nav-actions">
             {variant === 'chat' && (
-              <div className="flex items-center gap-2">
-                <Sparkles className="text-primary" size={20} />
-                <span className="font-semibold text-sm md:text-base">Text Reading</span>
+              <div className="flex items-center gap-2" style={{ marginRight: '0.5rem' }}>
+                <Sparkles className="text-primary" size={20} style={{ color: 'var(--tertiary)' }} />
+                <span className="font-semibold text-sm-custom" style={{ color: 'var(--tertiary)' }}>Text Reading</span>
               </div>
             )}
 
             {variant === 'voice' && (
-              <div className="flex items-center gap-2">
-                <Mic className="text-yellow-500" size={20} />
-                <span className="font-semibold text-yellow-500 text-sm md:text-base" style={{ color: "#f39c12" }}>
+              <div className="flex items-center gap-2" style={{ marginRight: '0.5rem' }}>
+                <Mic size={20} style={{ color: 'var(--tertiary)' }} />
+                <span className="font-semibold text-sm-custom" style={{ color: 'var(--tertiary)' }}>
                   PRO TIER
                 </span>
               </div>
             )}
 
-            {!isBackVariant && (
+            {userId ? (
               <>
-                {userId ? (
-                  <>
-                    {variant === 'landing' && (
-                      <Link href="/dashboard" className="btn btn-outline desktop-only" style={{ padding: '0.5rem 1rem' }}>
-                        Dashboard
-                      </Link>
-                    )}
-                    {variant === 'legal' && (
-                      <Link href="/dashboard" className="btn btn-outline desktop-only" style={{ padding: '0.5rem 1rem' }}>
-                        Dashboard
-                      </Link>
-                    )}
-                    <div className="flex items-center">
-                      <UserButton />
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    {(variant === 'landing' || variant === 'legal') && (
-                      <div className="flex gap-2 desktop-only">
-                        <Link href="/sign-in" className="btn btn-outline" style={{ padding: '0.5rem 1rem' }}>Sign In</Link>
-                        <Link href="/sign-up" className="btn btn-primary" style={{ padding: '0.5rem 1rem' }}>Get Started</Link>
-                      </div>
-                    )}
-                  </>
-                )}
+                <Link 
+                  href="/chat" 
+                  className="glow-button-nav"
+                  style={{ textDecoration: 'none' }}
+                >
+                  Consult Stars
+                </Link>
+                <div className="flex items-center">
+                  <UserButton />
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-4">
+                  <Link 
+                    href="/sign-in" 
+                    className="text-on-surface-variant hover:text-tertiary transition-colors font-label-caps desktop-only"
+                    style={{ textDecoration: 'none', fontSize: '12px' }}
+                  >
+                    Sign In
+                  </Link>
+                  <Link 
+                    href="/sign-up" 
+                    className="glow-button-nav"
+                    style={{ textDecoration: 'none' }}
+                  >
+                    Consult Stars
+                  </Link>
+                </div>
               </>
             )}
 
-            {(variant === 'landing' || variant === 'legal') && (
-              <button 
-                className="menu-toggle" 
-                onClick={toggleMobileMenu} 
-                aria-label="Toggle menu"
-              >
-                {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-              </button>
-            )}
+            <button 
+              className="menu-toggle" 
+              onClick={toggleMobileMenu} 
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
           </div>
         </div>
       </nav>
@@ -158,32 +137,49 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
             className="mobile-menu open"
           >
             <div className="mobile-menu-links">
-              {variant === 'landing' && (
-                <>
-                  <Link href="#features" onClick={closeMobileMenu}>Features</Link>
-                  <Link href="#how-it-works" onClick={closeMobileMenu}>How it Works</Link>
-                  <Link href="/pricing" onClick={closeMobileMenu}>Pricing</Link>
-                </>
-              )}
-              {variant === 'legal' && (
-                <>
-                  <Link href="/" onClick={closeMobileMenu}>Home</Link>
-                  <Link href="/pricing" onClick={closeMobileMenu}>Pricing</Link>
-                </>
-              )}
+              <Link href="/#birth-chart" onClick={closeMobileMenu}>Birth Chart</Link>
+              <Link href="/chat" onClick={closeMobileMenu}>Live Chat</Link>
+              <Link href="/voice" onClick={closeMobileMenu}>Voice</Link>
+              <Link href="/pricing" onClick={closeMobileMenu}>Pricing</Link>
             </div>
 
             <div className="mobile-menu-actions">
               {userId ? (
-                <Link href="/dashboard" className="btn btn-outline" onClick={closeMobileMenu} style={{ display: 'flex', width: '100%' }}>
-                  Dashboard
+                <Link 
+                  href="/chat" 
+                  className="btn btn-primary" 
+                  onClick={closeMobileMenu} 
+                  style={{ 
+                    display: 'flex', 
+                    width: '100%', 
+                    background: 'linear-gradient(135deg, var(--tertiary), #b89a38)', 
+                    color: 'var(--on-tertiary)', 
+                    border: 'none',
+                    justifyContent: 'center',
+                    fontWeight: 600
+                  }}
+                >
+                  Consult Stars
                 </Link>
               ) : (
                 <>
                   <Link href="/sign-in" className="btn btn-outline" onClick={closeMobileMenu} style={{ display: 'flex', width: '100%' }}>
                     Sign In
                   </Link>
-                  <Link href="/sign-up" className="btn btn-primary" onClick={closeMobileMenu} style={{ display: 'flex', width: '100%' }}>
+                  <Link 
+                    href="/sign-up" 
+                    className="btn btn-primary" 
+                    onClick={closeMobileMenu} 
+                    style={{ 
+                      display: 'flex', 
+                      width: '100%',
+                      background: 'linear-gradient(135deg, var(--tertiary), #b89a38)', 
+                      color: 'var(--on-tertiary)', 
+                      border: 'none',
+                      justifyContent: 'center',
+                      fontWeight: 600
+                    }}
+                  >
                     Get Started
                   </Link>
                 </>

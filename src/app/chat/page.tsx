@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import { useUser } from '@clerk/nextjs';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
+import '../astraeus.css';
 
 type Message = { id: string; role: 'user' | 'assistant'; content: string };
 
@@ -40,11 +41,11 @@ const SUGGESTIONS = [
 
 const getSuggestionIcon = (iconName: string) => {
   switch (iconName) {
-    case 'Briefcase': return <Briefcase className="text-purple-400" size={20} />;
-    case 'Heart': return <Heart className="text-red-400" size={20} />;
-    case 'Compass': return <Compass className="text-yellow-400" size={20} />;
-    case 'Moon': return <Moon className="text-blue-400" size={20} />;
-    default: return <Sparkles className="text-purple-400" size={20} />;
+    case 'Briefcase': return <Briefcase color="#cebdff" size={20} />;
+    case 'Heart': return <Heart color="#ffb4ab" size={20} />;
+    case 'Compass': return <Compass color="#e9c349" size={20} />;
+    case 'Moon': return <Moon color="#c0c6db" size={20} />;
+    default: return <Sparkles color="#e9c349" size={20} />;
   }
 };
 
@@ -68,7 +69,7 @@ function CopyButton({ text }: { text: string }) {
       className="copy-btn"
       title="Copy reading"
     >
-      {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+      {copied ? <Check size={14} color="#34d399" /> : <Copy size={14} />}
     </button>
   );
 }
@@ -166,6 +167,13 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    document.body.classList.add('astraeus-active');
+    return () => {
+      document.body.classList.remove('astraeus-active');
+    };
+  }, []);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -247,7 +255,7 @@ export default function ChatPage() {
   );
 
   return (
-    <>
+    <div className="theme-astraeus min-h-screen">
       <Navbar variant="chat" />
 
       <main className="chat-container fade-in relative z-10">
@@ -285,7 +293,7 @@ export default function ChatPage() {
               </div>
 
               <div className="mt-8">
-                <Link href="/pricing" className="btn btn-outline" style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}>
+                <Link href="/pricing" className="glow-button-secondary" style={{ fontSize: '0.875rem', padding: '0.5rem 1.2rem' }}>
                   Upgrade to Voice Reading
                 </Link>
               </div>
@@ -383,6 +391,6 @@ export default function ChatPage() {
           </form>
         </div>
       </main>
-    </>
+    </div>
   );
 }

@@ -1,17 +1,85 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Check, Sparkles, Star, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Star, Zap, Sparkles, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import '../astraeus.css';
+
+interface Plan {
+  id: string;
+  name: string;
+  displayName: string;
+  price: number;
+  durationInMinutes: number;
+  description: string;
+  icon: string;
+  iconColor: string;
+  featured?: boolean;
+  badgeText?: string;
+  features: string[];
+}
+
+const PLANS: Plan[] = [
+  {
+    id: 'quick-clarity',
+    name: '5 Min Pass',
+    displayName: 'Quick Clarity',
+    price: 1,
+    durationInMinutes: 5,
+    description: 'Perfect for a quick cosmic check-in.',
+    icon: 'star',
+    iconColor: 'var(--secondary)',
+    features: ['Live Voice Access', 'Instant Emotional Support', 'Private & Secure']
+  },
+  {
+    id: 'deep-healing',
+    name: '30 Min Pass',
+    displayName: 'Deep Healing',
+    price: 3,
+    durationInMinutes: 30,
+    description: 'Dive deep into your birth chart and emotional blockages.',
+    icon: 'bolt',
+    iconColor: 'var(--tertiary)',
+    featured: true,
+    badgeText: 'MOST LOVED',
+    features: ['Everything in Quick Clarity', 'Uncover Hidden Life Patterns', 'Persistent Soul Memory']
+  },
+  {
+    id: 'cosmic-awakening',
+    name: '60 Min Pass',
+    displayName: 'Cosmic Awakening',
+    price: 5,
+    durationInMinutes: 60,
+    description: 'A full hour of uninterrupted spiritual guidance.',
+    icon: 'stars',
+    iconColor: 'var(--secondary)',
+    features: ['Everything in Deep Healing', 'Complete Future Forecasting', 'Ultimate Peace of Mind']
+  }
+];
+
+const getPlanIcon = (iconName: string, iconColor: string) => {
+  switch (iconName) {
+    case 'star':
+      return <Star size={36} style={{ color: iconColor }} fill="currentColor" />;
+    case 'bolt':
+      return <Zap size={36} style={{ color: iconColor }} fill="currentColor" />;
+    case 'stars':
+      return <Sparkles size={36} style={{ color: iconColor }} fill="currentColor" />;
+    default:
+      return <Star size={36} style={{ color: iconColor }} fill="currentColor" />;
+  }
+};
 
 export default function PricingPage() {
   const [loading, setLoading] = useState(false);
   const [proUntil, setProUntil] = useState<Date | null>(null);
 
   useEffect(() => {
+    document.body.classList.add('astraeus-active');
+    
     fetch('/api/user')
       .then(res => res.json())
       .then(data => {
@@ -20,6 +88,10 @@ export default function PricingPage() {
         }
       })
       .catch(console.error);
+
+    return () => {
+      document.body.classList.remove('astraeus-active');
+    };
   }, []);
 
   const loadRazorpayScript = () => {
@@ -59,10 +131,10 @@ export default function PricingPage() {
       }
 
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID, // Enter the Key ID generated from the Dashboard
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: data.amount,
         currency: data.currency || "INR",
-        name: "Astro AI",
+        name: "Astraeus",
         description: `Subscription to ${plan} Plan`,
         order_id: data.orderId,
         handler: async function (response: {
@@ -85,7 +157,7 @@ export default function PricingPage() {
             
             if (verifyRes.ok) {
               toast.success("Payment successful! You are now a Cosmic Oracle.");
-              window.location.href = "/dashboard";
+              window.location.href = "/chat";
             } else {
               toast.error("Payment verification failed.");
             }
@@ -95,7 +167,7 @@ export default function PricingPage() {
           }
         },
         theme: {
-          color: "#9d4edd"
+          color: "#e9c349"
         }
       };
 
@@ -111,142 +183,145 @@ export default function PricingPage() {
   };
 
   return (
-    <>
+    <div className="theme-astraeus min-h-screen flex flex-col">
       <Navbar variant="pricing" />
 
-      <main className="container fade-in main-content">
+      {/* Main Content */}
+      <main className="flex-grow astral-container relative z-10" style={{ paddingTop: '8rem', paddingBottom: '6rem' }}>
+        
+        {/* Glow Background Orbs */}
         <div className="glow-orb glow-orb-1" style={{ top: '20%', left: '10%' }}></div>
         <div className="glow-orb glow-orb-2" style={{ bottom: '20%', right: '10%' }}></div>
 
-        <div className="text-center mb-16">
-          <h1 className="hero-title" style={{ fontSize: 'clamp(2.5rem, 6vw, 4rem)', marginBottom: '1rem' }}>
-            Invest in Your <span className="text-gradient font-serif italic" style={{ background: 'linear-gradient(135deg, #f1c40f, #e67e22)', WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Healing Journey</span>
+        {/* Header */}
+        <header className="text-center mb-8">
+          <h1 className="font-display" style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', lineHeight: 'tight', marginBottom: '1.5rem', background: 'linear-gradient(to right, #ffffff, var(--secondary), var(--tertiary))', WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            Invest in Your Healing Journey
           </h1>
-          <p className="text-muted" style={{ fontSize: '1.2rem', maxWidth: '600px', margin: '0 auto', lineHeight: 1.6 }}>
+          <p className="font-body-lg text-on-surface-variant max-w-2xl mx-auto" style={{ fontSize: '1.1rem', lineHeight: '1.6' }}>
             Your first 15 text messages are completely free. When you&apos;re ready for deep, uninterrupted voice guidance, choose a cosmic pass below.
           </p>
+
+          {/* Active Session Notification */}
           {proUntil && proUntil > new Date() && (
-            <div className="mt-6 p-4 glass-card" style={{ display: 'inline-block', border: '1px solid #f39c12' }}>
-              <p className="text-yellow-500 font-semibold m-0">
+            <div className="mt-8 p-6 glass-panel" style={{ display: 'inline-block', borderRadius: '1rem', border: '1px solid var(--tertiary)' }}>
+              <p className="text-tertiary font-semibold m-0" style={{ fontSize: '1.1rem' }}>
                 You currently have an active Cosmic Session!
               </p>
-              <p className="text-muted text-sm m-0 mt-1">
+              <p className="text-on-surface-variant text-sm m-0 mt-2">
                 Your Pro access expires on: {proUntil.toLocaleString()}
               </p>
-              <p className="text-muted text-xs m-0 mt-1 opacity-75">
-                Purchasing another pass will add to your remaining time.
+              <p className="text-on-surface-variant text-xs m-0 mt-1 opacity-75">
+                Purchasing another package will add to your remaining time.
               </p>
             </div>
           )}
+        </header>
+
+        {/* 3 Tiers Cards Grid */}
+        <div 
+          className="pricing-layout-grid" 
+          style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
+            gap: '2rem', 
+            maxWidth: '1100px', 
+            margin: '4rem auto 0 auto' 
+          }}
+        >
+          {PLANS.map((plan) => {
+            const isFeatured = plan.featured;
+            return (
+              <motion.div
+                key={plan.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                className="glass-card flex flex-col"
+                style={{
+                  borderRadius: '1.5rem',
+                  padding: '2.5rem 2rem',
+                  position: 'relative',
+                  border: isFeatured ? '1px solid var(--tertiary)' : '1px solid rgba(255, 255, 255, 0.1)',
+                  boxShadow: isFeatured ? '0 0 40px rgba(233, 195, 73, 0.15)' : '0 8px 32px 0 rgba(0, 0, 0, 0.3)',
+                  minHeight: '440px',
+                }}
+              >
+                {isFeatured && plan.badgeText && (
+                  <div 
+                    className="font-label-caps"
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      right: 0,
+                      background: 'linear-gradient(135deg, var(--tertiary), #b89a38)',
+                      color: 'var(--on-tertiary)',
+                      fontSize: '10px',
+                      fontWeight: 'bold',
+                      padding: '6px 16px',
+                      borderBottomLeftRadius: '1rem',
+                      borderTopRightRadius: '1.5rem',
+                      letterSpacing: '1px'
+                    }}
+                  >
+                    {plan.badgeText}
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                  {getPlanIcon(plan.icon, plan.iconColor)}
+                  <h3 className={isFeatured ? 'text-gradient font-display' : 'font-display'} style={{ fontSize: '1.6rem', margin: 0, fontWeight: 700 }}>
+                    {plan.displayName}
+                  </h3>
+                </div>
+
+                <div style={{ fontSize: '2.75rem', fontWeight: '800', margin: '1rem 0', display: 'flex', alignItems: 'baseline', color: 'var(--on-bg-color)' }}>
+                  ${plan.price}
+                  <span style={{ fontSize: '1.1rem', fontWeight: '500', color: 'var(--on-surface-variant)', marginLeft: '0.25rem' }}>
+                    / {plan.durationInMinutes} mins
+                  </span>
+                </div>
+
+                <p className="text-on-surface-variant" style={{ margin: '0 0 1.5rem 0', lineHeight: 1.5, minHeight: '48px', fontSize: '0.95rem' }}>
+                  {plan.description}
+                </p>
+
+                <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 2.5rem 0', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {plan.features.map((feat, idx) => (
+                    <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: 'var(--on-surface-variant)' }}>
+                      <CheckCircle2 size={18} style={{ color: plan.featured ? 'var(--tertiary)' : 'var(--secondary)' }} />
+                      <span>{feat}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                {isFeatured ? (
+                  <button
+                    onClick={() => handleSubscribe(plan.name, plan.price, plan.durationInMinutes)}
+                    className="glow-button"
+                    style={{ width: '100%', marginTop: 'auto', padding: '1rem', fontSize: '12px' }}
+                    disabled={loading}
+                  >
+                    {loading ? 'Processing...' : 'Start Deep Healing'}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleSubscribe(plan.name, plan.price, plan.durationInMinutes)}
+                    className="glow-button-secondary cursor-pointer"
+                    style={{ width: '100%', marginTop: 'auto', padding: '1rem', fontSize: '12px' }}
+                    disabled={loading}
+                  >
+                    {loading ? 'Processing...' : plan.id === 'quick-clarity' ? 'Begin Quick Session' : 'Embrace Awakening'}
+                  </button>
+                )}
+              </motion.div>
+            );
+          })}
         </div>
-        
-        <div className="flex flex-col md:flex-row justify-center gap-8 items-center md:items-stretch mt-8">
-          {/* 5 Min Plan */}
-          <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
-            className="glass-card flex flex-col hover-lift" 
-            style={{ width: '100%', maxWidth: '320px' }}
-          >
-            <div className="flex items-center gap-3 mb-2">
-               <Star className="text-muted" size={24} />
-              <h3 style={{ fontSize: '1.6rem', margin: 0, fontWeight: 600 }}>Quick Clarity</h3>
-            </div>
-            <div style={{ fontSize: '3rem', fontWeight: '800', margin: '1rem 0' }}>
-              $1<span className="text-muted" style={{ fontSize: '1.2rem', fontWeight: '500' }}> / 5 mins</span>
-            </div>
-            <p className="text-muted mb-6" style={{ minHeight: '48px' }}>Perfect for a quick cosmic check-in.</p>
-            
-            <ul className="mb-8 flex flex-col gap-3" style={{ listStyle: 'none', padding: 0, margin: '0 0 2rem 0' }}>
-              <li className="flex items-center gap-2 text-sm"><Check size={18} className="text-primary" /> Live Voice Access</li>
-              <li className="flex items-center gap-2 text-sm"><Check size={18} className="text-primary" /> Instant Emotional Support</li>
-              <li className="flex items-center gap-2 text-sm"><Check size={18} className="text-primary" /> Private & Secure</li>
-            </ul>
 
-            <button 
-              className="btn btn-outline mt-auto" 
-              style={{ width: '100%' }}
-              onClick={() => handleSubscribe('5 Min Pass', 1, 5)}
-              disabled={loading}
-            >
-              {loading ? 'Processing...' : 'Begin Quick Session'}
-            </button>
-          </motion.div>
-
-          {/* 30 Min Plan */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="glass-card flex flex-col relative pricing-card-featured hover-lift" 
-            style={{ width: '100%', maxWidth: '340px' }}
-          >
-            <div className="absolute top-0 right-0 text-white text-xs font-bold px-4 py-1" style={{ background: 'linear-gradient(to right, #f39c12, #d35400)', borderBottomLeftRadius: '1rem', borderTopRightRadius: '1rem', letterSpacing: '1px' }}>
-              MOST LOVED
-            </div>
-            
-            <div className="flex items-center gap-3 mb-2">
-              <Zap className="text-primary" size={24} />
-              <h3 className="text-gradient" style={{ fontSize: '1.8rem', margin: 0, fontWeight: 700 }}>Deep Healing</h3>
-            </div>
-            <div style={{ fontSize: '3.5rem', fontWeight: '800', margin: '1rem 0' }}>
-              $3<span className="text-muted" style={{ fontSize: '1.2rem', fontWeight: '500' }}> / 30 mins</span>
-            </div>
-            <p className="text-muted mb-6" style={{ minHeight: '48px' }}>Dive deep into your birth chart and emotional blockages.</p>
-            
-            <ul className="mb-8 flex flex-col gap-3" style={{ listStyle: 'none', padding: 0, margin: '0 0 2rem 0' }}>
-              <li className="flex items-center gap-2 text-sm font-medium"><Check size={18} className="text-primary" /> Everything in Quick Clarity</li>
-              <li className="flex items-center gap-2 text-sm font-medium"><Check size={18} className="text-primary" /> Uncover Hidden Life Patterns</li>
-              <li className="flex items-center gap-2 text-sm font-medium"><Check size={18} className="text-primary" /> Persistent Soul Memory</li>
-            </ul>
-            
-            <button 
-              className="btn btn-primary mt-auto" 
-              style={{ width: '100%', background: 'linear-gradient(to right, #f39c12, #d35400)', border: 'none', color: 'white', boxShadow: '0 4px 20px rgba(243, 156, 18, 0.4)', padding: '1rem' }}
-              onClick={() => handleSubscribe('30 Min Pass', 3, 30)}
-              disabled={loading}
-            >
-              {loading ? 'Processing...' : 'Start Deep Healing'}
-            </button>
-          </motion.div>
-
-          {/* 60 Min Plan */}
-          <motion.div 
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
-            className="glass-card flex flex-col hover-lift" 
-            style={{ width: '100%', maxWidth: '320px' }}
-          >
-            <div className="flex items-center gap-3 mb-2">
-               <Sparkles className="text-muted" size={24} />
-              <h3 style={{ fontSize: '1.6rem', margin: 0, fontWeight: 600 }}>Cosmic Awakening</h3>
-            </div>
-            <div style={{ fontSize: '3rem', fontWeight: '800', margin: '1rem 0' }}>
-              $5<span className="text-muted" style={{ fontSize: '1.2rem', fontWeight: '500' }}> / 60 mins</span>
-            </div>
-            <p className="text-muted mb-6" style={{ minHeight: '48px' }}>A full hour of uninterrupted spiritual guidance.</p>
-
-            <ul className="mb-8 flex flex-col gap-3" style={{ listStyle: 'none', padding: 0, margin: '0 0 2rem 0' }}>
-              <li className="flex items-center gap-2 text-sm"><Check size={18} className="text-primary" /> Everything in Deep Healing</li>
-              <li className="flex items-center gap-2 text-sm"><Check size={18} className="text-primary" /> Complete Future Forecasting</li>
-              <li className="flex items-center gap-2 text-sm"><Check size={18} className="text-primary" /> Ultimate Peace of Mind</li>
-            </ul>
-
-            <button 
-              className="btn btn-outline mt-auto" 
-              style={{ width: '100%' }}
-              onClick={() => handleSubscribe('60 Min Pass', 5, 60)}
-              disabled={loading}
-            >
-              {loading ? 'Processing...' : 'Embrace Awakening'}
-            </button>
-          </motion.div>
-          
-        </div>
       </main>
+
       <Footer />
-    </>
+    </div>
   );
 }
