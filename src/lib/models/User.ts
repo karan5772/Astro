@@ -8,6 +8,18 @@ const UserSchema = new mongoose.Schema({
   isPro: { type: Boolean, default: false },
   proUntil: { type: Date },
   messageCount: { type: Number, default: 0 },
+  birthDate: { type: String },
+  birthTime: { type: String },
+  birthTimezone: { type: String },
+  birthLocation: { type: String },
+  birthLatitude: { type: Number },
+  birthLongitude: { type: Number },
+  ayanamsa: { type: String, default: 'RAMAN' },
+  predictions: [{
+    name: { type: String },
+    description: { type: String },
+    tags: [{ type: String }]
+  }],
   payments: [{
     paymentId: String,
     orderId: String,

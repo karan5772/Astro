@@ -64,6 +64,26 @@ export async function POST(req: NextRequest) {
     ## Ask questions
     ###Gathere more and more important information about the user in the convesation, you should ask questions to the user to gather more and more information about them.`;
     
+    // Inject user's birth chart details and calculated predictions if available
+    if (dbUser && dbUser.birthDate) {
+      systemPrompt += `\n\nUser's Birth Details (Vedic/Jyotish parameters):
+- Date of Birth: ${dbUser.birthDate}
+- Time of Birth: ${dbUser.birthTime}
+- Location: ${dbUser.birthLocation} (Latitude: ${dbUser.birthLatitude}°, Longitude: ${dbUser.birthLongitude}°)
+- Timezone Offset: ${dbUser.birthTimezone}
+- Ayanamsa System: ${dbUser.ayanamsa || 'RAMAN'}`;
+
+      if (dbUser.predictions && dbUser.predictions.length > 0) {
+        // Feed the top 25 horoscope predictions into the LLM system prompt context
+        const userPredictionsText = dbUser.predictions
+          .slice(0, 25)
+          .map((p: any) => `- [${p.name}]: ${p.description}`)
+          .join('\n');
+        
+        systemPrompt += `\n\nHere are the calculated Vedic Horoscope Predictions for this user from the VedAstro system. Reference these predictions naturally in your conversation to show your clairvoyant/astrological accuracy. Do NOT list them all out in one reply; use them contextually to guide the user's reading:\n${userPredictionsText}`;
+      }
+    }
+
     if (memoryContext) {
       systemPrompt += `\n\nHere are some things you remember about the user: ${memoryContext}`;
     }

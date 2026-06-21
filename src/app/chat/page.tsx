@@ -1,16 +1,40 @@
-"use client";
+'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Send, Sparkles, User, Copy, Check, Briefcase, Heart, Compass, Moon } from 'lucide-react';
+import { 
+  Send, 
+  Sparkles, 
+  User, 
+  Copy, 
+  Check, 
+  Briefcase, 
+  Heart, 
+  Compass, 
+  Moon, 
+  MapPin, 
+  Calendar, 
+  Clock, 
+  Globe, 
+  Search, 
+  Lock, 
+  Info,
+  X
+} from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { useUser } from '@clerk/nextjs';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import '../astraeus.css';
 
 type Message = { id: string; role: 'user' | 'assistant'; content: string };
+
+interface GeocodeResult {
+  name: string;
+  latitude: number;
+  longitude: number;
+}
 
 const SUGGESTIONS = [
   {
@@ -77,7 +101,6 @@ function CopyButton({ text }: { text: string }) {
 function MarkdownText({ text }: { text: string }) {
   if (!text) return null;
 
-  // Split by newlines to parse block-level structures
   const lines = text.split('\n');
   
   return (
@@ -85,7 +108,6 @@ function MarkdownText({ text }: { text: string }) {
       {lines.map((line, index) => {
         const trimmed = line.trim();
         
-        // Headers
         if (trimmed.startsWith('### ')) {
           return (
             <h4 key={index} className="font-semibold text-accent text-sm md:text-base mt-3 mb-1">
@@ -108,7 +130,6 @@ function MarkdownText({ text }: { text: string }) {
           );
         }
         
-        // Bullet list items
         if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
           return (
             <div key={index} className="flex items-start gap-2 my-1 pl-2 text-sm md:text-base">
@@ -118,12 +139,10 @@ function MarkdownText({ text }: { text: string }) {
           );
         }
 
-        // Empty line spacer
         if (trimmed === '') {
           return <div key={index} className="h-2" />;
         }
 
-        // Paragraph line
         return (
           <p key={index} className="my-1.5 leading-relaxed text-sm md:text-base">
             {renderInline(line)}
@@ -135,7 +154,6 @@ function MarkdownText({ text }: { text: string }) {
 }
 
 function renderInline(text: string) {
-  // Regex to split on bold **word** or italic *word*
   const parts = text.split(/(\*\*.*?\*\*|\*.*?\*)/g);
   return parts.map((part, i) => {
     if (part.startsWith('**') && part.endsWith('**')) {
@@ -167,12 +185,154 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Profile status check
+  const [checkingDetails, setCheckingDetails] = useState(true);
+  const [showOnboardingForm, setShowOnboardingForm] = useState(false);
+  const [dbUser, setDbUser] = useState<any>(null);
+
+  // Onboarding Form States (defaulting to standard Raman birth metadata)
+  const [birthDate, setBirthDate] = useState('1990-06-15');
+  const [birthTime, setBirthTime] = useState('12:00');
+  const [birthTimezone, setBirthTimezone] = useState('+05:30');
+  const [locationQuery, setLocationQuery] = useState('Pilani, Surajgarh, Rajasthan, India');
+  const [selectedLocationName, setSelectedLocationName] = useState('Pilani, Surajgarh, Rajasthan, India');
+  const [latitude, setLatitude] = useState<number | null>(28.364);
+  const [longitude, setLongitude] = useState<number | null>(75.601);
+  const [ayanamsa, setAyanamsa] = useState('RAMAN');
+
+  // Autocomplete state
+  const [locationSuggestions, setLocationSuggestions] = useState<GeocodeResult[]>([]);
+  const [isSearchingLocation, setIsSearchingLocation] = useState(false);
+  const [isSubmittingDetails, setIsSubmittingDetails] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     document.body.classList.add('astraeus-active');
+
+    // Inferrer for timezone offset
+    const offset = -new Date().getTimezoneOffset();
+    const sign = offset >= 0 ? '+' : '-';
+    const absOffset = Math.abs(offset);
+    const hours = String(Math.floor(absOffset / 60)).padStart(2, '0');
+    const minutes = String(absOffset % 60).padStart(2, '0');
+    setBirthTimezone(`${sign}${hours}:${minutes}`);
+
+    // Check user profile data on load
+    async function checkUserProfile() {
+      try {
+        const res = await fetch('/api/user');
+        if (res.ok) {
+          const data = await res.json();
+          setDbUser(data);
+          if (!data.hasBirthDetails) {
+            setShowOnboardingForm(true);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch user metadata:', err);
+      } finally {
+        setCheckingDetails(false);
+      }
+    }
+
+    checkUserProfile();
+
+    // Autocomplete click outside handler
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setLocationSuggestions([]);
+      }
+    };
+
+    window.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.body.classList.remove('astraeus-active');
+      window.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  // Fetch location autocomplete
+  useEffect(() => {
+    if (!locationQuery || locationQuery === selectedLocationName || locationQuery.trim().length < 2) {
+      setLocationSuggestions([]);
+      return;
+    }
+
+    const delayDebounceFn = setTimeout(async () => {
+      setIsSearchingLocation(true);
+      try {
+        const res = await fetch(`/api/geocode?q=${encodeURIComponent(locationQuery)}`);
+        if (res.ok) {
+          const data = await res.json();
+          setLocationSuggestions(data);
+        }
+      } catch (err) {
+        console.error('Failed to search locations:', err);
+      } finally {
+        setIsSearchingLocation(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [locationQuery, selectedLocationName]);
+
+  const handleSelectLocation = (location: GeocodeResult) => {
+    setLocationQuery(location.name);
+    setSelectedLocationName(location.name);
+    setLatitude(location.latitude);
+    setLongitude(location.longitude);
+    setLocationSuggestions([]);
+  };
+
+  const handleSaveDetails = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!birthDate || !birthTime || latitude === null || longitude === null) {
+      toast.error('Please enter all required birth details.');
+      return;
+    }
+
+    setIsSubmittingDetails(true);
+
+    const savePromise = new Promise(async (resolve, reject) => {
+      try {
+        const response = await fetch('/api/user', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            birthDate,
+            birthTime,
+            birthTimezone,
+            birthLocation: selectedLocationName,
+            birthLatitude: latitude,
+            birthLongitude: longitude,
+            ayanamsa,
+          }),
+        });
+
+        if (!response.ok) {
+          const errData = await response.json();
+          throw new Error(errData.error || 'Server error saving birth details.');
+        }
+
+        const data = await response.json();
+        setDbUser(data);
+        setShowOnboardingForm(false);
+        resolve(data);
+      } catch (err: any) {
+        reject(err);
+      } finally {
+        setIsSubmittingDetails(false);
+      }
+    });
+
+    toast.promise(savePromise, {
+      loading: 'Syncing with the cosmos & querying horoscope predictions...',
+      success: 'Cosmic profile locked! Planetary readings initialized.',
+      error: (err) => `Failed to synchronize: ${err.message || 'Unknown error'}`
+    });
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -246,7 +406,6 @@ export default function ChatPage() {
     submitMessage(text);
   };
 
-  // Only show the typing dots loader if fetch is working and the assistant message is not yet populated
   const showTypingIndicator = isLoading && (
     messages.length === 0 || 
     (messages[messages.length - 1].role === 'assistant' 
@@ -254,6 +413,244 @@ export default function ChatPage() {
       : true)
   );
 
+  // 1. Render global loader while fetching user details
+  if (checkingDetails) {
+    return (
+      <div className="theme-astraeus min-h-screen flex items-center justify-center">
+        <div className="constellation-spinner"></div>
+      </div>
+    );
+  }
+
+  // 2. Render onboarding details collection form if not configured
+  if (showOnboardingForm) {
+    return (
+      <div className="theme-astraeus min-h-screen flex flex-col">
+        <Navbar variant="chat" />
+        
+        <main className="flex-1 flex items-center justify-center px-4 pt-28 pb-16 relative z-10">
+          <div className="glow-orb glow-orb-1" style={{ top: '20%', left: '15%' }}></div>
+          <div className="glow-orb glow-orb-2" style={{ bottom: '20%', right: '15%' }}></div>
+
+          <motion.div 
+            className="glass-panel p-8 w-full max-w-lg relative"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            {dbUser?.hasBirthDetails && (
+              <button
+                type="button"
+                onClick={() => setShowOnboardingForm(false)}
+                className="absolute top-4 right-4 text-muted hover:text-white transition-colors animate-pulse-slow"
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', outline: 'none' }}
+                aria-label="Close"
+              >
+                <X size={20} />
+              </button>
+            )}
+            
+            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+              <div className="feature-icon-wrapper mx-auto mb-4" style={{ width: '4.5rem', height: '4.5rem', borderRadius: '1.25rem' }}>
+                {dbUser?.hasBirthDetails ? (
+                  <Sparkles size={32} className="text-[#e9c349]" />
+                ) : (
+                  <Lock size={32} className="text-[#e9c349]" />
+                )}
+              </div>
+              <h2 className="font-display text-gradient" style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>
+                {dbUser?.hasBirthDetails ? 'Update Cosmic Identity' : 'Unlock Cosmic Identity'}
+              </h2>
+              <p className="text-muted" style={{ fontSize: '13px', lineHeight: 1.6 }}>
+                {dbUser?.hasBirthDetails 
+                  ? 'Modify your birth parameters to recalculate your planetary placements and predictions.' 
+                  : 'Before starting your chat reading, please enter your exact birth metadata. Our Vedic systems will map your placements to provide accurate horoscope predictions.'}
+              </p>
+            </div>
+
+            <form onSubmit={handleSaveDetails} className="chart-form-panel">
+              {/* Date & Time */}
+              <div className="chart-input-row">
+                <div className="chart-input-group">
+                  <label className="chart-input-label">
+                    <Calendar size={13} className="inline mr-1" /> Date of Birth
+                  </label>
+                  <input 
+                    type="date" 
+                    value={birthDate} 
+                    onChange={(e) => setBirthDate(e.target.value)} 
+                    className="chart-input-field" 
+                    required 
+                  />
+                </div>
+
+                <div className="chart-input-group">
+                  <label className="chart-input-label">
+                    <Clock size={13} className="inline mr-1" /> Time of Birth
+                  </label>
+                  <input 
+                    type="time" 
+                    value={birthTime} 
+                    onChange={(e) => setBirthTime(e.target.value)} 
+                    className="chart-input-field" 
+                    required 
+                  />
+                </div>
+              </div>
+
+              {/* Location Autocomplete */}
+              <div className="chart-input-group" ref={searchContainerRef}>
+                <label className="chart-input-label">
+                  <MapPin size={13} className="inline mr-1" /> Birth Place
+                </label>
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    placeholder="Search city..."
+                    value={locationQuery}
+                    onChange={(e) => setLocationQuery(e.target.value)}
+                    className="chart-input-field"
+                    style={{ paddingRight: '2.5rem' }}
+                    required
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center text-muted">
+                    {isSearchingLocation ? (
+                      <div className="w-4 h-4 border-2 border-t-transparent border-[#e9c349] rounded-full animate-spin"></div>
+                    ) : (
+                      <Search size={15} />
+                    )}
+                  </div>
+                </div>
+
+                <AnimatePresence>
+                  {locationSuggestions.length > 0 && (
+                    <motion.div 
+                      className="autocomplete-dropdown"
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      {locationSuggestions.map((loc, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          className="autocomplete-item"
+                          onClick={() => handleSelectLocation(loc)}
+                        >
+                          <MapPin size={13} className="text-[#e9c349] shrink-0" />
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{loc.name}</span>
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Timezone offset and Coordinates */}
+              <div className="chart-input-row">
+                <div className="chart-input-group">
+                  <label className="chart-input-label">
+                    <Globe size={13} className="inline mr-1" /> UTC Timezone Offset
+                  </label>
+                  <select 
+                    value={birthTimezone} 
+                    onChange={(e) => setBirthTimezone(e.target.value)} 
+                    className="chart-input-field"
+                  >
+                    <option value="-12:00">UTC-12:00</option>
+                    <option value="-11:00">UTC-11:00</option>
+                    <option value="-10:00">UTC-10:00</option>
+                    <option value="-09:00">UTC-09:00</option>
+                    <option value="-08:00">UTC-08:00 (PST)</option>
+                    <option value="-07:00">UTC-07:00 (MST)</option>
+                    <option value="-06:00">UTC-06:00 (CST)</option>
+                    <option value="-05:00">UTC-05:00 (EST)</option>
+                    <option value="-04:00">UTC-04:00 (AST)</option>
+                    <option value="-03:00">UTC-03:00</option>
+                    <option value="-02:00">UTC-02:00</option>
+                    <option value="-01:00">UTC-01:00</option>
+                    <option value="+00:00">UTC+00:00 (GMT)</option>
+                    <option value="+01:00">UTC+01:00 (CET)</option>
+                    <option value="+02:00">UTC+02:00 (EET)</option>
+                    <option value="+03:00">UTC+03:00</option>
+                    <option value="+04:00">UTC+04:00 (GST)</option>
+                    <option value="+04:30">UTC+04:30</option>
+                    <option value="+05:00">UTC+05:00</option>
+                    <option value="+05:30">UTC+05:30 (IST)</option>
+                    <option value="+05:45">UTC+05:45 (NPT)</option>
+                    <option value="+06:00">UTC+06:00</option>
+                    <option value="+07:00">UTC+07:00</option>
+                    <option value="+08:00">UTC+08:00 (SGT)</option>
+                    <option value="+09:00">UTC+09:00 (JST)</option>
+                    <option value="+09:30">UTC+09:30</option>
+                    <option value="+10:00">UTC+10:00 (AEST)</option>
+                    <option value="+11:00">UTC+11:00</option>
+                    <option value="+12:00">UTC+12:00 (NZST)</option>
+                  </select>
+                </div>
+
+                <div className="chart-input-group">
+                  <label className="chart-input-label">
+                    <Compass size={13} className="inline mr-1" /> Coordinates
+                  </label>
+                  <div 
+                    className="chart-input-field flex items-center justify-between" 
+                    style={{ background: 'rgba(255,255,255,0.02)', cursor: 'default' }}
+                  >
+                    {latitude !== null && longitude !== null ? (
+                      <span className="text-[#cebdff]" style={{ fontSize: '12px' }}>
+                        Lat: {latitude.toFixed(2)} | Lon: {longitude.toFixed(2)}
+                      </span>
+                    ) : (
+                      <span className="text-muted" style={{ fontSize: '12px' }}>None</span>
+                    )}
+                    <Globe size={13} className="text-muted" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Ayanamsa choice */}
+              <div className="chart-input-group">
+                <label className="chart-input-label">Ayanamsa system</label>
+                <select 
+                  value={ayanamsa} 
+                  onChange={(e) => setAyanamsa(e.target.value)} 
+                  className="chart-input-field"
+                >
+                  <option value="RAMAN">Raman Ayanamsa</option>
+                  <option value="LAHIRI">Lahiri Ayanamsa (Chitra Paksha)</option>
+                  <option value="KP">K.P. Ayanamsa</option>
+                </select>
+              </div>
+
+              {/* Submit Details button */}
+              <button 
+                type="submit" 
+                className="glow-button-primary cursor-pointer mt-2"
+                style={{ width: '100%', padding: '0.875rem' }}
+                disabled={isSubmittingDetails}
+              >
+                {isSubmittingDetails ? (
+                  <span className="flex items-center gap-2 justify-center">
+                    <span className="w-4 h-4 border-2 border-t-transparent border-current rounded-full animate-spin"></span>
+                    SYNCHRONIZING CELESTIAL ALIGNMENTS...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2 justify-center">
+                    <Sparkles size={16} />
+                    {dbUser?.hasBirthDetails ? 'SAVE COSMIC CHANGES' : 'UNLOCK COSMIC CHAT'}
+                  </span>
+                )}
+              </button>
+            </form>
+          </motion.div>
+        </main>
+      </div>
+    );
+  }
+
+  // 3. Main Chat Interface
   return (
     <div className="theme-astraeus min-h-screen">
       <Navbar variant="chat" />
@@ -261,6 +658,35 @@ export default function ChatPage() {
       <main className="chat-container fade-in relative z-10">
         <div className="glow-orb glow-orb-1" style={{ top: '20%', left: '10%' }}></div>
         <div className="glow-orb glow-orb-2" style={{ bottom: '20%', right: '10%' }}></div>
+
+        {/* Edit Profile Status Bar */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(12, 15, 20, 0.6)', border: '1px solid rgba(233, 195, 73, 0.15)', borderRadius: '12px', padding: '0.75rem 1.25rem', marginBottom: '1rem', backdropFilter: 'blur(10px)', gap: '1rem', position: 'relative', zIndex: 30 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '13px', color: 'var(--on-surface-variant)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <Compass size={14} className="text-[#e9c349]" />
+            <span style={{ fontWeight: 500 }}>Birth Profile:</span>
+            <span className="text-white" style={{ fontWeight: 600 }}>{dbUser?.birthLocation?.split(',')[0]}</span>
+            <span style={{ opacity: 0.6 }}>({dbUser?.birthDate})</span>
+          </div>
+          <button 
+            onClick={() => {
+              if (dbUser) {
+                setBirthDate(dbUser.birthDate || '1990-06-15');
+                setBirthTime(dbUser.birthTime || '12:00');
+                setBirthTimezone(dbUser.birthTimezone || '+05:30');
+                setLocationQuery(dbUser.birthLocation || 'Pilani, Surajgarh, Rajasthan, India');
+                setSelectedLocationName(dbUser.birthLocation || 'Pilani, Surajgarh, Rajasthan, India');
+                setLatitude(dbUser.birthLatitude || 28.364);
+                setLongitude(dbUser.birthLongitude || 75.601);
+                setAyanamsa(dbUser.ayanamsa || 'RAMAN');
+              }
+              setShowOnboardingForm(true);
+            }}
+            className="btn btn-outline"
+            style={{ padding: '0.35rem 0.75rem', fontSize: '11px', borderRadius: '6px', whiteSpace: 'nowrap' }}
+          >
+            Edit Profile
+          </button>
+        </div>
 
         <div className="messages">
           {messages.length === 0 && (
@@ -301,7 +727,6 @@ export default function ChatPage() {
           )}
 
           {messages.map(m => {
-            // Hide the AI message block when content is empty and the typing indicator is doing the visual job
             if (m.role === 'assistant' && m.content.length === 0) return null;
             
             return (

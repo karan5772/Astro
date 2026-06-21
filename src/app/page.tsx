@@ -304,7 +304,7 @@ export default function LandingPage() {
           </div>
 
           <div>
-            <Link href={userId ? "/chat" : "/sign-up"} className="no-underline">
+            <Link href="/chart" className="no-underline">
               <button className="glow-button-primary cursor-pointer" style={{ padding: '1.25rem 2.5rem' }}>
                 Generate Full Chart
               </button>

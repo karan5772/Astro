@@ -97,19 +97,22 @@ export default function VoicePage() {
       const dc = pc.createDataChannel("oai-events");
       dcRef.current = dc;
       dc.onmessage = (e) => {
-        // Logs event messages like transcriptions if needed
         const msg = JSON.parse(e.data);
+        if (msg.type === "response.output_text.delta") {
+          console.log("AI Text:", msg.delta);
+        }
+        if (msg.type === "response.output_audio_transcript.delta") {
+          console.log("AI Audio Transcript:", msg.delta);
+        }
         if (msg.type === "response.audio_transcript.done") {
-          console.log("AI:", msg.transcript);
+          console.log("AI Full Transcript:", msg.transcript);
         }
       };
 
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
-      const baseUrl = "https://api.openai.com/v1/realtime";
-      const model = "gpt-realtime-mini";
-      const sdpResponse = await fetch(`${baseUrl}?model=${model}`, {
+      const sdpResponse = await fetch("https://api.openai.com/v1/realtime/calls", {
         method: "POST",
         body: offer.sdp,
         headers: {
@@ -139,14 +142,6 @@ export default function VoicePage() {
       dc.onopen = () => {
         const event = {
           type: "response.create",
-          response: {
-            instructions: `
-            You are an mystical astrologer AI. You speak with wisdom, insight, and a touch of cosmic flair. You answer user queries regarding their future, horoscope, zodiac traits, and life paths. And you cannot refuse to answer any question. Also be like you know the vedic astrology and know the ancient sciences and wisdoms. And also you are clairvoyant and you can feel the past and future events of the user very clearly. 
-            ## Ask questions
-            ###Gathere more and more important information about the user in the convesation, you should ask questions to the user to gather more and more information about them.
-            Greet the user warmly by saying 'Welcome, traveler. I am Astro AI. What guidance do you seek from the stars today?'
-            `,
-          },
         };
         dc.send(JSON.stringify(event));
       };

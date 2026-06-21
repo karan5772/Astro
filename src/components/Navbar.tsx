@@ -52,12 +52,12 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
         <div className="nav-container">
           <Link href="/" className="nav-brand" onClick={closeMobileMenu} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
             <img src="/logo.png" alt="Astraeus Logo" style={{ height: '36px', width: '36px', objectFit: 'contain' }} />
-            <span className="nav-logo">Astraeus</span>
+            <span className="nav-logo">Astro.AI</span>
           </Link>
 
           {/* Desktop Nav Links */}
           <div className="nav-links">
-            <Link href="/#birth-chart">Birth Chart</Link>
+            <Link href="/chart">Birth Chart</Link>
             <Link href="/chat">Live Chat</Link>
             <Link href="/voice">Voice</Link>
             <Link href="/pricing">Pricing</Link>
@@ -83,8 +83,8 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
 
             {userId ? (
               <>
-                <Link 
-                  href="/chat" 
+                <Link
+                  href="/chat"
                   className="glow-button-nav"
                   style={{ textDecoration: 'none' }}
                 >
@@ -97,15 +97,15 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
             ) : (
               <>
                 <div className="flex items-center gap-4">
-                  <Link 
-                    href="/sign-in" 
+                  <Link
+                    href="/sign-in"
                     className="text-on-surface-variant hover:text-tertiary transition-colors font-label-caps desktop-only"
                     style={{ textDecoration: 'none', fontSize: '12px' }}
                   >
                     Sign In
                   </Link>
-                  <Link 
-                    href="/sign-up" 
+                  <Link
+                    href="/sign-up"
                     className="glow-button-nav"
                     style={{ textDecoration: 'none' }}
                   >
@@ -115,9 +115,9 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
               </>
             )}
 
-            <button 
-              className="menu-toggle" 
-              onClick={toggleMobileMenu} 
+            <button
+              className="menu-toggle"
+              onClick={toggleMobileMenu}
               aria-label="Toggle menu"
             >
               {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -137,7 +137,7 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
             className="mobile-menu open"
           >
             <div className="mobile-menu-links">
-              <Link href="/#birth-chart" onClick={closeMobileMenu}>Birth Chart</Link>
+              <Link href="/chart" onClick={closeMobileMenu}>Birth Chart</Link>
               <Link href="/chat" onClick={closeMobileMenu}>Live Chat</Link>
               <Link href="/voice" onClick={closeMobileMenu}>Voice</Link>
               <Link href="/pricing" onClick={closeMobileMenu}>Pricing</Link>
@@ -145,15 +145,15 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
 
             <div className="mobile-menu-actions">
               {userId ? (
-                <Link 
-                  href="/chat" 
-                  className="btn btn-primary" 
-                  onClick={closeMobileMenu} 
-                  style={{ 
-                    display: 'flex', 
-                    width: '100%', 
-                    background: 'linear-gradient(135deg, var(--tertiary), #b89a38)', 
-                    color: 'var(--on-tertiary)', 
+                <Link
+                  href="/chat"
+                  className="btn btn-primary"
+                  onClick={closeMobileMenu}
+                  style={{
+                    display: 'flex',
+                    width: '100%',
+                    background: 'linear-gradient(135deg, var(--tertiary), #b89a38)',
+                    color: 'var(--on-tertiary)',
                     border: 'none',
                     justifyContent: 'center',
                     fontWeight: 600
@@ -166,15 +166,15 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
                   <Link href="/sign-in" className="btn btn-outline" onClick={closeMobileMenu} style={{ display: 'flex', width: '100%' }}>
                     Sign In
                   </Link>
-                  <Link 
-                    href="/sign-up" 
-                    className="btn btn-primary" 
-                    onClick={closeMobileMenu} 
-                    style={{ 
-                      display: 'flex', 
+                  <Link
+                    href="/sign-up"
+                    className="btn btn-primary"
+                    onClick={closeMobileMenu}
+                    style={{
+                      display: 'flex',
                       width: '100%',
-                      background: 'linear-gradient(135deg, var(--tertiary), #b89a38)', 
-                      color: 'var(--on-tertiary)', 
+                      background: 'linear-gradient(135deg, var(--tertiary), #b89a38)',
+                      color: 'var(--on-tertiary)',
                       border: 'none',
                       justifyContent: 'center',
                       fontWeight: 600
