@@ -1,20 +1,20 @@
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
 
 :root {
-  --background: #09090b; /* Very dark zinc */
-  --foreground: #fafafa;
-  --primary: #9d4edd;
-  --primary-glow: rgba(157, 78, 221, 0.4);
-  --secondary: #5a189a;
-  --accent: #e0aaff;
-  --accent-glow: rgba(224, 170, 255, 0.3);
-  --card-bg: rgba(24, 24, 27, 0.6);
-  --card-border: rgba(255, 255, 255, 0.08);
-  --card-border-hover: rgba(157, 78, 221, 0.5);
+  --background: #0F1115; /* NexusCore background */
+  --foreground: #FFFFFF; /* NexusCore primary text */
+  --primary: #6D5DFB; /* NexusCore primary accent */
+  --primary-glow: rgba(109, 93, 251, 0.4);
+  --secondary: #18181B; /* NexusCore secondary background */
+  --accent: #6D5DFB;
+  --accent-glow: rgba(109, 93, 251, 0.3);
+  --card-bg: #18181B; /* NexusCore surface */
+  --card-border: #27272A; /* NexusCore border */
+  --card-border-hover: #6D5DFB;
   --font-sans: 'Inter', system-ui, sans-serif;
-  --font-serif: 'Playfair Display', serif;
-  --muted: #a1a1aa;
+  --font-serif: 'Inter', sans-serif;
+  --muted: #A1A1AA; /* NexusCore secondary text */
 }
 
 html {
@@ -76,14 +76,14 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .text-gradient {
-  background: linear-gradient(135deg, #e0aaff 0%, #9d4edd 50%, #5a189a 100%);
+  background: linear-gradient(135deg, #FFFFFF 0%, #6D5DFB 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .text-gradient-light {
-  background: linear-gradient(135deg, #ffffff 0%, #e0aaff 100%);
+  background: linear-gradient(135deg, #ffffff 0%, rgba(109, 93, 251, 0.7) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -192,7 +192,7 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   justify-content: center;
   padding: 0.875rem 1.75rem;
-  border-radius: 9999px;
+  border-radius: 8px; /* NexusCore control radius */
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -246,7 +246,7 @@ h1, h2, h3, h4, h5, h6 {
 .glass-card {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: 1.5rem;
+  border-radius: 8px; /* NexusCore card radius */
   padding: 2.5rem;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -265,7 +265,7 @@ h1, h2, h3, h4, h5, h6 {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
-  border-radius: 1.5rem;
+  border-radius: 8px;
   padding: 2px;
   background: linear-gradient(135deg, var(--card-border-hover), transparent);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -1166,13 +1166,13 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Reusable main content container padding */
 .main-content {
-  padding-top: 120px;
+  padding-top: 140px;
   padding-bottom: 4rem;
 }
 
 @media (max-width: 768px) {
   .main-content {
-    padding-top: 90px;
+    padding-top: 110px;
     padding-bottom: 2rem;
   }
 }

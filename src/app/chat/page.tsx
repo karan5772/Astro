@@ -25,7 +25,7 @@ import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { useUser } from '@clerk/nextjs';
 import { motion, AnimatePresence } from 'framer-motion';
-import Navbar from '@/components/Navbar';
+import Sidebar from '@/components/Sidebar';
 import '../astraeus.css';
 
 type Message = { id: string; role: 'user' | 'assistant'; content: string };
@@ -67,9 +67,9 @@ const getSuggestionIcon = (iconName: string) => {
   switch (iconName) {
     case 'Briefcase': return <Briefcase color="#cebdff" size={20} />;
     case 'Heart': return <Heart color="#ffb4ab" size={20} />;
-    case 'Compass': return <Compass color="#e9c349" size={20} />;
+    case 'Compass': return <Compass color="#6D5DFB" size={20} />;
     case 'Moon': return <Moon color="#c0c6db" size={20} />;
-    default: return <Sparkles color="#e9c349" size={20} />;
+    default: return <Sparkles color="#6D5DFB" size={20} />;
   }
 };
 
@@ -173,6 +173,26 @@ function renderInline(text: string) {
     return part;
   });
 }
+
+const getMockPlacements = (dateStr?: string) => {
+  if (!dateStr) return [];
+  const date = new Date(dateStr);
+  const month = date.getMonth();
+  const day = date.getDate();
+  
+  const signs = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"];
+  const sunSign = signs[(month + (day > 20 ? 1 : 0)) % 12];
+  const moonSign = signs[(month + day) % 12];
+  const lagnaSign = signs[(day * 3 + 1) % 12];
+  const venusSign = signs[(month + 2) % 12];
+  
+  return [
+    { body: "Sun", sign: sunSign, degree: `${(day * 1.3).toFixed(1)}°` },
+    { body: "Moon", sign: moonSign, degree: `${(day * 2.1).toFixed(1)}°` },
+    { body: "Ascendant", sign: lagnaSign, degree: `${(day * 0.7).toFixed(1)}°` },
+    { body: "Venus", sign: venusSign, degree: `${(day * 1.5).toFixed(1)}°` }
+  ];
+};
 
 export default function ChatPage() {
   const { user } = useUser();
@@ -425,15 +445,15 @@ export default function ChatPage() {
   // 2. Render onboarding details collection form if not configured
   if (showOnboardingForm) {
     return (
-      <div className="theme-astraeus min-h-screen flex flex-col">
-        <Navbar variant="chat" />
+      <div className="theme-astraeus sidebar-layout min-h-screen flex flex-col">
+        <Sidebar />
         
-        <main className="flex-1 flex items-center justify-center px-4 pt-28 pb-16 relative z-10">
-          <div className="glow-orb glow-orb-1" style={{ top: '20%', left: '15%' }}></div>
-          <div className="glow-orb glow-orb-2" style={{ bottom: '20%', right: '15%' }}></div>
+        <main className="page-main flex-1 flex items-center justify-center px-4 relative z-10">
+          <div className="glow-orb glow-orb-1"></div>
+          <div className="glow-orb glow-orb-2"></div>
 
           <motion.div 
-            className="glass-panel p-8 w-full max-w-lg relative"
+            className="glass-panel p-8 w-full max-w-lg relative shared-surface"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
@@ -451,17 +471,17 @@ export default function ChatPage() {
             )}
             
             <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-              <div className="feature-icon-wrapper mx-auto mb-4" style={{ width: '4.5rem', height: '4.5rem', borderRadius: '1.25rem' }}>
+              <div className="feature-icon-wrapper mx-auto mb-4" style={{ width: '4.5rem', height: '4.5rem', borderRadius: '8px' }}>
                 {dbUser?.hasBirthDetails ? (
-                  <Sparkles size={32} className="text-[#e9c349]" />
+                  <Sparkles size={32} className="text-primary" />
                 ) : (
-                  <Lock size={32} className="text-[#e9c349]" />
+                  <Lock size={32} className="text-primary" />
                 )}
               </div>
-              <h2 className="font-display text-gradient" style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>
+              <h1 className="page-title" style={{ fontSize: 'clamp(1.9rem, 4vw, 2.8rem)', marginBottom: '0.75rem' }}>
                 {dbUser?.hasBirthDetails ? 'Update Cosmic Identity' : 'Unlock Cosmic Identity'}
-              </h2>
-              <p className="text-muted" style={{ fontSize: '13px', lineHeight: 1.6 }}>
+              </h1>
+              <p className="page-lead" style={{ fontSize: '13px', lineHeight: 1.6, marginTop: 0 }}>
                 {dbUser?.hasBirthDetails 
                   ? 'Modify your birth parameters to recalculate your planetary placements and predictions.' 
                   : 'Before starting your chat reading, please enter your exact birth metadata. Our Vedic systems will map your placements to provide accurate horoscope predictions.'}
@@ -515,7 +535,7 @@ export default function ChatPage() {
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center text-muted">
                     {isSearchingLocation ? (
-                      <div className="w-4 h-4 border-2 border-t-transparent border-[#e9c349] rounded-full animate-spin"></div>
+                      <div className="w-4 h-4 border-2 border-t-transparent border-primary rounded-full animate-spin"></div>
                     ) : (
                       <Search size={15} />
                     )}
@@ -538,7 +558,7 @@ export default function ChatPage() {
                           className="autocomplete-item"
                           onClick={() => handleSelectLocation(loc)}
                         >
-                          <MapPin size={13} className="text-[#e9c349] shrink-0" />
+                          <MapPin size={13} className="text-primary shrink-0" />
                           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{loc.name}</span>
                         </button>
                       ))}
@@ -651,169 +671,136 @@ export default function ChatPage() {
   }
 
   // 3. Main Chat Interface
+  const mockPlacements = getMockPlacements(dbUser?.birthDate);
+
   return (
-    <div className="theme-astraeus min-h-screen">
-      <Navbar variant="chat" />
+    <div className="theme-astraeus sidebar-layout min-h-screen">
+      <Sidebar />
 
-      <main className="chat-container fade-in relative z-10">
-        <div className="glow-orb glow-orb-1" style={{ top: '20%', left: '10%' }}></div>
-        <div className="glow-orb glow-orb-2" style={{ bottom: '20%', right: '10%' }}></div>
+      <main className="page-main chat-shell fade-in relative z-10">
+        <div className="glow-orb glow-orb-1"></div>
+        <div className="glow-orb glow-orb-2"></div>
 
-        {/* Edit Profile Status Bar */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(12, 15, 20, 0.6)', border: '1px solid rgba(233, 195, 73, 0.15)', borderRadius: '12px', padding: '0.75rem 1.25rem', marginBottom: '1rem', backdropFilter: 'blur(10px)', gap: '1rem', position: 'relative', zIndex: 30 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '13px', color: 'var(--on-surface-variant)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            <Compass size={14} className="text-[#e9c349]" />
-            <span style={{ fontWeight: 500 }}>Birth Profile:</span>
-            <span className="text-white" style={{ fontWeight: 600 }}>{dbUser?.birthLocation?.split(',')[0]}</span>
-            <span style={{ opacity: 0.6 }}>({dbUser?.birthDate})</span>
-          </div>
-          <button 
-            onClick={() => {
-              if (dbUser) {
-                setBirthDate(dbUser.birthDate || '1990-06-15');
-                setBirthTime(dbUser.birthTime || '12:00');
-                setBirthTimezone(dbUser.birthTimezone || '+05:30');
-                setLocationQuery(dbUser.birthLocation || 'Pilani, Surajgarh, Rajasthan, India');
-                setSelectedLocationName(dbUser.birthLocation || 'Pilani, Surajgarh, Rajasthan, India');
-                setLatitude(dbUser.birthLatitude || 28.364);
-                setLongitude(dbUser.birthLongitude || 75.601);
-                setAyanamsa(dbUser.ayanamsa || 'RAMAN');
-              }
-              setShowOnboardingForm(true);
-            }}
-            className="btn btn-outline"
-            style={{ padding: '0.35rem 0.75rem', fontSize: '11px', borderRadius: '6px', whiteSpace: 'nowrap' }}
-          >
-            Edit Profile
-          </button>
-        </div>
-
-        <div className="messages">
-          {messages.length === 0 && (
-            <div style={{ textAlign: 'center', marginTop: 'auto', marginBottom: 'auto', padding: '2rem' }}>
-              <div className="feature-icon-wrapper mx-auto mb-6">
-                <Sparkles size={32} />
-              </div>
-              <h2 className="text-gradient" style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>Ask the Cosmos</h2>
-              <p className="text-muted" style={{ fontSize: '1.1rem', marginBottom: '2rem' }}>
-                Select a query below or type your own question to talk to your AI Astrologer.
+        <div className="chat-shell-inner">
+          <div className="chat-shell-header">
+            <div>
+              <p className="section-kicker">Live chat</p>
+              <h1 className="chat-page-title">Talk to Astro AI</h1>
+              <p className="chat-page-copy">
+                A focused text console for quick questions, follow-ups, and deeper readings.
               </p>
-              
-              <div className="suggestion-grid">
-                {SUGGESTIONS.map((s, idx) => (
-                  <button 
-                    type="button"
-                    key={idx} 
-                    className="suggestion-card"
-                    onClick={() => {
-                      submitMessage(s.prompt);
-                    }}
-                  >
-                    <div className="suggestion-card-icon">
-                      {getSuggestionIcon(s.icon)}
-                    </div>
-                    <div className="suggestion-card-title">{s.title}</div>
-                    <div className="suggestion-card-desc">{s.description}</div>
-                  </button>
-                ))}
-              </div>
-
-              <div className="mt-8">
-                <Link href="/pricing" className="glow-button-secondary" style={{ fontSize: '0.875rem', padding: '0.5rem 1.2rem' }}>
-                  Upgrade to Voice Reading
-                </Link>
-              </div>
             </div>
-          )}
+            <div className="chat-shell-pills">
+              <span>Text console</span>
+              <span>{messages.length} messages</span>
+            </div>
+          </div>
 
-          {messages.map(m => {
-            if (m.role === 'assistant' && m.content.length === 0) return null;
-            
-            return (
-              <motion.div 
-                key={m.id} 
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className={`message-wrapper ${m.role === 'user' ? 'user' : 'ai'}`}
-              >
-                {m.role === 'assistant' && (
+          <section className="chat-stage glass-panel shared-surface">
+            <div className="messages chat-messages">
+              {messages.length === 0 && (
+                <div className="chat-empty-state">
+                  <div className="feature-icon-wrapper mx-auto mb-6">
+                    <Sparkles size={28} />
+                  </div>
+                  <h2>Ask one clear question.</h2>
+                  <p>Start with your career, love life, timing, or a general reading.</p>
+
+                  <div className="chat-suggestion-strip">
+                    {SUGGESTIONS.map((s) => (
+                      <button
+                        type="button"
+                        key={s.title}
+                        className="chat-suggestion-chip"
+                        onClick={() => submitMessage(s.prompt)}
+                      >
+                        <span>{s.title}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {messages.map((m) => {
+                if (m.role === 'assistant' && m.content.length === 0) return null;
+
+                return (
+                  <motion.div
+                    key={m.id}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className={`message-wrapper ${m.role === 'user' ? 'user' : 'ai'}`}
+                  >
+                    {m.role === 'assistant' && (
+                      <div className="message-avatar ai">
+                        <Sparkles size={16} />
+                      </div>
+                    )}
+
+                    <div className="message-bubble">
+                      <MarkdownText text={m.content} />
+                      {m.role === 'assistant' && <CopyButton text={m.content} />}
+                    </div>
+
+                    {m.role === 'user' && (
+                      <div className="message-avatar user">
+                        {user?.imageUrl ? <img src={user.imageUrl} alt="You" /> : <User size={16} />}
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })}
+
+              {showTypingIndicator && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="message-wrapper ai"
+                >
                   <div className="message-avatar ai">
                     <Sparkles size={16} />
                   </div>
-                )}
-                
-                <div className="message-bubble">
-                  <div className="message-sender-name">
-                    {m.role === 'user' ? 'You' : 'Astro AI'}
+                  <div className="message-bubble typing-bubble">
+                    <div className="typing-indicator">
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                    </div>
+                    <div className="typing-text">Consulting the stars...</div>
                   </div>
-                  
-                  <MarkdownText text={m.content} />
+                </motion.div>
+              )}
 
-                  {m.role === 'assistant' && (
-                    <CopyButton text={m.content} />
-                  )}
+              {error && (
+                <div className="chat-error-banner">
+                  <strong>Error:</strong> {error || 'Something went wrong. Please check your API keys.'}
                 </div>
+              )}
 
-                {m.role === 'user' && (
-                  <div className="message-avatar user">
-                    {user?.imageUrl ? (
-                      <img src={user.imageUrl} alt="You" />
-                    ) : (
-                      <User size={16} />
-                    )}
-                  </div>
-                )}
-              </motion.div>
-            );
-          })}
-
-          {showTypingIndicator && (
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="message-wrapper ai"
-            >
-              <div className="message-avatar ai">
-                <Sparkles size={16} />
-              </div>
-              <div className="message-bubble typing-bubble">
-                <div className="typing-indicator">
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                </div>
-                <div className="typing-text">Consulting the stars...</div>
-              </div>
-            </motion.div>
-          )}
-
-          {error && (
-            <div className="message" style={{ backgroundColor: 'rgba(255, 71, 87, 0.1)', border: '1px solid #ff4757', color: '#ff4757', alignSelf: 'center', borderRadius: '1.25rem', padding: '1rem 1.5rem', maxWidth: '80%' }}>
-              <strong>Error:</strong> {error || 'Something went wrong. Please check your API keys.'}
+              <div ref={messagesEndRef} />
             </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
 
-        <div style={{ paddingBottom: '1.5rem', paddingTop: '1rem' }}>
-          <form onSubmit={onFormSubmit} className="chat-input-wrapper">
-            <input
-              ref={inputRef}
-              className="chat-input"
-              value={localInput}
-              onChange={(e) => setLocalInput(e.target.value)}
-              placeholder="Ask about your future, career, or love life..."
-              style={{ paddingLeft: '0.75rem' }}
-            />
-            <button 
-              type="submit" 
-              className={`chat-send-btn ${localInput.trim() ? 'active' : ''}`} 
-              disabled={isLoading || !localInput.trim()}
-            >
-              <Send size={18} style={{ marginLeft: localInput.trim() ? '-2px' : '0px' }} />
-            </button>
-          </form>
+            <div className="chat-composer-shell">
+              <form onSubmit={onFormSubmit} className="chat-input-wrapper" id="chat-composer">
+                <input
+                  ref={inputRef}
+                  className="chat-input"
+                  value={localInput}
+                  onChange={(e) => setLocalInput(e.target.value)}
+                  placeholder="Message Astro AI"
+                  style={{ paddingLeft: '0.75rem' }}
+                />
+                <button
+                  type="submit"
+                  className={`chat-send-btn ${localInput.trim() ? 'active' : ''}`}
+                  disabled={isLoading || !localInput.trim()}
+                >
+                  <Send size={18} style={{ marginLeft: localInput.trim() ? '-2px' : '0px' }} />
+                </button>
+              </form>
+            </div>
+          </section>
         </div>
       </main>
     </div>

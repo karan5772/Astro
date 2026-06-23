@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useAuth } from '@clerk/nextjs';
-import { MessageSquare } from 'lucide-react';
 
 export default function Footer() {
   const { userId } = useAuth();
@@ -14,8 +13,8 @@ export default function Footer() {
 
           {/* Brand Block */}
           <div className="footer-brand-block">
-            <div className="footer-logo" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <img src="/logo.png" alt="Astraeus Logo" style={{ height: '32px', width: '32px', objectFit: 'contain' }} />
+            <div className="footer-logo">
+              <img src="/logo.png" alt="Astraeus Logo" className="footer-logo-img" />
               <span>Astraeus</span>
             </div>
             <p className="footer-desc">
@@ -50,10 +49,8 @@ export default function Footer() {
 
           {/* Column 4: Start Chat CTA */}
           <div className="footer-cta-block">
-            <Link href={userId ? "/chat" : "/sign-up"} className="no-underline">
-              <button className="glow-button-primary cursor-pointer">
-                Start Chat
-              </button>
+            <Link href={userId ? "/chat" : "/sign-up"} className="glow-button-primary">
+              Start Chat
             </Link>
           </div>
 

@@ -50,12 +50,11 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
     <>
       <nav className={`navbar ${isNavbarScrolled ? 'scrolled' : ''}`}>
         <div className="nav-container">
-          <Link href="/" className="nav-brand" onClick={closeMobileMenu} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
-            <img src="/logo.png" alt="Astraeus Logo" style={{ height: '36px', width: '36px', objectFit: 'contain' }} />
+          <Link href="/" className="nav-brand" onClick={closeMobileMenu}>
+            <img src="/logo.png" alt="Astraeus Logo" className="nav-brand-logo" />
             <span className="nav-logo">Astro.AI</span>
           </Link>
 
-          {/* Desktop Nav Links */}
           <div className="nav-links">
             <Link href="/chart">Birth Chart</Link>
             <Link href="/chat">Live Chat</Link>
@@ -63,63 +62,35 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
             <Link href="/pricing">Pricing</Link>
           </div>
 
-          {/* Right actions (Desktop and Mobile) */}
           <div className="nav-actions">
-            {variant === 'chat' && (
-              <div className="flex items-center gap-2" style={{ marginRight: '0.5rem' }}>
-                <Sparkles className="text-primary" size={20} style={{ color: 'var(--tertiary)' }} />
-                <span className="font-semibold text-sm-custom" style={{ color: 'var(--tertiary)' }}>Text Reading</span>
-              </div>
-            )}
-
-            {variant === 'voice' && (
-              <div className="flex items-center gap-2" style={{ marginRight: '0.5rem' }}>
-                <Mic size={20} style={{ color: 'var(--tertiary)' }} />
-                <span className="font-semibold text-sm-custom" style={{ color: 'var(--tertiary)' }}>
-                  PRO TIER
-                </span>
+            {(variant === 'chat' || variant === 'voice') && (
+              <div className="nav-context-pill" aria-label={variant === 'chat' ? 'Text reading' : 'Voice reading'}>
+                {variant === 'chat' ? <Sparkles size={14} /> : <Mic size={14} />}
+                <span>{variant === 'chat' ? 'Text reading' : 'Voice reading'}</span>
               </div>
             )}
 
             {userId ? (
               <>
-                <Link
-                  href="/chat"
-                  className="glow-button-nav"
-                  style={{ textDecoration: 'none' }}
-                >
+                <Link href="/chat" className="glow-button-nav">
                   Consult Stars
                 </Link>
-                <div className="flex items-center">
+                <div className="nav-user-slot">
                   <UserButton />
                 </div>
               </>
             ) : (
-              <>
-                <div className="flex items-center gap-4">
-                  <Link
-                    href="/sign-in"
-                    className="text-on-surface-variant hover:text-tertiary transition-colors font-label-caps desktop-only"
-                    style={{ textDecoration: 'none', fontSize: '12px' }}
-                  >
-                    Sign In
-                  </Link>
-                  <Link
-                    href="/sign-up"
-                    className="glow-button-nav"
-                    style={{ textDecoration: 'none' }}
-                  >
-                    Consult Stars
-                  </Link>
-                </div>
-              </>
+              <div className="nav-auth-links">
+                <Link href="/sign-in" className="nav-signin-link desktop-only">
+                  Sign In
+                </Link>
+                <Link href="/sign-up" className="glow-button-nav">
+                  Consult Stars
+                </Link>
+              </div>
             )}
 
-            <button
-              className="menu-toggle"
-              onClick={toggleMobileMenu}
-              aria-label="Toggle menu"
-            >
+            <button className="menu-toggle" onClick={toggleMobileMenu} aria-label="Toggle menu">
               {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
@@ -145,41 +116,15 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
 
             <div className="mobile-menu-actions">
               {userId ? (
-                <Link
-                  href="/chat"
-                  className="btn btn-primary"
-                  onClick={closeMobileMenu}
-                  style={{
-                    display: 'flex',
-                    width: '100%',
-                    background: 'linear-gradient(135deg, var(--tertiary), #b89a38)',
-                    color: 'var(--on-tertiary)',
-                    border: 'none',
-                    justifyContent: 'center',
-                    fontWeight: 600
-                  }}
-                >
+                <Link href="/chat" className="glow-button-primary mobile-cta" onClick={closeMobileMenu}>
                   Consult Stars
                 </Link>
               ) : (
                 <>
-                  <Link href="/sign-in" className="btn btn-outline" onClick={closeMobileMenu} style={{ display: 'flex', width: '100%' }}>
+                  <Link href="/sign-in" className="glow-button-secondary mobile-cta" onClick={closeMobileMenu}>
                     Sign In
                   </Link>
-                  <Link
-                    href="/sign-up"
-                    className="btn btn-primary"
-                    onClick={closeMobileMenu}
-                    style={{
-                      display: 'flex',
-                      width: '100%',
-                      background: 'linear-gradient(135deg, var(--tertiary), #b89a38)',
-                      color: 'var(--on-tertiary)',
-                      border: 'none',
-                      justifyContent: 'center',
-                      fontWeight: 600
-                    }}
-                  >
+                  <Link href="/sign-up" className="glow-button-primary mobile-cta" onClick={closeMobileMenu}>
                     Get Started
                   </Link>
                 </>

@@ -2,26 +2,21 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Sparkles, 
-  MapPin, 
-  Calendar, 
-  Clock, 
-  Download, 
-  Printer, 
-  Globe, 
-  Compass, 
-  Info, 
-  Search, 
-  X, 
-  Check, 
-  HelpCircle,
-  TrendingUp,
-  Award,
-  Layers
+import {
+  Sparkles,
+  MapPin,
+  Calendar,
+  Clock,
+  Download,
+  Printer,
+  Globe,
+  Compass,
+  Info,
+  Search,
+  X,
+  Loader2
 } from 'lucide-react';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
+import Sidebar from '@/components/Sidebar';
 import toast from 'react-hot-toast';
 import '../astraeus.css';
 
@@ -32,7 +27,6 @@ interface GeocodeResult {
 }
 
 export default function BirthChartPage() {
-  // Set default values matching the example from the prompt
   const [date, setDate] = useState('1990-06-15');
   const [time, setTime] = useState('12:00');
   const [timezoneOffset, setTimezoneOffset] = useState('+05:30');
@@ -43,21 +37,16 @@ export default function BirthChartPage() {
   const [chartType, setChartType] = useState('RasiD1');
   const [ayanamsa, setAyanamsa] = useState('RAMAN');
 
-  // UI state
   const [suggestions, setSuggestions] = useState<GeocodeResult[]>([]);
   const [isSearchingLocation, setIsSearchingLocation] = useState(false);
   const [isGeneratingChart, setIsGeneratingChart] = useState(false);
   const [svgData, setSvgData] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'chart' | 'guide'>('chart');
-  
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
-  // Set default timezone offset based on user's browser location on mount
   useEffect(() => {
     document.body.classList.add('astraeus-active');
-    
-    // Inferrer for timezone offset
+
     const offset = -new Date().getTimezoneOffset();
     const sign = offset >= 0 ? '+' : '-';
     const absOffset = Math.abs(offset);
@@ -65,7 +54,6 @@ export default function BirthChartPage() {
     const minutes = String(absOffset % 60).padStart(2, '0');
     setTimezoneOffset(`${sign}${hours}:${minutes}`);
 
-    // Close autocomplete on click outside
     const handleClickOutside = (event: MouseEvent) => {
       if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
         setSuggestions([]);
@@ -79,7 +67,6 @@ export default function BirthChartPage() {
     };
   }, []);
 
-  // Fetch location autocomplete suggestions
   useEffect(() => {
     if (!locationQuery || locationQuery === selectedLocationName || locationQuery.trim().length < 2) {
       setSuggestions([]);
@@ -128,18 +115,10 @@ export default function BirthChartPage() {
       try {
         const response = await fetch('/api/chart', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            date,
-            time,
-            timezoneOffset,
-            locationName: selectedLocationName,
-            latitude,
-            longitude,
-            chartType,
-            ayanamsa,
+            date, time, timezoneOffset, locationName: selectedLocationName,
+            latitude, longitude, chartType, ayanamsa,
           }),
         });
 
@@ -166,7 +145,6 @@ export default function BirthChartPage() {
     });
   };
 
-  // Download SVG file handler
   const handleDownloadSVG = () => {
     if (!svgData) return;
     try {
@@ -185,7 +163,6 @@ export default function BirthChartPage() {
     }
   };
 
-  // Print chart handler
   const handlePrintChart = () => {
     if (!svgData) return;
     try {
@@ -199,33 +176,9 @@ export default function BirthChartPage() {
           <head>
             <title>Birth Chart - Astraeus Astrology</title>
             <style>
-              body {
-                background: white;
-                color: black;
-                font-family: sans-serif;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
-                height: 100vh;
-                margin: 0;
-                padding: 20px;
-                box-sizing: border-box;
-              }
-              .container {
-                text-align: center;
-                max-width: 600px;
-                width: 100%;
-              }
-              svg {
-                width: 100%;
-                max-height: 500px;
-                margin-top: 20px;
-                box-shadow: 0 0 10px rgba(0,0,0,0.1);
-                border-radius: 8px;
-              }
-              h2 { margin: 5px 0; color: #333; }
-              p { margin: 3px 0; color: #666; font-size: 14px; }
+              body { background: white; color: black; font-family: sans-serif; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
+              .container { text-align: center; max-width: 600px; width: 100%; }
+              svg { width: 100%; max-height: 500px; margin-top: 20px; }
             </style>
           </head>
           <body>
@@ -233,7 +186,6 @@ export default function BirthChartPage() {
               <h2>Natal Birth Chart</h2>
               <p>Date: ${date} | Time: ${time} (${timezoneOffset})</p>
               <p>Location: ${selectedLocationName}</p>
-              <p>Coordinates: Lat ${latitude !== null ? latitude.toFixed(3) : ''}°, Lon ${longitude !== null ? longitude.toFixed(3) : ''}°</p>
               ${svgData}
             </div>
           </body>
@@ -251,463 +203,315 @@ export default function BirthChartPage() {
   };
 
   return (
-    <div className="theme-astraeus selection:bg-[#e9c349]/30 selection:text-[#ffe088] min-h-screen flex flex-col">
-      {/* Navigation Bar */}
-      <Navbar variant="legal" />
+    <div className="theme-astraeus sidebar-layout min-h-screen">
 
-      {/* Main Content container */}
-      <main className="relative z-10 pt-32 pb-24 flex-1">
-        <div className="glow-orb glow-orb-1" style={{ top: '15%', left: '10%' }}></div>
-        <div className="glow-orb glow-orb-2" style={{ bottom: '25%', right: '10%' }}></div>
+      <style>{`
+        .chart-svg-wrapper svg {
+          width: 100% !important;
+          height: auto !important;
+          max-height: 500px !important;
+          object-fit: contain;
+        }
+        .spin {
+          animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
 
-        <div className="astral-container">
-          {/* Page Heading Section */}
-          <div className="text-center mb-12">
-            <motion.div 
-              className="astral-chip font-label-caps mx-auto mb-4"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <Compass size={16} className="text-[#e9c349]" fill="currentColor" />
-              <span>Celestial Calculations</span>
-            </motion.div>
-            <motion.h1 
-              className="astral-hero-title hero-title-gradient font-display text-center mx-auto"
-              style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)' }}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-            >
-              Generate Natal Birth Chart
-            </motion.h1>
-            <motion.p 
-              className="astral-hero-desc text-center mx-auto"
-              style={{ maxWidth: '600px', marginBottom: 0 }}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-            >
-              Map the planetary alignment at the exact second of your birth. Discover your elements, placements, and cosmic blueprints.
-            </motion.p>
+      <Sidebar />
+
+      <main className="page-main relative z-10 flex-1 fade-in" style={{ padding: '2rem 3rem', display: 'flex', flexDirection: 'column', alignItems: 'center', overflowY: 'auto' }}>
+        <div className="glow-orb glow-orb-1 pointer-events-none"></div>
+        <div className="glow-orb glow-orb-2 pointer-events-none"></div>
+
+        <div className="astral-container" style={{ width: '100%', maxWidth: '1280px' }}>
+
+          <div className="page-heading" style={{ marginBottom: '1.5rem' }}>
+            <p className="section-kicker" style={{ color: '#6D5DFB', fontWeight: 600, letterSpacing: '0.05em', marginBottom: '0.5rem', textTransform: 'uppercase', fontSize: '0.75rem' }}>Birth chart</p>
+            <h1 className="page-title" style={{ fontSize: '2.5rem', margin: '0 0 1rem 0', fontWeight: 800, color: '#fff' }}>Build fast, read fast.</h1>
+            <p className="page-lead" style={{ maxWidth: '48rem', color: '#a1a1aa', fontSize: '1.05rem', lineHeight: 1.6 }}>
+              Enter the essentials, generate the chart, and keep the result panel clean enough to actually use.
+            </p>
           </div>
 
-          {/* Form & Result Grid */}
-          <div className="chart-grid">
-            {/* Form Section */}
-            <motion.div 
-              className="glass-panel p-8"
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-            >
-              <form onSubmit={handleGenerateChart} className="chart-form-panel">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', borderBottom: '1px solid rgba(233,195,73,0.15)', paddingBottom: '0.75rem', marginBottom: '0.5rem' }}>
-                  <Sparkles className="text-[#e9c349]" size={20} />
-                  <h3 className="font-display text-[#e9c349]" style={{ margin: 0, fontSize: '1.25rem' }}>Natal Details</h3>
-                </div>
-
-                {/* Birth Date and Time Row */}
-                <div className="chart-input-row">
-                  <div className="chart-input-group">
-                    <label className="chart-input-label">
-                      <Calendar size={14} className="inline mr-1" /> Date of Birth
-                    </label>
-                    <input 
-                      type="date" 
-                      value={date} 
-                      onChange={(e) => setDate(e.target.value)} 
-                      className="chart-input-field" 
-                      required 
-                    />
-                  </div>
-
-                  <div className="chart-input-group">
-                    <label className="chart-input-label">
-                      <Clock size={14} className="inline mr-1" /> Time of Birth
-                    </label>
-                    <input 
-                      type="time" 
-                      value={time} 
-                      onChange={(e) => setTime(e.target.value)} 
-                      className="chart-input-field" 
-                      required 
-                    />
-                  </div>
-                </div>
-
-                {/* Location Search Input */}
-                <div className="chart-input-group" ref={searchContainerRef}>
-                  <label className="chart-input-label">
-                    <MapPin size={14} className="inline mr-1" /> Birth Location
-                  </label>
-                  <div className="relative">
-                    <input 
-                      type="text" 
-                      placeholder="Search city/place..."
-                      value={locationQuery}
-                      onChange={(e) => setLocationQuery(e.target.value)}
-                      className="chart-input-field"
-                      style={{ paddingRight: '2.5rem' }}
-                      required
-                    />
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center text-muted">
-                      {isSearchingLocation ? (
-                        <div className="w-4 h-4 border-2 border-t-transparent border-[#e9c349] rounded-full animate-spin"></div>
-                      ) : (
-                        <Search size={16} />
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Autocomplete Dropdown suggestions list */}
-                  <AnimatePresence>
-                    {suggestions.length > 0 && (
-                      <motion.div 
-                        className="autocomplete-dropdown"
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.15 }}
-                      >
-                        {suggestions.map((loc, idx) => (
-                          <button
-                            key={idx}
-                            type="button"
-                            className="autocomplete-item"
-                            onClick={() => handleSelectLocation(loc)}
-                          >
-                            <MapPin size={14} className="text-[#e9c349] shrink-0" />
-                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{loc.name}</span>
-                          </button>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-                {/* Timezone offset and Coordinates read-only */}
-                <div className="chart-input-row">
-                  <div className="chart-input-group">
-                    <label className="chart-input-label">
-                      <Globe size={14} className="inline mr-1" /> UTC Timezone Offset
-                    </label>
-                    <select 
-                      value={timezoneOffset} 
-                      onChange={(e) => setTimezoneOffset(e.target.value)} 
-                      className="chart-input-field"
-                    >
-                      <option value="-12:00">UTC-12:00 (Baker Island)</option>
-                      <option value="-11:00">UTC-11:00 (Samoa)</option>
-                      <option value="-10:00">UTC-10:00 (Hawaii)</option>
-                      <option value="-09:00">UTC-09:00 (Alaska)</option>
-                      <option value="-08:00">UTC-08:00 (Pacific Time)</option>
-                      <option value="-07:00">UTC-07:00 (Mountain Time)</option>
-                      <option value="-06:00">UTC-06:00 (Central Time)</option>
-                      <option value="-05:00">UTC-05:00 (Eastern Time)</option>
-                      <option value="-04:00">UTC-04:00 (Atlantic Time)</option>
-                      <option value="-03:00">UTC-03:00 (Buenos Aires)</option>
-                      <option value="-02:00">UTC-02:00 (Mid-Atlantic)</option>
-                      <option value="-01:00">UTC-01:00 (Azores)</option>
-                      <option value="+00:00">UTC+00:00 (GMT/London)</option>
-                      <option value="+01:00">UTC+01:00 (Central European Time)</option>
-                      <option value="+02:00">UTC+02:00 (Eastern European Time)</option>
-                      <option value="+03:00">UTC+03:00 (Moscow/Nairobi)</option>
-                      <option value="+03:30">UTC+03:30 (Tehran)</option>
-                      <option value="+04:00">UTC+04:00 (Dubai/Baku)</option>
-                      <option value="+04:30">UTC+04:30 (Kabul)</option>
-                      <option value="+05:00">UTC+05:00 (Karachi/Tashkent)</option>
-                      <option value="+05:30">UTC+05:30 (India/Sri Lanka)</option>
-                      <option value="+05:45">UTC+05:45 (Kathmandu)</option>
-                      <option value="+06:00">UTC+06:00 (Dhaka/Almaty)</option>
-                      <option value="+06:30">UTC+06:30 (Yangon)</option>
-                      <option value="+07:00">UTC+07:00 (Bangkok/Jakarta)</option>
-                      <option value="+08:00">UTC+08:00 (Singapore/Beijing)</option>
-                      <option value="+09:00">UTC+09:00 (Tokyo/Seoul)</option>
-                      <option value="+09:30">UTC+09:30 (Adelaide)</option>
-                      <option value="+10:00">UTC+10:00 (Sydney/Vladivostok)</option>
-                      <option value="+11:00">UTC+11:00 (Solomon Islands)</option>
-                      <option value="+12:00">UTC+12:00 (Auckland/Fiji)</option>
-                      <option value="+13:00">UTC+13:00 (Tonga)</option>
-                      <option value="+14:00">UTC+14:00 (Line Islands)</option>
-                    </select>
-                  </div>
-
-                  <div className="chart-input-group">
-                    <label className="chart-input-label">
-                      <Compass size={14} className="inline mr-1" /> Coordinates
-                    </label>
-                    <div 
-                      className="chart-input-field flex items-center justify-between" 
-                      style={{ background: 'rgba(255,255,255,0.02)', cursor: 'default' }}
-                    >
-                      {latitude !== null && longitude !== null ? (
-                        <span className="text-[#cebdff]" style={{ fontSize: '13px' }}>
-                          Lat: {latitude.toFixed(3)}° | Lon: {longitude.toFixed(3)}°
-                        </span>
-                      ) : (
-                        <span className="text-muted" style={{ fontSize: '13px' }}>No location selected</span>
-                      )}
-                      <Globe size={14} className="text-muted" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Advanced parameters selectors */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.75rem', borderBottom: '1px solid rgba(233,195,73,0.15)', paddingBottom: '0.5rem' }}>
-                  <Info className="text-muted" size={16} />
-                  <h4 className="font-display text-muted" style={{ margin: 0, fontSize: '0.95rem' }}>Calculation Settings</h4>
-                </div>
-
-                <div className="chart-input-row">
-                  <div className="chart-input-group">
-                    <label className="chart-input-label">Chart Format</label>
-                    <select 
-                      value={chartType} 
-                      onChange={(e) => setChartType(e.target.value)} 
-                      className="chart-input-field"
-                    >
-                      <option value="RasiD1">Rasi (D1 - Birth Placements)</option>
-                      <option value="NavamsaD9">Navamsa (D9 - Soul & Marriage)</option>
-                      <option value="HoraD2">Hora (D2 - Wealth & Finance)</option>
-                      <option value="DrekkanaD3">Drekkana (D3 - Siblings & Actions)</option>
-                    </select>
-                  </div>
-
-                  <div className="chart-input-group">
-                    <label className="chart-input-label">Ayanamsa system</label>
-                    <select 
-                      value={ayanamsa} 
-                      onChange={(e) => setAyanamsa(e.target.value)} 
-                      className="chart-input-field"
-                    >
-                      <option value="RAMAN">Raman Ayanamsa</option>
-                      <option value="LAHIRI">Lahiri Ayanamsa (Chitra Paksha)</option>
-                      <option value="KP">K.P. Ayanamsa</option>
-                      <option value="FAGANBRADLEY">Fagan Bradley Ayanamsa</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Submit button */}
-                <button 
-                  type="submit" 
-                  className="glow-button-primary cursor-pointer mt-4"
-                  style={{ width: '100%', padding: '1rem' }}
-                  disabled={isGeneratingChart}
-                >
-                  {isGeneratingChart ? (
-                    <span className="flex items-center gap-2">
-                      <span className="w-4 h-4 border-2 border-t-transparent border-current rounded-full animate-spin"></span>
-                      CALCULATING PLANETS...
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-2">
-                      <Sparkles size={16} />
-                      GENERATE BIRTH CHART
-                    </span>
-                  )}
-                </button>
-              </form>
-            </motion.div>
-
-            {/* Results Section */}
-            <motion.div 
-              className="glass-panel chart-result-card"
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-            >
-              {/* Overlay Orb glow inside card */}
-              <div className="absolute right-0 bottom-0 w-48 h-48 bg-[#e9c349]/5 rounded-full blur-[60px] pointer-events-none" />
-
-              {isGeneratingChart && (
-                <div className="chart-loading-container">
-                  <div className="constellation-spinner"></div>
-                  <h3 className="loading-text-glow">Consulting the Heavens</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', color: 'var(--on-surface-variant)', fontSize: '13px' }}>
-                    <span>Positioning the Sun, Moon, and Ascendant...</span>
-                    <span>Mapping 12 zodiac houses according to {ayanamsa} ayanamsa...</span>
-                  </div>
-                </div>
-              )}
-
-              {!isGeneratingChart && !svgData && !error && (
-                <div className="text-center p-8">
-                  <div className="feature-icon-wrapper mx-auto mb-4" style={{ width: '4.5rem', height: '4.5rem', borderRadius: '1.25rem' }}>
-                    <Compass size={36} className="text-[#e9c349]" />
-                  </div>
-                  <h3 className="font-display text-[#e9c349] mb-3" style={{ fontSize: '1.5rem' }}>Chart Output</h3>
-                  <p className="text-muted" style={{ maxWidth: '380px', margin: '0 auto', fontSize: '14px', lineHeight: 1.6 }}>
-                    Fill in your details and click **Generate** to draw your South Indian style horoscope wheel.
-                  </p>
-                  
-                  <div style={{ border: '1px dashed rgba(233,195,73,0.15)', background: 'rgba(233,195,73,0.02)', padding: '0.75rem 1rem', borderRadius: '8px', marginTop: '1.5rem', fontSize: '12px', display: 'flex', gap: '0.5rem', alignItems: 'center', color: 'var(--on-surface-variant)' }}>
-                    <Info size={16} className="text-[#e9c349] shrink-0" />
-                    <span style={{ textAlign: 'left' }}>The South Indian chart style presents the 12 zodiac houses in a clockwise format. It is a traditional map used in Vedic Astrology.</span>
-                  </div>
-                </div>
-              )}
-
-              {!isGeneratingChart && error && (
-                <div className="text-center p-8">
-                  <div className="feature-icon-wrapper mx-auto mb-4" style={{ background: 'rgba(147,0,10,0.2)', border: '1px solid rgba(255,180,171,0.3)', color: '#ffb4ab' }}>
-                    <X size={30} />
-                  </div>
-                  <h3 className="font-display" style={{ color: '#ffb4ab', fontSize: '1.3rem', marginBottom: '0.5rem' }}>Failed to generate</h3>
-                  <p className="text-muted" style={{ maxWidth: '350px', margin: '0 auto', fontSize: '13px' }}>
-                    {error}
-                  </p>
-                  <button 
-                    onClick={handleGenerateChart} 
-                    className="glow-button-secondary mt-6"
-                    style={{ padding: '0.5rem 1.25rem', fontSize: '11px' }}
-                  >
-                    Retry Calculation
-                  </button>
-                </div>
-              )}
-
-              {!isGeneratingChart && svgData && (
-                <div className="w-full h-full p-6 flex flex-col items-center justify-between z-10">
-                  <div className="text-center mb-4">
-                    <span className="font-label-caps text-[#e9c349] text-xs block mb-1">Generated Output</span>
-                    <h3 className="font-display text-white" style={{ fontSize: '1.3rem', margin: 0 }}>
-                      {chartType === 'RasiD1' ? 'Rasi D-1 Chart' : 'Navamsa D-9 Chart'}
-                    </h3>
-                    <p className="text-muted" style={{ fontSize: '11px', margin: '4px 0 0 0' }}>
-                      {date} | {time} | {selectedLocationName.split(',')[0]}
-                    </p>
-                  </div>
-
-                  {/* Render the SVG Inline */}
-                  <div 
-                    className="svg-display-wrapper" 
-                    dangerouslySetInnerHTML={{ __html: svgData }} 
-                  />
-
-                  {/* Actions buttons */}
-                  <div className="chart-actions-row">
-                    <button 
-                      onClick={handleDownloadSVG}
-                      className="btn btn-outline"
-                      style={{ padding: '0.6rem 1.2rem', fontSize: '13px', borderRadius: '8px' }}
-                    >
-                      <Download size={15} />
-                      Download SVG
-                    </button>
-                    <button 
-                      onClick={handlePrintChart}
-                      className="btn btn-outline"
-                      style={{ padding: '0.6rem 1.2rem', fontSize: '13px', borderRadius: '8px' }}
-                    >
-                      <Printer size={15} />
-                      Print Chart
-                    </button>
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          </div>
-
-          {/* Tab Navigation for Guide */}
-          <div className="chart-guide-section">
-            <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.08)', gap: '1.5rem', marginBottom: '1.5rem' }}>
-              <button 
-                onClick={() => setActiveTab('chart')}
-                className={`font-label-caps pb-2 cursor-pointer ${activeTab === 'chart' ? 'text-[#e9c349] border-b-2 border-[#e9c349]' : 'text-muted'}`}
-                style={{ background: 'transparent', border: 'none', fontWeight: 600, fontSize: '12px' }}
-              >
-                Chart Interpretation
-              </button>
-              <button 
-                onClick={() => setActiveTab('guide')}
-                className={`font-label-caps pb-2 cursor-pointer ${activeTab === 'guide' ? 'text-[#e9c349] border-b-2 border-[#e9c349]' : 'text-muted'}`}
-                style={{ background: 'transparent', border: 'none', fontWeight: 600, fontSize: '12px' }}
-              >
-                Vedic Elements
-              </button>
+          <div className="chart-meta-strip" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '2.5rem' }}>
+            <div className="chart-meta-chip" style={{ padding: '0.6rem 1.2rem', borderRadius: '9999px', background: 'rgba(39, 39, 42, 0.4)', border: '1px solid #27272A', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <span className="metric-label" style={{ color: '#71717a', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Mode</span>
+              <strong style={{ color: '#e4e4e7', fontSize: '0.875rem' }}>Chart workbench</strong>
             </div>
+            <div className="chart-meta-chip" style={{ padding: '0.6rem 1.2rem', borderRadius: '9999px', background: 'rgba(39, 39, 42, 0.4)', border: '1px solid #27272A', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <span className="metric-label" style={{ color: '#71717a', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Format</span>
+              <strong style={{ color: '#e4e4e7', fontSize: '0.875rem' }}>Rasi D1 / Navamsa</strong>
+            </div>
+            <div className="chart-meta-chip" style={{ padding: '0.6rem 1.2rem', borderRadius: '9999px', background: 'rgba(39, 39, 42, 0.4)', border: '1px solid #27272A', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <span className="metric-label" style={{ color: '#71717a', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Output</span>
+              <strong style={{ color: '#e4e4e7', fontSize: '0.875rem' }}>SVG + interpretation</strong>
+            </div>
+          </div>
 
-            {activeTab === 'chart' ? (
-              <motion.div 
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="guide-grid"
-              >
-                <div className="guide-step-card">
-                  <div className="guide-step-title">
-                    <TrendingUp size={16} />
-                    <span>1. Clockwise Zodiac Order</span>
-                  </div>
-                  <p className="guide-step-desc">
-                    In South Indian charts, houses are laid out in a fixed clockwise order starting from Aries in the second box of the top row, down through Pisces. The Ascendant (Lagna) is indicated by diagonal lines or the letter &quot;Asc/Lg&quot;.
-                  </p>
-                </div>
+          {/* SINGLE CENTERED STAGE (Voice Page Layout) */}
+          <div className="chart-shell" style={{ display: 'flex', justifyContent: 'center', width: '100%', paddingBottom: '3rem' }}>
+            <motion.section
+              className="chart-stage glass-panel shared-surface"
+              style={{
+                width: '100%',
+                maxWidth: '750px',
+                background: 'rgba(9, 9, 11, 0.7)',
+                border: '1px solid rgba(39, 39, 42, 0.6)',
+                borderRadius: '1.5rem',
+                padding: '2.5rem',
+                position: 'relative',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+              }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.05 }}
+            >
+              {/* Subtle inner glow */}
+              <div style={{ position: 'absolute', top: '0', left: '50%', transform: 'translateX(-50%)', width: '80%', height: '300px', background: 'rgba(109, 93, 251, 0.05)', filter: 'blur(80px)', pointerEvents: 'none' }} />
 
-                <div className="guide-step-card">
-                  <div className="guide-step-title">
-                    <Award size={16} />
-                    <span>2. Planet Symbols</span>
-                  </div>
-                  <p className="guide-step-desc">
-                    Planets are represented by abbreviations (e.g., Su = Sun, Mo = Moon, Ma = Mars, Me = Mercury, Ju = Jupiter, Ve = Venus, Sa = Saturn, Ra = Rahu, Ke = Ketu). Their presence in a square indicates their house residency.
-                  </p>
-                </div>
-
-                <div className="guide-step-card">
-                  <div className="guide-step-title">
-                    <Layers size={16} />
-                    <span>3. Planetary Strengths</span>
-                  </div>
-                  <p className="guide-step-desc">
-                    The houses represent different aspects of life: 1st (self/health), 2nd (wealth/speech), 5th (intellect/children), 7th (marriage/partners), 10th (profession). Planets occupying these houses influence their outcomes based on dignity.
-                  </p>
-                </div>
-              </motion.div>
-            ) : (
-              <motion.div 
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="guide-grid"
-              >
-                <div className="guide-step-card">
-                  <div className="guide-step-title">
-                    <span className="text-[#ffe088]">✦</span>
-                    <span>Raman vs Lahiri</span>
-                  </div>
-                  <p className="guide-step-desc">
-                    Ayanamsa is the angular distance between the sidereal and tropical zodiacs. Lahiri is officially used by the Indian Government, while Raman is favored by Bangalore Venkata Raman. They differ by about 1.4 degrees.
-                  </p>
+              <div style={{ position: 'relative', zIndex: 2 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', borderBottom: '1px solid rgba(39,39,42,0.8)', paddingBottom: '1.25rem', marginBottom: '1.5rem' }}>
+                  <Sparkles color="#6D5DFB" size={20} />
+                  <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#f4f4f5', fontWeight: 600 }}>Natal Details</h3>
                 </div>
 
-                <div className="guide-step-card">
-                  <div className="guide-step-title">
-                    <span className="text-[#ffe088]">✦</span>
-                    <span>Rasi vs Navamsa</span>
-                  </div>
-                  <p className="guide-step-desc">
-                    The Rasi D-1 chart represents the physical manifestation of life (body, actions, health). The Navamsa D-9 divisional chart shows the inner strength, spiritual essence, and potential in marriage.
-                  </p>
-                </div>
+                <form onSubmit={handleGenerateChart} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
-                <div className="guide-step-card">
-                  <div className="guide-step-title">
-                    <span className="text-[#ffe088]">✦</span>
-                    <span>Vedic Astrological Science</span>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#a1a1aa', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                        <Calendar size={12} /> Date
+                      </label>
+                      <input
+                        type="date"
+                        value={date}
+                        onChange={(e) => setDate(e.target.value)}
+                        style={{ width: '100%', padding: '0.85rem', fontSize: '0.9rem', borderRadius: '0.5rem', background: 'rgba(24, 24, 27, 0.6)', border: '1px solid #27272A', color: '#e4e4e7', outline: 'none' }}
+                        required
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#a1a1aa', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                        <Clock size={12} /> Time
+                      </label>
+                      <input
+                        type="time"
+                        value={time}
+                        onChange={(e) => setTime(e.target.value)}
+                        style={{ width: '100%', padding: '0.85rem', fontSize: '0.9rem', borderRadius: '0.5rem', background: 'rgba(24, 24, 27, 0.6)', border: '1px solid #27272A', color: '#e4e4e7', outline: 'none' }}
+                        required
+                      />
+                    </div>
                   </div>
-                  <p className="guide-step-desc">
-                    Vedic astrology (Jyotish) is a predictive science rooted in the ancient Vedas. It calculates planetary gravity and astronomical coordinates at the time of birth to draw karma-based blueprints.
-                  </p>
-                </div>
-              </motion.div>
-            )}
+
+                  <div ref={searchContainerRef} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', position: 'relative' }}>
+                    <label style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#a1a1aa', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                      <MapPin size={12} /> Birth Place
+                    </label>
+                    <div style={{ position: 'relative', width: '100%' }}>
+                      <input
+                        type="text"
+                        placeholder="Search city/place..."
+                        value={locationQuery}
+                        onChange={(e) => setLocationQuery(e.target.value)}
+                        style={{ width: '100%', padding: '0.85rem', paddingRight: '2.5rem', fontSize: '0.9rem', borderRadius: '0.5rem', background: 'rgba(24, 24, 27, 0.6)', border: '1px solid #27272A', color: '#e4e4e7', outline: 'none' }}
+                        required
+                      />
+                      <div style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#71717a' }}>
+                        {isSearchingLocation ? (
+                          <Loader2 size={16} className="spin text-primary" color="#6D5DFB" />
+                        ) : (
+                          <Search size={14} />
+                        )}
+                      </div>
+                    </div>
+
+                    <AnimatePresence>
+                      {suggestions.length > 0 && (
+                        <motion.div
+                          style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, right: 0, background: '#18181B', border: '1px solid #27272A', borderRadius: '0.5rem', zIndex: 50, maxHeight: '200px', overflowY: 'auto', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.5)' }}
+                          initial={{ opacity: 0, y: -5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -5 }}
+                        >
+                          {suggestions.map((loc, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => handleSelectLocation(loc)}
+                              style={{ width: '100%', textAlign: 'left', padding: '0.85rem 1rem', background: 'transparent', border: 'none', borderBottom: '1px solid rgba(39,39,42,0.5)', color: '#d4d4d8', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}
+                            >
+                              <MapPin size={14} color="#6D5DFB" style={{ flexShrink: 0 }} />
+                              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{loc.name}</span>
+                            </button>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#a1a1aa', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                        <Globe size={12} /> Timezone
+                      </label>
+                      <select
+                        value={timezoneOffset}
+                        onChange={(e) => setTimezoneOffset(e.target.value)}
+                        style={{ width: '100%', padding: '0.85rem', fontSize: '0.9rem', borderRadius: '0.5rem', background: 'rgba(24, 24, 27, 0.6)', border: '1px solid #27272A', color: '#e4e4e7', outline: 'none' }}
+                      >
+                        <option value="-08:00">UTC-08:00 (PST)</option>
+                        <option value="-05:00">UTC-05:00 (EST)</option>
+                        <option value="+00:00">UTC+00:00 (GMT)</option>
+                        <option value="+05:30">UTC+05:30 (IST)</option>
+                        <option value="+08:00">UTC+08:00 (SGT)</option>
+                      </select>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#a1a1aa', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                        <Compass size={12} /> Coordinates
+                      </label>
+                      <div style={{ width: '100%', padding: '0.85rem', fontSize: '0.8rem', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(24,24,27,0.3)', border: '1px solid rgba(39, 39, 42, 0.4)', cursor: 'not-allowed' }}>
+                        {latitude !== null && longitude !== null ? (
+                          <span style={{ color: '#cebdff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {latitude.toFixed(2)}°N | {longitude.toFixed(2)}°E
+                          </span>
+                        ) : (
+                          <span style={{ color: '#71717a' }}>None</span>
+                        )}
+                        <Globe size={14} color="#71717a" style={{ flexShrink: 0 }} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginTop: '0.5rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#a1a1aa' }}>Format</label>
+                      <select
+                        value={chartType}
+                        onChange={(e) => setChartType(e.target.value)}
+                        style={{ width: '100%', padding: '0.85rem', fontSize: '0.9rem', borderRadius: '0.5rem', background: 'rgba(24, 24, 27, 0.6)', border: '1px solid #27272A', color: '#e4e4e7', outline: 'none' }}
+                      >
+                        <option value="RasiD1">Rasi (D1)</option>
+                        <option value="NavamsaD9">Navamsa (D9)</option>
+                      </select>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#a1a1aa' }}>Ayanamsa</label>
+                      <select
+                        value={ayanamsa}
+                        onChange={(e) => setAyanamsa(e.target.value)}
+                        style={{ width: '100%', padding: '0.85rem', fontSize: '0.9rem', borderRadius: '0.5rem', background: 'rgba(24, 24, 27, 0.6)', border: '1px solid #27272A', color: '#e4e4e7', outline: 'none' }}
+                      >
+                        <option value="RAMAN">Raman</option>
+                        <option value="LAHIRI">Lahiri</option>
+                        <option value="KP">K.P.</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: '1rem' }}>
+                    <button
+                      type="submit"
+                      style={{
+                        width: '100%',
+                        padding: '1.2rem',
+                        fontSize: '1rem',
+                        borderRadius: '0.75rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.5rem',
+                        fontWeight: 600,
+                        cursor: isGeneratingChart ? 'not-allowed' : 'pointer',
+                        background: 'linear-gradient(135deg, #6D5DFB 0%, #5b4be3 100%)',
+                        color: '#fff',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        boxShadow: '0 10px 20px -5px rgba(109, 93, 251, 0.4)',
+                        opacity: isGeneratingChart ? 0.7 : 1,
+                        transition: 'all 0.2s ease'
+                      }}
+                      disabled={isGeneratingChart}
+                    >
+                      {isGeneratingChart ? (
+                        <>
+                          <Loader2 size={18} className="spin" />
+                          CALCULATING HEAVENS...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles size={18} />
+                          GENERATE BLUEPRINT
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              {/* DYNAMIC RESULTS RENDERED BELOW FORM */}
+              <AnimatePresence mode="wait">
+                {(isGeneratingChart || svgData || error) && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                    animate={{ opacity: 1, height: 'auto', marginTop: '2.5rem' }}
+                    exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                    style={{ borderTop: '1px solid rgba(39,39,42,0.8)', paddingTop: '2.5rem', overflow: 'hidden' }}
+                  >
+                    {error && (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                        <div style={{ width: '60px', height: '60px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+                          <X color="#ef4444" size={30} />
+                        </div>
+                        <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#ef4444', margin: '0 0 0.5rem 0' }}>Calculation Failed</h3>
+                        <p style={{ color: '#a1a1aa', fontSize: '0.9rem' }}>{error}</p>
+                      </div>
+                    )}
+
+                    {svgData && !isGeneratingChart && (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <div style={{ textAlign: 'center', marginBottom: '1.5rem', width: '100%' }}>
+                          <span style={{ color: '#6D5DFB', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '0.3rem' }}>Generated Output</span>
+                          <h3 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#fff', margin: '0 0 0.2rem 0' }}>
+                            {chartType === 'RasiD1' ? 'Rasi D-1 Chart' : `${chartType} Chart`}
+                          </h3>
+                        </div>
+
+                        <div
+                          className="chart-svg-wrapper"
+                          style={{ width: '100%', display: 'flex', justifyContent: 'center', background: 'rgba(0,0,0,0.2)', borderRadius: '1rem', padding: '1.5rem' }}
+                          dangerouslySetInnerHTML={{ __html: svgData }}
+                        />
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '2rem' }}>
+                          <button
+                            onClick={handleDownloadSVG}
+                            style={{ padding: '0.75rem 1.25rem', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(39,39,42,0.8)', border: '1px solid rgba(63,63,70,0.5)', color: '#e4e4e7', cursor: 'pointer', fontSize: '0.9rem' }}
+                          >
+                            <Download size={16} /> SVG
+                          </button>
+                          <button
+                            onClick={handlePrintChart}
+                            style={{ padding: '0.75rem 1.25rem', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(39,39,42,0.8)', border: '1px solid rgba(63,63,70,0.5)', color: '#e4e4e7', cursor: 'pointer', fontSize: '0.9rem' }}
+                          >
+                            <Printer size={16} /> Print
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+            </motion.section>
           </div>
         </div>
       </main>
-
-      {/* Footer component */}
-      <Footer />
     </div>
   );
 }
