@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import connectToDatabase from '@/lib/mongodb';
 import User from '@/lib/models/User';
+import Payment from '@/lib/models/Payment';
 
 export async function GET() {
   try {
@@ -29,17 +30,24 @@ export async function GET() {
       });
     }
 
-    // Check if pro membership expired
-    if (dbUser.isPro && dbUser.proUntil && new Date(dbUser.proUntil) < new Date()) {
-      dbUser.isPro = false;
-      await dbUser.save();
+    // Check if pro membership expired based on voice balance
+    if (dbUser.isPro) {
+      const balance = dbUser.voiceBalanceInSeconds || 0;
+      if (balance <= 0) {
+        dbUser.isPro = false;
+        await dbUser.save();
+      }
     }
+
+    // Retrieve payments from separate Payment model
+    const payments = await Payment.find({ clerkId: userId }).sort({ date: -1 });
 
     return NextResponse.json({
       clerkId: dbUser.clerkId,
       email: dbUser.email,
       isPro: dbUser.isPro,
-      proUntil: dbUser.proUntil,
+      messageCount: dbUser.messageCount || 0,
+      voiceBalanceInSeconds: dbUser.voiceBalanceInSeconds || 0,
       birthDate: dbUser.birthDate || null,
       birthTime: dbUser.birthTime || null,
       birthTimezone: dbUser.birthTimezone || null,
@@ -48,6 +56,8 @@ export async function GET() {
       birthLongitude: dbUser.birthLongitude !== undefined ? dbUser.birthLongitude : null,
       ayanamsa: dbUser.ayanamsa || 'RAMAN',
       hasBirthDetails: !!dbUser.birthDate,
+      predictions: dbUser.predictions || [],
+      payments: payments || [],
     });
   } catch (error) {
     console.error('Error fetching user:', error);

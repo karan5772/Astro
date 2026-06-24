@@ -14,6 +14,7 @@ export default function VoicePage() {
   const [status, setStatus] = useState("Ready");
   const [isLoading, setIsLoading] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [voiceBalanceInSeconds, setVoiceBalanceInSeconds] = useState(0);
   const pcRef = useRef<RTCPeerConnection | null>(null);
 
   useEffect(() => {
@@ -53,22 +54,14 @@ export default function VoicePage() {
         fetch("/api/user")
           .then((res) => res.json())
           .then((data) => {
-            if (!data || !data.isPro) {
+            if (!data || !data.isPro || (data.voiceBalanceInSeconds || 0) <= 0) {
               stopSession();
               toast.error(
                 "Your cosmic session has expired. Please recharge to continue.",
               );
               router.push("/pricing");
-            } else if (data.proUntil) {
-              const timeRemaining =
-                new Date(data.proUntil).getTime() - Date.now();
-              if (timeRemaining <= 0) {
-                stopSession();
-                toast.error(
-                  "Your cosmic session has expired. Please recharge to continue.",
-                );
-                router.push("/pricing");
-              }
+            } else {
+              setVoiceBalanceInSeconds(data.voiceBalanceInSeconds);
             }
           })
           .catch(console.error);
@@ -82,6 +75,42 @@ export default function VoicePage() {
       return () => clearInterval(interval);
     }
   }, [isLoaded, user, router]);
+
+  // Local second-by-second countdown for premium UI feedback
+  useEffect(() => {
+    let countdownTimer: NodeJS.Timeout;
+    if (isSessionActive && voiceBalanceInSeconds > 0) {
+      countdownTimer = setInterval(() => {
+        setVoiceBalanceInSeconds((prev) => Math.max(0, prev - 1));
+      }, 1000);
+    }
+    return () => clearInterval(countdownTimer);
+  }, [isSessionActive, voiceBalanceInSeconds]);
+
+  // Heartbeat signal to server to decrement the actual database balance
+  useEffect(() => {
+    let heartbeatTimer: NodeJS.Timeout;
+    if (isSessionActive) {
+      heartbeatTimer = setInterval(async () => {
+        try {
+          const response = await fetch('/api/user/voice-heartbeat', { method: 'POST' });
+          if (response.ok) {
+            const data = await response.json();
+            if (!data.success || data.voiceBalanceInSeconds <= 0) {
+              stopSession();
+              toast.error("Your voice balance has run out. Please recharge to continue.");
+              router.push('/pricing');
+            } else {
+              setVoiceBalanceInSeconds(data.voiceBalanceInSeconds);
+            }
+          }
+        } catch (e) {
+          console.error('Error during voice heartbeat:', e);
+        }
+      }, 10000); // 10 seconds
+    }
+    return () => clearInterval(heartbeatTimer);
+  }, [isSessionActive, router]);
 
   const startSession = async () => {
     try {
@@ -212,6 +241,10 @@ export default function VoicePage() {
             <div className="chart-meta-chip">
               <span className="metric-label">Status</span>
               <strong>{isSessionActive ? 'Live' : 'Idle'}</strong>
+            </div>
+            <div className="chart-meta-chip">
+              <span className="metric-label">Time Remaining</span>
+              <strong>{formatTime(voiceBalanceInSeconds)}</strong>
             </div>
             <div className="chart-meta-chip">
               <span className="metric-label">Controls</span>

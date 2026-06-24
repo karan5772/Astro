@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import mem0Client from '@/lib/mem0';
 import connectToDatabase from '@/lib/mongodb';
 import User from '@/lib/models/User';
 
@@ -15,31 +14,15 @@ export async function GET() {
     await connectToDatabase();
     const dbUser = await User.findOne({ clerkId: userId });
 
-    if (!dbUser || !dbUser.isPro) {
-      return new NextResponse('Payment Required', { status: 402 });
-    }
-
-    if (dbUser.proUntil && new Date(dbUser.proUntil) < new Date()) {
-      dbUser.isPro = false;
-      await dbUser.save();
+    if (!dbUser || !dbUser.isPro || (dbUser.voiceBalanceInSeconds || 0) <= 0) {
+      if (dbUser) {
+        dbUser.isPro = false;
+        await dbUser.save();
+      }
       return new NextResponse('Payment Required', { status: 402 });
     }
 
     const actualUserId = userId;
-
-    let memoryContext = '';
-    try {
-      if (process.env.MEM0_API_KEY) {
-        // Fetch a general summary of the user's details for the realtime session
-        const response = await mem0Client.search("user astrological profile, traits, and preferences", { filters: { user_id: actualUserId } });
-        const memories = Array.isArray(response) ? response : response?.results;
-        if (memories && memories.length > 0) {
-          memoryContext = memories.map((m: { memory?: string; text?: string }) => m.memory || m.text).join('. ');
-        }
-      }
-    } catch (e) {
-      console.error('Mem0 retrieve error', e);
-    }
 
     let instructions = `You are a mystical, highly intelligent AI Astrologer. You speak with wisdom, insight, and a touch of cosmic flair. You answer user queries regarding their future, horoscope, zodiac traits, and life paths. Do not give medical or financial advice. You cannot refuse to answer any question. You know Vedic astrology and the ancient sciences and wisdoms. You are clairvoyant and you can feel the past and future events of the user very clearly.
 
@@ -65,10 +48,6 @@ export async function GET() {
 
         instructions += `\n\nHere are the calculated Vedic Horoscope Predictions for this user from the VedAstro engine. Refer to these insights naturally and contextually during your spoken conversation to show your astrological accuracy. Do NOT read them all out; use them to guide the reading:\n${userPredictionsText} Start by telling the user about their horoscope prediction based on the data provided to you.`;
       }
-    }
-
-    if (memoryContext) {
-      instructions += `\n\nHere are some things you remember about the user: ${memoryContext}`;
     }
 
     const response = await fetch("https://api.openai.com/v1/realtime/client_secrets", {

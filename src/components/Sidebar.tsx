@@ -15,6 +15,7 @@ import {
   Sparkles,
   Menu,
   X,
+  User,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -24,9 +25,10 @@ const NAV_ITEMS = [
   { href: '/chat', label: 'Live Chat', icon: MessageCircle },
   { href: '/voice', label: 'Voice', icon: Mic },
   { href: '/pricing', label: 'Pricing', icon: CreditCard },
+  { href: '/profile', label: 'Profile', icon: User },
 ];
 
-type SidebarMode = 'home' | 'chart' | 'chat' | 'voice' | 'pricing' | 'other';
+type SidebarMode = 'home' | 'chart' | 'chat' | 'voice' | 'pricing' | 'profile' | 'other';
 
 const MODE_META: Record<SidebarMode, {
   label: string;
@@ -76,6 +78,14 @@ const MODE_META: Record<SidebarMode, {
     secondaryHref: '/voice',
     secondaryLabel: 'Voice Room',
   },
+  profile: {
+    label: 'Profile',
+    description: 'Manage birth details, view predictions, and check subscription.',
+    primaryHref: '/chart',
+    primaryLabel: 'View Chart',
+    secondaryHref: '/chat',
+    secondaryLabel: 'Ask AI',
+  },
   other: {
     label: 'Astro AI',
     description: 'Navigate the product and open the most useful surface.',
@@ -121,7 +131,9 @@ export default function Sidebar() {
           ? 'voice'
           : pathname.startsWith('/pricing')
             ? 'pricing'
-            : 'other';
+            : pathname.startsWith('/profile')
+              ? 'profile'
+              : 'other';
 
   const modeMeta = MODE_META[mode];
   const withAnchor = (href: string) => (href.startsWith('#') ? `${pathname}${href}` : href);
@@ -238,19 +250,20 @@ export default function Sidebar() {
           )}
 
           {userId ? (
-            <div className="sidebar-user-section">
-              <UserButton />
+            <Link href="/profile" className="sidebar-user-section" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', textDecoration: 'none', color: 'var(--on-surface)' }}>
+              <User size={20} style={{ color: 'var(--primary)' }} />
               {!collapsed && (
                 <motion.span
                   className="sidebar-user-label"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.1 }}
+                  style={{ fontSize: '0.875rem', fontWeight: 500 }}
                 >
                   Account
                 </motion.span>
               )}
-            </div>
+            </Link>
           ) : (
             <Link
               href="/sign-in"

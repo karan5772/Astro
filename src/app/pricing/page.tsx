@@ -36,10 +36,10 @@ const PLANS: Plan[] = [
   },
   {
     id: "deep-healing",
-    name: "30 Min Pass",
+    name: "15 Min Pass",
     displayName: "Deep Healing",
     price: 5,
-    durationInMinutes: 30,
+    durationInMinutes: 15,
     description: "A more complete reading for patterns, transitions, and recurring themes.",
     icon: "bolt",
     iconColor: "var(--tertiary)",
@@ -49,10 +49,10 @@ const PLANS: Plan[] = [
   },
   {
     id: "cosmic-awakening",
-    name: "60 Min Pass",
+    name: "40 Min Pass",
     displayName: "Cosmic Awakening",
     price: 10,
-    durationInMinutes: 60,
+    durationInMinutes: 40,
     description: "A full session for deeper forecasting and a broader life review.",
     icon: "stars",
     iconColor: "var(--secondary)",
@@ -75,7 +75,7 @@ const getPlanIcon = (iconName: string, iconColor: string) => {
 
 export default function PricingPage() {
   const [loading, setLoading] = useState(false);
-  const [proUntil, setProUntil] = useState<Date | null>(null);
+  const [voiceBalanceInSeconds, setVoiceBalanceInSeconds] = useState<number>(0);
 
   useEffect(() => {
     document.body.classList.add("astraeus-active");
@@ -83,8 +83,8 @@ export default function PricingPage() {
     fetch("/api/user")
       .then((res) => res.json())
       .then((data) => {
-        if (data?.isPro && data?.proUntil) {
-          setProUntil(new Date(data.proUntil));
+        if (data?.isPro && data?.voiceBalanceInSeconds) {
+          setVoiceBalanceInSeconds(data.voiceBalanceInSeconds);
         }
       })
       .catch(console.error);
@@ -193,11 +193,11 @@ export default function PricingPage() {
             Your first 15 text messages are free. When you want deeper voice sessions, pick the pass that fits the depth of the conversation.
           </p>
 
-          {proUntil && proUntil > new Date() && (
+          {voiceBalanceInSeconds > 0 && (
             <div className="glass-panel page-card" style={{ display: "inline-block", marginTop: "1.5rem" }}>
               <p style={{ margin: 0, color: "var(--tertiary)", fontWeight: 600 }}>You currently have an active Cosmic Session.</p>
               <p style={{ margin: "0.5rem 0 0", color: "var(--on-surface-variant)" }}>
-                Your Pro access expires on {proUntil.toLocaleString()}.
+                You have {Math.ceil(voiceBalanceInSeconds / 60)} minutes of active voice time remaining.
               </p>
             </div>
           )}

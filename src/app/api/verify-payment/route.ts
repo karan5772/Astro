@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import crypto from 'crypto';
 import connectToDatabase from '@/lib/mongodb';
 import User from '@/lib/models/User';
+import Payment from '@/lib/models/Payment';
 
 export async function POST(req: NextRequest) {
   try {
@@ -40,30 +41,25 @@ export async function POST(req: NextRequest) {
       return new NextResponse('User not found in DB', { status: 404 });
     }
 
-    const now = new Date();
-    const currentProUntil = currentUserDoc.proUntil && new Date(currentUserDoc.proUntil) > now 
-      ? new Date(currentUserDoc.proUntil) 
-      : now;
-      
-    const newProUntil = new Date(currentProUntil.getTime() + durationInMinutes * 60000);
+    // Create the payment record in the separate payments collection
+    await Payment.create({
+      clerkId: userId,
+      paymentId: razorpay_payment_id,
+      orderId: razorpay_order_id,
+      amount: amount || 999,
+      durationInMinutes
+    });
 
     const dbUser = await User.findOneAndUpdate(
       { clerkId: userId },
       { 
-        $set: { isPro: true, proUntil: newProUntil },
-        $push: { 
-          payments: { 
-            paymentId: razorpay_payment_id, 
-            orderId: razorpay_order_id, 
-            amount: amount || 999,
-            durationInMinutes
-          } 
-        } 
+        $set: { isPro: true },
+        $inc: { voiceBalanceInSeconds: durationInMinutes * 60 }
       },
       { new: true }
     );
 
-    return NextResponse.json({ success: true, isPro: dbUser.isPro, proUntil: dbUser.proUntil });
+    return NextResponse.json({ success: true, isPro: dbUser.isPro, voiceBalanceInSeconds: dbUser.voiceBalanceInSeconds });
   } catch (error) {
     console.error('Payment verification error:', error);
     return new NextResponse('Internal Server Error', { status: 500 });

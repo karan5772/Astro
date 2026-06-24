@@ -71,21 +71,13 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
             )}
 
             {userId ? (
-              <>
-                <Link href="/chat" className="glow-button-nav">
-                  Consult Stars
-                </Link>
-                <div className="nav-user-slot">
-                  <UserButton />
-                </div>
-              </>
+              <Link href="/profile" className="glow-button-nav desktop-only" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
+                Profile
+              </Link>
             ) : (
               <div className="nav-auth-links">
                 <Link href="/sign-in" className="nav-signin-link desktop-only">
                   Sign In
-                </Link>
-                <Link href="/sign-up" className="glow-button-nav">
-                  Consult Stars
                 </Link>
               </div>
             )}
@@ -112,12 +104,13 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
               <Link href="/chat" onClick={closeMobileMenu}>Live Chat</Link>
               <Link href="/voice" onClick={closeMobileMenu}>Voice</Link>
               <Link href="/pricing" onClick={closeMobileMenu}>Pricing</Link>
+              {userId && <Link href="/profile" onClick={closeMobileMenu}>Profile</Link>}
             </div>
 
             <div className="mobile-menu-actions">
               {userId ? (
-                <Link href="/chat" className="glow-button-primary mobile-cta" onClick={closeMobileMenu}>
-                  Consult Stars
+                <Link href="/profile" className="glow-button-primary mobile-cta" onClick={closeMobileMenu}>
+                  Profile Settings
                 </Link>
               ) : (
                 <>

@@ -17,14 +17,11 @@ export default async function VoiceLayout({
   await connectToDatabase();
   const dbUser = await User.findOne({ clerkId: userId });
 
-  if (!dbUser || !dbUser.isPro) {
-    redirect('/pricing');
-  }
-
-  // Check if pro membership expired
-  if (dbUser.isPro && dbUser.proUntil && new Date(dbUser.proUntil) < new Date()) {
-    dbUser.isPro = false;
-    await dbUser.save();
+  if (!dbUser || !dbUser.isPro || (dbUser.voiceBalanceInSeconds || 0) <= 0) {
+    if (dbUser && dbUser.isPro) {
+      dbUser.isPro = false;
+      await dbUser.save();
+    }
     redirect('/pricing');
   }
 
