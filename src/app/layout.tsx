@@ -4,8 +4,11 @@ import type { Metadata } from 'next'
 import { ToastProvider } from '@/components/ToastProvider';
 
 export const metadata: Metadata = {
-  title: 'Astro AI - Your Future Revealed',
+  title: 'Astro AI',
   description: 'AI-powered astrology and horoscope readings with voice and text agents.',
+  icons: {
+    icon: "/logo.png",
+  },
 }
 
 export default function RootLayout({
