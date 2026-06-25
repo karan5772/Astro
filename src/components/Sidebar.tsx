@@ -30,14 +30,16 @@ const MAIN_NAV = [
 export default function Sidebar() {
   const pathname = usePathname();
   const { userId } = useAuth();
-  const [collapsed, setCollapsed] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('sidebar-collapsed') === 'true';
-    }
-    return false;
-  });
+  const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dbUser, setDbUser] = useState<any>(null);
+
+  // Sync collapsed state from localStorage on mount to prevent SSR hydration mismatch
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setCollapsed(localStorage.getItem('sidebar-collapsed') === 'true');
+    }
+  }, []);
 
   // Close mobile sidebar on route change
   useEffect(() => {
@@ -121,11 +123,7 @@ export default function Sidebar() {
                 </span>
               </Link>
 
-              {userId && (
-                <div className="scale-75 origin-left">
-                  <UserButton />
-                </div>
-              )}
+
             </div>
           ) : null}
 

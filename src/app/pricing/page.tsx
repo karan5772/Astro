@@ -178,7 +178,7 @@ export default function PricingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0F1115] text-white flex flex-col justify-between selection:bg-primary/30 selection:text-white">
+    <div className="min-h-screen bg-[#0c0d12] text-white flex flex-col justify-between selection:bg-primary/30 selection:text-white">
       <Navbar variant="pricing" />
 
       <main className="relative z-10 pt-32 pb-16 max-w-[1280px] mx-auto px-6 flex-grow w-full">
@@ -187,7 +187,6 @@ export default function PricingPage() {
         <div className="absolute w-[400px] h-[400px] rounded-full bg-[#9d4edd]/5 blur-3xl pointer-events-none" style={{ bottom: '15%', right: '10%' }}></div>
 
         <header className="flex flex-col gap-3 mb-12 text-center max-w-[720px] mx-auto">
-          <p className="text-xs uppercase tracking-widest font-bold text-primary">Pricing</p>
           <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-white leading-tight">Invest in focused guidance, not a bloated subscription.</h1>
           <p className="text-sm text-white/50 leading-relaxed max-w-[580px] mx-auto mt-2">
             Your first 15 text messages are free. When you want deeper voice sessions, pick the pass that fits the depth of the conversation.

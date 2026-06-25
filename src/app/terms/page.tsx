@@ -10,7 +10,7 @@ export default function TermsPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#0F1115] text-white flex flex-col justify-between selection:bg-primary/30 selection:text-white">
+    <div className="min-h-screen bg-[#0c0d12] text-white flex flex-col justify-between selection:bg-primary/30 selection:text-white">
       <Navbar variant="legal" />
       <main className="relative z-10 pt-32 pb-16 max-w-[1280px] mx-auto px-6 flex-1 w-full">
         <div className="flex flex-col gap-3 mb-10">

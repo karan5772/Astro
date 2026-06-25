@@ -56,6 +56,18 @@ export default function BirthChartPage() {
   const [svgData, setSvgData] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    const handleSync = () => {
+      if (typeof window !== 'undefined') {
+        setSidebarCollapsed(localStorage.getItem('sidebar-collapsed') === 'true');
+      }
+    };
+    handleSync();
+    window.addEventListener('sidebar-collapse-change', handleSync);
+    return () => window.removeEventListener('sidebar-collapse-change', handleSync);
+  }, []);
 
   useEffect(() => {
     document.body.classList.add('astraeus-active');
@@ -263,36 +275,17 @@ export default function BirthChartPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0F1115] text-white flex flex-col lg:flex-row selection:bg-primary/30 selection:text-white">
+    <div className="min-h-screen bg-white dark:bg-[#0c0d12] text-white flex flex-col lg:flex-row selection:bg-primary/30 selection:text-white">
       <Sidebar />
 
-      <main className="flex-1 pt-24 lg:pt-8 pb-16 px-4 md:px-12 lg:pl-[300px] flex flex-col items-center overflow-y-auto w-full relative z-10">
+      <main className={`flex-1 pt-24 lg:pt-8 pb-16 px-4 md:px-12 flex flex-col items-center overflow-y-auto w-full relative z-10 transition-all duration-300 ${sidebarCollapsed ? 'lg:pl-[72px]' : 'lg:pl-[260px]'
+        }`}>
         {/* Glow Background Orbs */}
         <div className="absolute w-[400px] h-[400px] rounded-full bg-primary/5 blur-3xl pointer-events-none" style={{ top: '15%', left: '10%' }}></div>
         <div className="absolute w-[400px] h-[400px] rounded-full bg-[#9d4edd]/5 blur-3xl pointer-events-none" style={{ bottom: '15%', right: '10%' }}></div>
 
-        <div className="w-full max-w-[1280px]">
+        <div className="w-full max-w-[1280px] my-auto">
 
-          <div className="mb-6">
-            <p className="text-xs uppercase tracking-widest font-bold text-primary mb-2">Birth chart</p>
-            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white mb-2">Build fast, read fast.</h1>
-            <p className="text-sm text-white/50 leading-relaxed max-w-[580px]">
-              Enter the essentials, generate the chart, and keep the result panel clean enough to actually use.
-            </p>
-          </div>
-
-          <div className="flex gap-3 flex-wrap mb-8">
-            <div className="px-4 py-2 rounded-full bg-[#18181b]/40 border border-card-border flex items-center gap-2">
-              <span className="text-[10px] uppercase tracking-wider font-extrabold text-white/40">Mode</span>
-              <strong className="text-white/80 text-xs">Chart workbench</strong>
-            </div>
-            <div className="px-4 py-2 rounded-full bg-[#18181b]/40 border border-card-border flex items-center gap-2">
-              <span className="text-[10px] uppercase tracking-wider font-extrabold text-white/40">Output</span>
-              <strong className="text-white/80 text-xs">SVG + interpretation</strong>
-            </div>
-          </div>
-
-          {/* SINGLE CENTERED STAGE (Voice Page Layout) */}
           <div className="flex justify-center w-full pb-12">
             <motion.section
               className="w-full max-w-[750px] bg-secondary/40 backdrop-blur-lg border border-card-border rounded-2xl p-8 md:p-10 shadow-2xl relative"

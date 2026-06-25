@@ -15,6 +15,18 @@ export default function VoicePage() {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [voiceBalanceInSeconds, setVoiceBalanceInSeconds] = useState(0);
   const pcRef = useRef<RTCPeerConnection | null>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    const handleSync = () => {
+      if (typeof window !== 'undefined') {
+        setSidebarCollapsed(localStorage.getItem('sidebar-collapsed') === 'true');
+      }
+    };
+    handleSync();
+    window.addEventListener('sidebar-collapse-change', handleSync);
+    return () => window.removeEventListener('sidebar-collapse-change', handleSync);
+  }, []);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -216,41 +228,19 @@ export default function VoicePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0F1115] text-white flex flex-col lg:flex-row selection:bg-primary/30 selection:text-white">
+    <div className="min-h-screen bg-white dark:bg-[#0c0d12] text-white flex flex-col lg:flex-row selection:bg-primary/30 selection:text-white">
       <Sidebar />
-      
-      <main className="flex-1 pt-24 lg:pt-8 pb-16 px-4 md:px-12 lg:pl-[300px] flex flex-col items-center overflow-y-auto w-full relative z-10">
+
+      <main className={`flex-1 pt-24 lg:pt-8 pb-16 px-4 md:px-12 flex flex-col items-center overflow-y-auto w-full relative z-10 transition-all duration-300 ${sidebarCollapsed ? 'lg:pl-[72px]' : 'lg:pl-[260px]'
+        }`}>
         {/* Glow Background Orbs */}
         <div className="absolute w-[400px] h-[400px] rounded-full bg-primary/5 blur-3xl pointer-events-none" style={{ top: '15%', left: '10%' }}></div>
         <div className="absolute w-[400px] h-[400px] rounded-full bg-[#9d4edd]/5 blur-3xl pointer-events-none" style={{ bottom: '15%', right: '10%' }}></div>
 
-        <div className="w-full max-w-[1280px]">
-          <div className="mb-6">
-            <p className="text-xs uppercase tracking-widest font-bold text-primary mb-2">Voice session</p>
-            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white mb-2">A cleaner control room for live readings.</h1>
-            <p className="text-sm text-white/50 leading-relaxed max-w-[580px]">
-              The voice page now opens with a lighter shell, clearer telemetry, and more intentional session controls.
-            </p>
-          </div>
+        <div className="w-full max-w-[1280px] my-auto">
 
-          <div className="flex gap-3 flex-wrap mb-8">
-            <div className="px-4 py-2 rounded-full bg-[#18181b]/40 border border-card-border flex items-center gap-2 text-xs">
-              <span className="text-white/40 uppercase tracking-widest text-[9px] font-bold">Mode</span>
-              <strong className="text-white/80">Voice room</strong>
-            </div>
-            <div className="px-4 py-2 rounded-full bg-[#18181b]/40 border border-card-border flex items-center gap-2 text-xs">
-              <span className="text-white/40 uppercase tracking-widest text-[9px] font-bold">Status</span>
-              <strong className="text-white/80">{isSessionActive ? 'Live' : 'Idle'}</strong>
-            </div>
-            <div className="px-4 py-2 rounded-full bg-[#18181b]/40 border border-card-border flex items-center gap-2 text-xs">
-              <span className="text-white/40 uppercase tracking-widest text-[9px] font-bold">Time Remaining</span>
-              <strong className="text-white/80">{formatTime(voiceBalanceInSeconds)}</strong>
-            </div>
-            <div className="px-4 py-2 rounded-full bg-[#18181b]/40 border border-card-border flex items-center gap-2 text-xs">
-              <span className="text-white/40 uppercase tracking-widest text-[9px] font-bold">Controls</span>
-              <strong className="text-white/80">{isLoading ? 'Connecting...' : 'Ready'}</strong>
-            </div>
-          </div>
+
+
 
           <div className="flex justify-center w-full pb-12">
             <motion.section

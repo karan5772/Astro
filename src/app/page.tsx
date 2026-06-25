@@ -137,7 +137,7 @@ export default function LandingPage() {
   } as const;
 
   return (
-    <div className="min-h-screen bg-[#0F1115] text-white overflow-hidden relative selection:bg-primary/30 selection:text-white">
+    <div className="min-h-screen bg-[#0c0d12] text-white overflow-hidden relative selection:bg-primary/30 selection:text-white">
       <Navbar variant="landing" />
 
       <main className="relative z-10 pt-24 pb-16">
@@ -219,7 +219,7 @@ export default function LandingPage() {
                         <div className="absolute rounded-full border border-white/5 w-[90%] h-[90%] animate-spin-slow" />
                         <div className="absolute rounded-full border border-white/5 w-[65%] h-[65%] animate-spin-slow-reverse" />
                         <div className="absolute rounded-full border border-white/5 w-[40%] h-[40%] animate-spin-slow" />
-                        <div className="relative w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-[#0F1115] border border-primary/30 shadow-[0_0_15px_rgba(109,93,251,0.2)]">
+                        <div className="relative w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-[#0c0d12] border border-primary/30 shadow-[0_0_15px_rgba(109,93,251,0.2)]">
                           <img src="/logo.png" width={100} height={100} alt="" className="w-6 h-6 object-contain" />
                         </div>
                         {orbitPoints.map((point) => (
@@ -228,7 +228,7 @@ export default function LandingPage() {
                             className="absolute flex items-center justify-center"
                             style={{ top: point.top, left: point.left }}
                           >
-                            <span className="absolute whitespace-nowrap text-[9px] uppercase tracking-widest font-semibold px-2 py-0.5 bg-[#0F1115] border border-white/10 rounded-full text-white/60 shadow-lg">{point.label}</span>
+                            <span className="absolute whitespace-nowrap text-[9px] uppercase tracking-widest font-semibold px-2 py-0.5 bg-[#0c0d12] border border-white/10 rounded-full text-white/60 shadow-lg">{point.label}</span>
                           </div>
                         ))}
                       </div>

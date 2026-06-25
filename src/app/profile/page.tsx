@@ -284,7 +284,7 @@ export default function ProfilePage() {
 
   if (!clerkLoaded || loading) {
     return (
-      <div className="min-h-screen bg-[#0F1115] text-white flex items-center justify-center">
+      <div className="min-h-screen bg-[#0c0d12] text-white flex items-center justify-center">
         <div className="flex flex-col items-center gap-4 mt-[20vh] w-full">
           <Loader2 size={40} className="animate-spin text-primary" />
           <p className="text-white/50 text-sm">Aligning solar system details...</p>
@@ -294,7 +294,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0F1115] text-white flex flex-col selection:bg-primary/30 selection:text-white">
+    <div className="min-h-screen bg-[#0c0d12] text-white flex flex-col selection:bg-primary/30 selection:text-white">
       <Navbar variant="dashboard" />
 
       <main className="flex-grow pt-32 pb-16 px-4 md:px-12 flex flex-col items-center overflow-y-auto w-full relative z-10">
