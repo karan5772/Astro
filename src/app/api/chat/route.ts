@@ -47,8 +47,7 @@ export async function POST(req: NextRequest) {
 - Date of Birth: ${dbUser.birthDate}
 - Time of Birth: ${dbUser.birthTime}
 - Location: ${dbUser.birthLocation} (Latitude: ${dbUser.birthLatitude}°, Longitude: ${dbUser.birthLongitude}°)
-- Timezone Offset: ${dbUser.birthTimezone}
-- Ayanamsa System: ${dbUser.ayanamsa || 'RAMAN'}`;
+- Timezone Offset: ${dbUser.birthTimezone}`;
 
       if (dbUser.predictions && dbUser.predictions.length > 0) {
         // Feed the top 25 horoscope predictions into the LLM system prompt context

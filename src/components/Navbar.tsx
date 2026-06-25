@@ -72,6 +72,9 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
 
             {userId ? (
               <Link href="/profile" className="glow-button-nav desktop-only" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
+                <div style={{ marginRight: '0.5rem' }}>
+                  <UserButton />
+                </div>
                 Profile
               </Link>
             ) : (

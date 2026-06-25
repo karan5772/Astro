@@ -36,8 +36,7 @@ export async function GET() {
 - Date of Birth: ${dbUser.birthDate}
 - Time of Birth: ${dbUser.birthTime}
 - Location: ${dbUser.birthLocation} (Latitude: ${dbUser.birthLatitude}°, Longitude: ${dbUser.birthLongitude}°)
-- Timezone Offset: ${dbUser.birthTimezone}
-- Ayanamsa Used: ${dbUser.ayanamsa || 'RAMAN'}`;
+- Timezone Offset: ${dbUser.birthTimezone}`;
 
       if (dbUser.predictions && dbUser.predictions.length > 0) {
         // Feed the top 25 horoscope predictions to guide the voice agent's spoken readings

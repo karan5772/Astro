@@ -54,7 +54,6 @@ export async function GET() {
       birthLocation: dbUser.birthLocation || null,
       birthLatitude: dbUser.birthLatitude !== undefined ? dbUser.birthLatitude : null,
       birthLongitude: dbUser.birthLongitude !== undefined ? dbUser.birthLongitude : null,
-      ayanamsa: dbUser.ayanamsa || 'RAMAN',
       hasBirthDetails: !!dbUser.birthDate,
       predictions: dbUser.predictions || [],
       payments: payments || [],
@@ -80,7 +79,6 @@ export async function POST(req: NextRequest) {
       birthLocation, // e.g. "Pilani, Surajgarh, Rajasthan, India"
       birthLatitude,
       birthLongitude,
-      ayanamsa = 'RAMAN',
     } = body;
 
     // Validate inputs
@@ -115,7 +113,6 @@ export async function POST(req: NextRequest) {
       },
       FilterTags: [],
       SortByWeight: false,
-      Ayanamsa: ayanamsa,
     };
 
     console.log('Fetching horoscope predictions from VedAstro for user:', userId);
@@ -156,7 +153,6 @@ export async function POST(req: NextRequest) {
           birthLocation,
           birthLatitude: parseFloat(birthLatitude),
           birthLongitude: parseFloat(birthLongitude),
-          ayanamsa,
           predictions: mappedPredictions,
         },
       },
@@ -170,7 +166,6 @@ export async function POST(req: NextRequest) {
       birthDate: updatedUser.birthDate,
       birthTime: updatedUser.birthTime,
       birthLocation: updatedUser.birthLocation,
-      ayanamsa: updatedUser.ayanamsa,
       hasBirthDetails: true,
     });
   } catch (error: any) {

@@ -251,16 +251,19 @@ export default function Sidebar() {
 
           {userId ? (
             <Link href="/profile" className="sidebar-user-section" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', textDecoration: 'none', color: 'var(--on-surface)' }}>
-              <User size={20} style={{ color: 'var(--primary)' }} />
+
               {!collapsed && (
                 <motion.span
                   className="sidebar-user-label"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.1 }}
-                  style={{ fontSize: '0.875rem', fontWeight: 500 }}
+                  style={{ fontSize: '0.875rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                 >
-                  Account
+                  <div style={{ marginRight: '0.5rem' }}>
+                    <UserButton />
+                  </div>
+                  Profile
                 </motion.span>
               )}
             </Link>

@@ -218,7 +218,6 @@ export default function ChatPage() {
   const [selectedLocationName, setSelectedLocationName] = useState('Pilani, Surajgarh, Rajasthan, India');
   const [latitude, setLatitude] = useState<number | null>(28.364);
   const [longitude, setLongitude] = useState<number | null>(75.601);
-  const [ayanamsa, setAyanamsa] = useState('RAMAN');
 
   // Autocomplete state
   const [locationSuggestions, setLocationSuggestions] = useState<GeocodeResult[]>([]);
@@ -327,7 +326,6 @@ export default function ChatPage() {
             birthLocation: selectedLocationName,
             birthLatitude: latitude,
             birthLongitude: longitude,
-            ayanamsa,
           }),
         });
 
@@ -630,19 +628,7 @@ export default function ChatPage() {
                 </div>
               </div>
 
-              {/* Ayanamsa choice */}
-              <div className="chart-input-group">
-                <label className="chart-input-label">Ayanamsa system</label>
-                <select 
-                  value={ayanamsa} 
-                  onChange={(e) => setAyanamsa(e.target.value)} 
-                  className="chart-input-field"
-                >
-                  <option value="RAMAN">Raman Ayanamsa</option>
-                  <option value="LAHIRI">Lahiri Ayanamsa (Chitra Paksha)</option>
-                  <option value="KP">K.P. Ayanamsa</option>
-                </select>
-              </div>
+
 
               {/* Submit Details button */}
               <button 

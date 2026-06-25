@@ -10,8 +10,6 @@ export async function POST(req: NextRequest) {
       locationName,
       latitude,
       longitude,
-      chartType = 'RasiD1',
-      ayanamsa = 'RAMAN',
     } = body;
 
     // Validate required fields
@@ -36,8 +34,8 @@ export async function POST(req: NextRequest) {
           Longitude: parseFloat(longitude),
         },
       },
-      ChartType: chartType,
-      Ayanamsa: ayanamsa,
+      ChartType: 'RasiD1',
+      Ayanamsa: 'RAMAN',
     };
 
     console.log('Sending payload to VedAstro:', JSON.stringify(payload, null, 2));

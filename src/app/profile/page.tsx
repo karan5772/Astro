@@ -41,7 +41,6 @@ interface UserData {
   birthLocation: string | null;
   birthLatitude: number | null;
   birthLongitude: number | null;
-  ayanamsa: string;
   hasBirthDetails: boolean;
   predictions: Prediction[];
   messageCount: number;
@@ -84,7 +83,6 @@ export default function ProfilePage() {
   const [selectedLocationName, setSelectedLocationName] = useState('');
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
-  const [ayanamsa, setAyanamsa] = useState('RAMAN');
 
   const [suggestions, setSuggestions] = useState<GeocodeResult[]>([]);
   const [isSearchingLocation, setIsSearchingLocation] = useState(false);
@@ -105,7 +103,6 @@ export default function ProfilePage() {
           setSelectedLocationName(data.birthLocation || '');
           setLatitude(data.birthLatitude);
           setLongitude(data.birthLongitude);
-          setAyanamsa(data.ayanamsa || 'RAMAN');
         }
       }
     } catch (err) {
@@ -187,7 +184,6 @@ export default function ProfilePage() {
             birthLocation: selectedLocationName,
             birthLatitude: latitude,
             birthLongitude: longitude,
-            ayanamsa,
           }),
         });
 
@@ -477,18 +473,6 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#a1a1aa' }}>Ayanamsa</label>
-                  <select
-                    value={ayanamsa}
-                    onChange={(e) => setAyanamsa(e.target.value)}
-                    style={{ width: '100%', padding: '0.85rem', fontSize: '0.9rem', borderRadius: '0.5rem', background: 'rgba(24, 24, 27, 0.6)', border: '1px solid #27272A', color: '#e4e4e7', outline: 'none' }}
-                  >
-                    <option value="RAMAN">Raman</option>
-                    <option value="LAHIRI">Lahiri</option>
-                    <option value="KP">K.P.</option>
-                  </select>
-                </div>
 
                 <div style={{ marginTop: '0.5rem' }}>
                   <button

@@ -2318,6 +2318,11 @@ html {
   .theme-astraeus.sidebar-layout.sidebar-collapsed > main {
     margin-left: 0;
   }
+
+  .theme-astraeus .page-main {
+    padding-top: 72px !important;
+    padding-bottom: 2.5rem;
+  }
 }
 
 @media (max-width: 767px) {

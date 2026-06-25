@@ -14,7 +14,6 @@ const UserSchema = new mongoose.Schema({
   birthLocation: { type: String },
   birthLatitude: { type: Number },
   birthLongitude: { type: Number },
-  ayanamsa: { type: String, default: 'RAMAN' },
   predictions: [{
     name: { type: String },
     description: { type: String },

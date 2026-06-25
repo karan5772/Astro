@@ -16,6 +16,7 @@ import {
   X,
   Loader2
 } from 'lucide-react';
+import { useUser } from '@clerk/nextjs';
 import Sidebar from '@/components/Sidebar';
 import toast from 'react-hot-toast';
 import '../astraeus.css';
@@ -26,7 +27,22 @@ interface GeocodeResult {
   longitude: number;
 }
 
+interface UserData {
+  clerkId: string;
+  email: string;
+  isPro: boolean;
+  birthDate: string | null;
+  birthTime: string | null;
+  birthTimezone: string | null;
+  birthLocation: string | null;
+  birthLatitude: number | null;
+  birthLongitude: number | null;
+}
+
 export default function BirthChartPage() {
+  const { user, isLoaded: clerkLoaded } = useUser();
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [date, setDate] = useState('1990-06-15');
   const [time, setTime] = useState('12:00');
   const [timezoneOffset, setTimezoneOffset] = useState('+05:30');
@@ -34,8 +50,6 @@ export default function BirthChartPage() {
   const [selectedLocationName, setSelectedLocationName] = useState('Pilani, Surajgarh, Rajasthan, India');
   const [latitude, setLatitude] = useState<number | null>(28.364);
   const [longitude, setLongitude] = useState<number | null>(75.601);
-  const [chartType, setChartType] = useState('RasiD1');
-  const [ayanamsa, setAyanamsa] = useState('RAMAN');
 
   const [suggestions, setSuggestions] = useState<GeocodeResult[]>([]);
   const [isSearchingLocation, setIsSearchingLocation] = useState(false);
@@ -53,6 +67,31 @@ export default function BirthChartPage() {
     const hours = String(Math.floor(absOffset / 60)).padStart(2, '0');
     const minutes = String(absOffset % 60).padStart(2, '0');
     setTimezoneOffset(`${sign}${hours}:${minutes}`);
+
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch('/api/user');
+        if (response.ok) {
+          const data = await response.json();
+          setUserData(data);
+          if (data.hasBirthDetails) {
+            setDate(data.birthDate || '');
+            setTime(data.birthTime || '');
+            setTimezoneOffset(data.birthTimezone || '+05:30');
+            setLocationQuery(data.birthLocation || '');
+            setSelectedLocationName(data.birthLocation || '');
+            setLatitude(data.birthLatitude);
+            setLongitude(data.birthLongitude);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching user profile:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
 
     const handleClickOutside = (event: MouseEvent) => {
       if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
@@ -91,6 +130,28 @@ export default function BirthChartPage() {
     return () => clearTimeout(delayDebounceFn);
   }, [locationQuery, selectedLocationName]);
 
+  const fetchUserData = async () => {
+    try {
+      const response = await fetch('/api/user');
+      if (response.ok) {
+        const data = await response.json();
+        setUserData(data);
+        if (data.hasBirthDetails) {
+          setDate(data.birthDate || '');
+          setTime(data.birthTime || '');
+          setTimezoneOffset(data.birthTimezone || '+05:30');
+          setLocationQuery(data.birthLocation || '');
+          setSelectedLocationName(data.birthLocation || '');
+          setLatitude(data.birthLatitude);
+          setLongitude(data.birthLongitude);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching user profile:', err);
+      toast.error('Failed to load profile details.');
+    }
+  };
+
   const handleSelectLocation = (location: GeocodeResult) => {
     setLocationQuery(location.name);
     setSelectedLocationName(location.name);
@@ -118,7 +179,7 @@ export default function BirthChartPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             date, time, timezoneOffset, locationName: selectedLocationName,
-            latitude, longitude, chartType, ayanamsa,
+            latitude, longitude,
           }),
         });
 
@@ -240,10 +301,6 @@ export default function BirthChartPage() {
             <div className="chart-meta-chip" style={{ padding: '0.6rem 1.2rem', borderRadius: '9999px', background: 'rgba(39, 39, 42, 0.4)', border: '1px solid #27272A', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <span className="metric-label" style={{ color: '#71717a', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Mode</span>
               <strong style={{ color: '#e4e4e7', fontSize: '0.875rem' }}>Chart workbench</strong>
-            </div>
-            <div className="chart-meta-chip" style={{ padding: '0.6rem 1.2rem', borderRadius: '9999px', background: 'rgba(39, 39, 42, 0.4)', border: '1px solid #27272A', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <span className="metric-label" style={{ color: '#71717a', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Format</span>
-              <strong style={{ color: '#e4e4e7', fontSize: '0.875rem' }}>Rasi D1 / Navamsa</strong>
             </div>
             <div className="chart-meta-chip" style={{ padding: '0.6rem 1.2rem', borderRadius: '9999px', background: 'rgba(39, 39, 42, 0.4)', border: '1px solid #27272A', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <span className="metric-label" style={{ color: '#71717a', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Output</span>
@@ -388,32 +445,7 @@ export default function BirthChartPage() {
                     </div>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginTop: '0.5rem' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                      <label style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#a1a1aa' }}>Format</label>
-                      <select
-                        value={chartType}
-                        onChange={(e) => setChartType(e.target.value)}
-                        style={{ width: '100%', padding: '0.85rem', fontSize: '0.9rem', borderRadius: '0.5rem', background: 'rgba(24, 24, 27, 0.6)', border: '1px solid #27272A', color: '#e4e4e7', outline: 'none' }}
-                      >
-                        <option value="RasiD1">Rasi (D1)</option>
-                        <option value="NavamsaD9">Navamsa (D9)</option>
-                      </select>
-                    </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                      <label style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#a1a1aa' }}>Ayanamsa</label>
-                      <select
-                        value={ayanamsa}
-                        onChange={(e) => setAyanamsa(e.target.value)}
-                        style={{ width: '100%', padding: '0.85rem', fontSize: '0.9rem', borderRadius: '0.5rem', background: 'rgba(24, 24, 27, 0.6)', border: '1px solid #27272A', color: '#e4e4e7', outline: 'none' }}
-                      >
-                        <option value="RAMAN">Raman</option>
-                        <option value="LAHIRI">Lahiri</option>
-                        <option value="KP">K.P.</option>
-                      </select>
-                    </div>
-                  </div>
 
                   <div style={{ marginTop: '1rem' }}>
                     <button
@@ -478,7 +510,7 @@ export default function BirthChartPage() {
                         <div style={{ textAlign: 'center', marginBottom: '1.5rem', width: '100%' }}>
                           <span style={{ color: '#6D5DFB', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '0.3rem' }}>Generated Output</span>
                           <h3 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#fff', margin: '0 0 0.2rem 0' }}>
-                            {chartType === 'RasiD1' ? 'Rasi D-1 Chart' : `${chartType} Chart`}
+                            Rasi D-1 Chart
                           </h3>
                         </div>
 
