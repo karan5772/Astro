@@ -6,7 +6,6 @@ import { Star, Zap, Sparkles, CheckCircle2 } from "lucide-react";
 import toast from "react-hot-toast";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import "../astraeus.css";
 
 interface Plan {
   id: string;
@@ -179,31 +178,32 @@ export default function PricingPage() {
   };
 
   return (
-    <div className="theme-astraeus page-shell">
+    <div className="min-h-screen bg-[#0F1115] text-white flex flex-col justify-between selection:bg-primary/30 selection:text-white">
       <Navbar variant="pricing" />
 
-      <main className="page-main astral-container">
-        <div className="glow-orb glow-orb-1" />
-        <div className="glow-orb glow-orb-2" />
+      <main className="relative z-10 pt-32 pb-16 max-w-[1280px] mx-auto px-6 flex-grow w-full">
+        {/* Glow Background Orbs */}
+        <div className="absolute w-[400px] h-[400px] rounded-full bg-primary/5 blur-3xl pointer-events-none" style={{ top: '15%', left: '10%' }}></div>
+        <div className="absolute w-[400px] h-[400px] rounded-full bg-[#9d4edd]/5 blur-3xl pointer-events-none" style={{ bottom: '15%', right: '10%' }}></div>
 
-        <header className="page-heading">
-          <p className="section-kicker">Pricing</p>
-          <h1 className="page-title">Invest in focused guidance, not a bloated subscription.</h1>
-          <p className="page-lead">
+        <header className="flex flex-col gap-3 mb-12 text-center max-w-[720px] mx-auto">
+          <p className="text-xs uppercase tracking-widest font-bold text-primary">Pricing</p>
+          <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-white leading-tight">Invest in focused guidance, not a bloated subscription.</h1>
+          <p className="text-sm text-white/50 leading-relaxed max-w-[580px] mx-auto mt-2">
             Your first 15 text messages are free. When you want deeper voice sessions, pick the pass that fits the depth of the conversation.
           </p>
 
           {voiceBalanceInSeconds > 0 && (
-            <div className="glass-panel page-card" style={{ display: "inline-block", marginTop: "1.5rem" }}>
-              <p style={{ margin: 0, color: "var(--tertiary)", fontWeight: 600 }}>You currently have an active Cosmic Session.</p>
-              <p style={{ margin: "0.5rem 0 0", color: "var(--on-surface-variant)" }}>
+            <div className="inline-block mt-6 p-4 bg-secondary/80 border border-card-border rounded-lg max-w-[500px] mx-auto text-left">
+              <p className="text-primary font-semibold text-sm">You currently have an active Cosmic Session.</p>
+              <p className="text-white/50 text-xs mt-1">
                 You have {Math.ceil(voiceBalanceInSeconds / 60)} minutes of active voice time remaining.
               </p>
             </div>
           )}
         </header>
 
-        <section className="page-grid">
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
           {PLANS.map((plan) => {
             const isFeatured = plan.featured;
 
@@ -213,38 +213,40 @@ export default function PricingPage() {
                 initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4 }}
-                className={`glass-panel page-card shared-surface pricing-card ${isFeatured ? "pricing-card-featured" : ""}`}
+                className={`p-8 bg-[#18181b]/40 backdrop-blur-lg border rounded-lg shadow-xl relative flex flex-col justify-between h-full transition-all duration-300 hover:border-primary/50 hover:shadow-[0_8px_32px_rgba(109,93,251,0.05)] hover:-translate-y-1 ${isFeatured ? "border-primary bg-secondary/60 hover:border-primary/80 shadow-[0_0_30px_rgba(109,93,251,0.15)]" : "border-card-border"}`}
               >
                 {isFeatured && plan.badgeText && (
-                  <div className="pricing-badge">{plan.badgeText}</div>
+                  <div className="absolute top-4 right-4 bg-primary text-white text-[9px] uppercase tracking-widest font-extrabold px-2.5 py-1 rounded-full">{plan.badgeText}</div>
                 )}
 
-                <div className="pricing-card-top">
-                  <div className="pricing-icon">{getPlanIcon(plan.icon, plan.iconColor)}</div>
-                  <div>
-                    <h2 className="pricing-title">{plan.displayName}</h2>
-                    <p className="pricing-desc">{plan.description}</p>
+                <div>
+                  <div className="flex items-start gap-4 mb-6">
+                    <div className="w-12 h-12 rounded-lg bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shrink-0">{getPlanIcon(plan.icon, plan.iconColor)}</div>
+                    <div>
+                      <h2 className="text-lg font-bold text-white">{plan.displayName}</h2>
+                      <p className="text-xs text-white/50 leading-relaxed mt-1">{plan.description}</p>
+                    </div>
                   </div>
-                </div>
 
-                <div className="pricing-price">
-                  ${plan.price}
-                  <span>/ {plan.durationInMinutes} mins</span>
-                </div>
+                  <div className="text-3xl font-black text-white my-6 flex items-baseline gap-1">
+                    ${plan.price}
+                    <span className="text-xs font-medium text-white/40">/ {plan.durationInMinutes} mins</span>
+                  </div>
 
-                <ul className="pricing-features">
-                  {plan.features.map((feature) => (
-                    <li key={feature}>
-                      <CheckCircle2 size={18} />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
+                  <ul className="flex flex-col gap-3 mb-8 list-none p-0">
+                    {plan.features.map((feature) => (
+                      <li key={feature} className="flex items-center gap-2.5 text-xs text-white/70">
+                        <CheckCircle2 size={18} className="text-primary shrink-0" />
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
 
                 <button
                   type="button"
                   onClick={() => handleSubscribe(plan.name, plan.price, plan.durationInMinutes)}
-                  className={isFeatured ? "glow-button-primary pricing-action" : "glow-button-secondary pricing-action"}
+                  className={`w-full text-center py-3 rounded-lg font-bold text-xs uppercase tracking-wider cursor-pointer transition-all duration-300 ${isFeatured ? "bg-gradient-to-r from-primary to-[#4f46e5] text-white shadow-[0_0_20px_rgba(109,93,251,0.3)] hover:shadow-[0_0_30px_rgba(109,93,251,0.5)]" : "bg-secondary/80 border border-card-border hover:border-white/20 text-white"}`}
                   disabled={loading}
                 >
                   {loading ? "Processing..." : isFeatured ? "Start Deep Healing" : plan.id === "quick-clarity" ? "Begin Quick Session" : "Embrace Awakening"}

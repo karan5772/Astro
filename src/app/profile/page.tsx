@@ -20,10 +20,12 @@ import {
   BookOpen,
   Activity,
   CreditCard,
+  ChevronDown,
+  ChevronUp,
+  Filter,
 } from 'lucide-react';
-import Sidebar from '@/components/Sidebar';
+import Navbar from '@/components/Navbar';
 import toast from 'react-hot-toast';
-import '../astraeus.css';
 
 interface Prediction {
   name: string;
@@ -53,6 +55,76 @@ interface GeocodeResult {
   latitude: number;
   longitude: number;
 }
+
+const getCosmicOrigins = (dateStr: string | null, timeStr: string | null) => {
+  if (!dateStr) return null;
+
+  // Weekday and ruler
+  // Parse YYYY-MM-DD safely
+  const parts = dateStr.split('-');
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10) - 1; // months are 0-indexed
+  const day = parseInt(parts[2], 10);
+  const birthDateObj = new Date(Date.UTC(year, month, day));
+  
+  const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const weekday = weekdays[birthDateObj.getUTCDay()];
+  
+  const rulers: Record<string, { planet: string; symbol: string; description: string }> = {
+    Sunday: { planet: 'Sun', symbol: '☀️', description: 'Represents expression, life force, and the true self.' },
+    Monday: { planet: 'Moon', symbol: '🌙', description: 'Governs emotion, intuition, and the subconscious mind.' },
+    Tuesday: { planet: 'Mars', symbol: '♂️', description: 'Rules drive, determination, energy, and physical action.' },
+    Wednesday: { planet: 'Mercury', symbol: '☿', description: 'Governs communication, intellect, logic, and travel.' },
+    Thursday: { planet: 'Jupiter', symbol: '♃', description: 'Rules luck, expansion, wisdom, and higher learning.' },
+    Friday: { planet: 'Venus', symbol: '♀', description: 'Governs love, beauty, value, and personal relationships.' },
+    Saturday: { planet: 'Saturn', symbol: '♄', description: 'Rules structure, boundaries, discipline, and life lessons.' },
+  };
+  const ruler = rulers[weekday];
+
+  // Sect (Day vs Night)
+  let sect = 'Unknown';
+  let sectIcon = '✨';
+  let sectDescription = '';
+  if (timeStr) {
+    const hour = parseInt(timeStr.split(':')[0], 10);
+    const isDay = hour >= 6 && hour < 18;
+    sect = isDay ? 'Diurnal (Day Birth)' : 'Nocturnal (Night Birth)';
+    sectIcon = isDay ? '☀️' : '🌙';
+    sectDescription = isDay 
+      ? 'The Sun is your primary luminary. Your chart favors external expression, active focus, and conscious goals.' 
+      : 'The Moon is your primary luminary. Your chart leans toward emotional depth, intuition, and subconscious processes.';
+  }
+
+  // Solar Season
+  const m = month + 1; // 1-12
+  const d = day;
+  let season = 'Unknown';
+  let seasonIcon = '✨';
+  
+  if ((m === 12 && d >= 21) || m === 1 || m === 2 || (m === 3 && d < 20)) {
+    season = 'Winter Solstice Cycle';
+    seasonIcon = '❄️';
+  } else if ((m === 3 && d >= 20) || m === 4 || m === 5 || (m === 6 && d < 21)) {
+    season = 'Spring Equinox Cycle';
+    seasonIcon = '🌱';
+  } else if ((m === 6 && d >= 21) || m === 7 || m === 8 || (m === 9 && d < 22)) {
+    season = 'Summer Solstice Cycle';
+    seasonIcon = '☀️';
+  } else {
+    season = 'Autumn Equinox Cycle';
+    seasonIcon = '🍂';
+  }
+
+  return {
+    weekday,
+    ruler,
+    sect,
+    sectIcon,
+    sectDescription,
+    season,
+    seasonIcon,
+  };
+};
 
 export default function ProfilePage() {
   const { user, isLoaded: clerkLoaded } = useUser();
@@ -212,108 +284,43 @@ export default function ProfilePage() {
 
   if (!clerkLoaded || loading) {
     return (
-      <div className="theme-astraeus sidebar-layout min-h-screen flex items-center justify-center">
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', marginTop: '20vh', width: '100%' }}>
-          <Loader2 size={40} className="spin" color="#6D5DFB" />
-          <p style={{ color: '#a1a1aa', fontSize: '0.95rem' }}>Aligning solar system details...</p>
+      <div className="min-h-screen bg-[#0F1115] text-white flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4 mt-[20vh] w-full">
+          <Loader2 size={40} className="animate-spin text-primary" />
+          <p className="text-white/50 text-sm">Aligning solar system details...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="theme-astraeus sidebar-layout min-h-screen">
-      <style>{`
-        .spin {
-          animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-          100% { transform: rotate(360deg); }
-        }
-        .prediction-card {
-          background: rgba(24, 24, 27, 0.4);
-          border: 1px solid rgba(39, 39, 42, 0.5);
-          border-radius: 0.75rem;
-          padding: 1.25rem;
-          transition: all 0.2s ease;
-        }
-        .prediction-card:hover {
-          border-color: rgba(109, 93, 251, 0.5);
-          background: rgba(24, 24, 27, 0.6);
-        }
-        .profile-page-main {
-          padding: 2rem 3rem;
-        }
-        .profile-grid {
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
-          gap: 2.5rem;
-        }
-        .profile-form-row {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 1.25rem;
-        }
-        .profile-stats-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 1.25rem;
-        }
-        @media (max-width: 1024px) {
-          .profile-grid {
-            grid-template-columns: 1fr !important;
-            gap: 2rem !important;
-          }
-          .profile-header-card {
-            flex-direction: column;
-            align-items: flex-start !important;
-            gap: 1.5rem !important;
-          }
-        }
-        @media (max-width: 768px) {
-          .profile-page-main {
-            padding: 1.5rem 1rem !important;
-          }
-        }
-        @media (max-width: 600px) {
-          .profile-form-row {
-            grid-template-columns: 1fr !important;
-            gap: 1rem !important;
-          }
-          .profile-stats-grid {
-            grid-template-columns: 1fr !important;
-          }
-        }
-      `}</style>
+    <div className="min-h-screen bg-[#0F1115] text-white flex flex-col selection:bg-primary/30 selection:text-white">
+      <Navbar variant="dashboard" />
 
-      <Sidebar />
+      <main className="flex-grow pt-32 pb-16 px-4 md:px-12 flex flex-col items-center overflow-y-auto w-full relative z-10">
+        {/* Glow Background Orbs */}
+        <div className="absolute w-[400px] h-[400px] rounded-full bg-primary/5 blur-3xl pointer-events-none" style={{ top: '15%', left: '10%' }}></div>
+        <div className="absolute w-[400px] h-[400px] rounded-full bg-[#9d4edd]/5 blur-3xl pointer-events-none" style={{ bottom: '15%', right: '10%' }}></div>
 
-      <main className="page-main profile-page-main relative z-10 flex-1 fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', overflowY: 'auto' }}>
-        <div className="glow-orb glow-orb-1 pointer-events-none"></div>
-        <div className="glow-orb glow-orb-2 pointer-events-none"></div>
-
-        <div className="astral-container" style={{ width: '100%', maxWidth: '1280px' }}>
+        <div className="w-full max-w-[1280px]">
 
           {/* Page Heading */}
-          <div className="page-heading" style={{ marginBottom: '2rem' }}>
-            <p className="section-kicker" style={{ color: '#6D5DFB', fontWeight: 600, letterSpacing: '0.05em', marginBottom: '0.5rem', textTransform: 'uppercase', fontSize: '0.75rem' }}>Account & Destiny</p>
-            <h1 className="page-title" style={{ fontSize: '2.5rem', margin: '0 0 0.5rem 0', fontWeight: 800, color: '#fff' }}>User Profile</h1>
-            {/* <p className="page-lead" style={{ maxWidth: '48rem', color: '#a1a1aa', fontSize: '1.05rem', lineHeight: 1.6 }}>
-              Review your cosmic blueprint, update natal parameters, and monitor your subscription.
-            </p> */}
+          <div className="mb-8">
+            <p className="text-xs uppercase tracking-widest font-bold text-primary mb-2">Account & Destiny</p>
+            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white">User Profile</h1>
           </div>
 
           {/* User Info Header Block */}
-          <div className="glass-panel profile-header-card" style={{ width: '100%', background: 'rgba(9, 9, 11, 0.6)', border: '1px solid rgba(39, 39, 42, 0.8)', borderRadius: '1.5rem', padding: '2rem', marginBottom: '2.5rem', display: 'flex', flexWrap: 'wrap', gap: '2rem', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-              <div style={{ scale: 1.4, paddingLeft: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <UserButton appearance={{ elements: { avatarBox: { width: '46px', height: '46px', border: '2px solid #6D5DFB' } } }} />
+          <div className="w-full bg-secondary/40 backdrop-blur-lg border border-card-border rounded-2xl p-8 mb-10 flex flex-wrap gap-8 items-center justify-between shadow-xl">
+            <div className="flex items-center gap-6">
+              <div className="scale-125 md:scale-150 pl-2 flex items-center justify-center">
+                <UserButton appearance={{ elements: { avatarBox: { width: '40px', height: '40px', border: '2px solid #6D5DFB' } } }} />
               </div>
               <div>
-                <h2 style={{ margin: '0 0 0.3rem 0', fontSize: '1.5rem', fontWeight: 700, color: '#fff' }}>
+                <h2 className="text-xl md:text-2xl font-bold text-white mb-1">
                   {user?.fullName || userData?.email.split('@')[0] || 'Astro Traveler'}
                 </h2>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#a1a1aa', fontSize: '0.9rem' }}>
+                <div className="flex items-center gap-2 text-white/50 text-sm">
                   <Mail size={14} />
                   <span>{userData?.email}</span>
                 </div>
@@ -321,21 +328,21 @@ export default function ProfilePage() {
             </div>
 
             {/* Plan Status Card */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 1.5rem', borderRadius: '1rem', background: userData?.isPro ? 'rgba(30, 46, 61, 0.39)' : 'rgba(39, 39, 42, 0.3)', border: userData?.isPro ? '1px solid rgba(0, 76, 255, 0.84)' : '1px solid rgba(63, 63, 70, 0.4)' }}>
+            <div className={`flex items-center gap-3.5 px-6 py-4 rounded-xl border ${userData?.isPro ? 'bg-[#1e2e3d]/40 border-blue-600/80 shadow-[0_0_20px_rgba(0,76,255,0.1)]' : 'bg-[#18181b]/35 border-card-border'}`}>
               {userData?.isPro ? (
                 <>
-                  <ShieldCheck size={24} color="#5578f7ff" />
+                  <ShieldCheck size={24} className="text-blue-500" />
                   <div>
-                    <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#a855f7', fontWeight: 600 }}>Plan tier</div>
-                    <div style={{ color: '#fff', fontSize: '1rem', fontWeight: 700 }}>Pro Member</div>
+                    <div className="text-[10px] uppercase tracking-wider font-extrabold text-purple-400">Plan tier</div>
+                    <div className="text-white text-base font-bold">Pro Member</div>
                   </div>
                 </>
               ) : (
                 <>
-                  <ShieldAlert size={24} color="#71717a" />
+                  <ShieldAlert size={24} className="text-white/40" />
                   <div>
-                    <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#71717a', fontWeight: 600 }}>Plan tier</div>
-                    <div style={{ color: '#fff', fontSize: '1rem', fontWeight: 700 }}>Free Account</div>
+                    <div className="text-[10px] uppercase tracking-wider font-extrabold text-white/40">Plan tier</div>
+                    <div className="text-white text-base font-bold">Free Account</div>
                   </div>
                 </>
               )}
@@ -343,71 +350,64 @@ export default function ProfilePage() {
           </div>
 
           {/* Grid: Left - Edit Natal Info, Right - Predictions */}
-          <div className="profile-grid" style={{ alignItems: 'start', paddingBottom: '3rem' }}>
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-10 items-start pb-12">
 
             {/* Left: Natal Form */}
             <motion.section
-              className="glass-panel"
-              style={{
-                background: 'rgba(9, 9, 11, 0.7)',
-                border: '1px solid rgba(39, 39, 42, 0.6)',
-                borderRadius: '1.5rem',
-                padding: '2rem',
-                position: 'relative'
-              }}
+              className="bg-secondary/40 backdrop-blur-lg border border-card-border rounded-2xl p-8 shadow-xl"
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', borderBottom: '1px solid rgba(39,39,42,0.8)', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
-                <Sparkles color="#6D5DFB" size={20} />
-                <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#f4f4f5', fontWeight: 600 }}>Birth Parameters</h3>
+              <div className="flex items-center gap-3 border-b border-card-border pb-4 mb-6">
+                <Sparkles className="text-primary" size={20} />
+                <h3 className="text-lg font-bold text-white">Birth Parameters</h3>
               </div>
 
-              <form onSubmit={handleUpdateProfile} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                <div className="profile-form-row">
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <label style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#a1a1aa', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+              <form onSubmit={handleUpdateProfile} className="flex flex-col gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[10px] uppercase tracking-wider font-extrabold text-white/50 flex items-center gap-1.5">
                       <Calendar size={12} /> Date
                     </label>
                     <input
                       type="date"
                       value={date}
                       onChange={(e) => setDate(e.target.value)}
-                      style={{ width: '100%', padding: '0.85rem', fontSize: '0.9rem', borderRadius: '0.5rem', background: 'rgba(24, 24, 27, 0.6)', border: '1px solid #27272A', color: '#e4e4e7', outline: 'none' }}
+                      className="w-full p-3 text-sm rounded-lg bg-secondary/80 border border-card-border text-white outline-none focus:border-primary/50 transition-colors"
                       required
                     />
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <label style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#a1a1aa', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[10px] uppercase tracking-wider font-extrabold text-white/50 flex items-center gap-1.5">
                       <Clock size={12} /> Time
                     </label>
                     <input
                       type="time"
                       value={time}
                       onChange={(e) => setTime(e.target.value)}
-                      style={{ width: '100%', padding: '0.85rem', fontSize: '0.9rem', borderRadius: '0.5rem', background: 'rgba(24, 24, 27, 0.6)', border: '1px solid #27272A', color: '#e4e4e7', outline: 'none' }}
+                      className="w-full p-3 text-sm rounded-lg bg-secondary/80 border border-card-border text-white outline-none focus:border-primary/50 transition-colors"
                       required
                     />
                   </div>
                 </div>
 
-                <div ref={searchContainerRef} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', position: 'relative' }}>
-                  <label style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#a1a1aa', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                <div ref={searchContainerRef} className="flex flex-col gap-2 relative">
+                  <label className="text-[10px] uppercase tracking-wider font-extrabold text-white/50 flex items-center gap-1.5">
                     <MapPin size={12} /> Birth Place
                   </label>
-                  <div style={{ position: 'relative', width: '100%' }}>
+                  <div className="relative w-full">
                     <input
                       type="text"
                       placeholder="Search city/place..."
                       value={locationQuery}
                       onChange={(e) => setLocationQuery(e.target.value)}
-                      style={{ width: '100%', padding: '0.85rem', paddingRight: '2.5rem', fontSize: '0.9rem', borderRadius: '0.5rem', background: 'rgba(24, 24, 27, 0.6)', border: '1px solid #27272A', color: '#e4e4e7', outline: 'none' }}
+                      className="w-full p-3 pr-10 text-sm rounded-lg bg-secondary/80 border border-card-border text-white outline-none focus:border-primary/50 transition-colors"
                       required
                     />
-                    <div style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#71717a' }}>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40">
                       {isSearchingLocation ? (
-                        <Loader2 size={16} className="spin text-primary" color="#6D5DFB" />
+                        <Loader2 size={16} className="animate-spin text-primary" />
                       ) : (
                         <Search size={14} />
                       )}
@@ -417,7 +417,7 @@ export default function ProfilePage() {
                   <AnimatePresence>
                     {suggestions.length > 0 && (
                       <motion.div
-                        style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, right: 0, background: '#18181B', border: '1px solid #27272A', borderRadius: '0.5rem', zIndex: 50, maxHeight: '200px', overflowY: 'auto', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.5)' }}
+                        className="absolute top-[calc(100%+8px)] left-0 right-0 bg-[#18181B] border border-card-border rounded-lg z-50 max-h-[200px] overflow-y-auto shadow-2xl"
                         initial={{ opacity: 0, y: -5 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -5 }}
@@ -427,10 +427,10 @@ export default function ProfilePage() {
                             key={idx}
                             type="button"
                             onClick={() => handleSelectLocation(loc)}
-                            style={{ width: '100%', textAlign: 'left', padding: '0.85rem 1rem', background: 'transparent', border: 'none', borderBottom: '1px solid rgba(39,39,42,0.5)', color: '#d4d4d8', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}
+                            className="w-full text-left p-3 hover:bg-white/5 border-b border-white/5 text-white/80 text-xs flex items-center gap-2 cursor-pointer transition-colors"
                           >
-                            <MapPin size={14} color="#6D5DFB" style={{ flexShrink: 0 }} />
-                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{loc.name}</span>
+                            <MapPin size={14} className="text-primary shrink-0" />
+                            <span className="truncate">{loc.name}</span>
                           </button>
                         ))}
                       </motion.div>
@@ -438,15 +438,15 @@ export default function ProfilePage() {
                   </AnimatePresence>
                 </div>
 
-                <div className="profile-form-row">
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <label style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#a1a1aa', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[10px] uppercase tracking-wider font-extrabold text-white/50 flex items-center gap-1.5">
                       <Globe size={12} /> Timezone
                     </label>
                     <select
                       value={timezoneOffset}
                       onChange={(e) => setTimezoneOffset(e.target.value)}
-                      style={{ width: '100%', padding: '0.85rem', fontSize: '0.9rem', borderRadius: '0.5rem', background: 'rgba(24, 24, 27, 0.6)', border: '1px solid #27272A', color: '#e4e4e7', outline: 'none' }}
+                      className="w-full p-3 text-sm rounded-lg bg-secondary/80 border border-card-border text-white outline-none focus:border-primary/50 transition-colors"
                     >
                       <option value="-08:00">UTC-08:00 (PST)</option>
                       <option value="-05:00">UTC-05:00 (EST)</option>
@@ -456,50 +456,32 @@ export default function ProfilePage() {
                     </select>
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <label style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#a1a1aa', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[10px] uppercase tracking-wider font-extrabold text-white/50 flex items-center gap-1.5">
                       <Compass size={12} /> Coordinates
                     </label>
-                    <div style={{ width: '100%', padding: '0.85rem', fontSize: '0.85rem', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(24,24,27,0.3)', border: '1px solid rgba(39, 39, 42, 0.4)', cursor: 'not-allowed' }}>
+                    <div className="w-full p-3 text-xs rounded-lg flex items-center justify-between bg-secondary/40 border border-white/5 cursor-not-allowed">
                       {latitude !== null && longitude !== null ? (
-                        <span style={{ color: '#cebdff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <span className="text-[#cebdff] truncate">
                           {latitude.toFixed(2)}°N | {longitude.toFixed(2)}°E
                         </span>
                       ) : (
-                        <span style={{ color: '#71717a' }}>None</span>
+                        <span className="text-white/40">None</span>
                       )}
-                      <Globe size={14} color="#71717a" style={{ flexShrink: 0 }} />
+                      <Globe size={14} className="text-white/40 shrink-0" />
                     </div>
                   </div>
                 </div>
 
-
-                <div style={{ marginTop: '0.5rem' }}>
+                <div className="mt-4">
                   <button
                     type="submit"
-                    style={{
-                      width: '100%',
-                      padding: '1rem',
-                      fontSize: '0.95rem',
-                      borderRadius: '0.75rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.5rem',
-                      fontWeight: 600,
-                      cursor: isUpdating ? 'not-allowed' : 'pointer',
-                      background: 'linear-gradient(135deg, #6D5DFB 0%, #5b4be3 100%)',
-                      color: '#fff',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      boxShadow: '0 8px 16px -4px rgba(109, 93, 251, 0.4)',
-                      opacity: isUpdating ? 0.7 : 1,
-                      transition: 'all 0.2s ease'
-                    }}
+                    className={`w-full py-3.5 px-6 rounded-lg font-bold text-xs uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2 shadow-[0_8px_16px_-4px_rgba(109,93,251,0.4)] bg-gradient-to-r from-primary to-[#5b4be3] text-white hover:opacity-90 transition-all ${isUpdating ? 'opacity-70 cursor-not-allowed' : ''}`}
                     disabled={isUpdating}
                   >
                     {isUpdating ? (
                       <>
-                        <Loader2 size={16} className="spin" />
+                        <Loader2 size={16} className="animate-spin" />
                         RECALCULATING DESTINY...
                       </>
                     ) : (
@@ -515,79 +497,70 @@ export default function ProfilePage() {
 
             {/* Right: Stats & Payments */}
             <motion.section
-              className="glass-panel"
-              style={{
-                background: 'rgba(9, 9, 11, 0.7)',
-                border: '1px solid rgba(39, 39, 42, 0.6)',
-                borderRadius: '1.5rem',
-                padding: '2rem',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '2rem'
-              }}
+              className="bg-secondary/40 backdrop-blur-lg border border-card-border rounded-2xl p-8 shadow-xl flex flex-col gap-8"
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.1 }}
             >
               {/* Telemetry Stats */}
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', borderBottom: '1px solid rgba(39,39,42,0.8)', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
-                  <Activity color="#6D5DFB" size={20} />
-                  <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#f4f4f5', fontWeight: 600 }}>Cosmic Telemetry</h3>
+                <div className="flex items-center gap-3 border-b border-card-border pb-4 mb-6">
+                  <Activity className="text-primary" size={20} />
+                  <h3 className="text-lg font-bold text-white">Cosmic Telemetry</h3>
                 </div>
 
-                <div className="profile-stats-grid">
-                  <div style={{ background: 'rgba(24, 24, 27, 0.4)', border: '1px solid rgba(39, 39, 42, 0.5)', borderRadius: '0.75rem', padding: '1.25rem' }}>
-                    <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#71717a', marginBottom: '0.25rem' }}>Messages Sent / Remaining</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#fff' }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="bg-secondary/20 border border-white/5 rounded-xl p-5">
+                    <div className="text-[10px] uppercase tracking-wider font-extrabold text-white/40 mb-1">Messages Sent / Remaining</div>
+                    <div className="text-2xl font-bold text-white">
                       {userData?.messageCount || 0} / {userData?.isPro ? '∞' : Math.max(0, 15 - (userData?.messageCount || 0))}
                     </div>
                   </div>
 
-                  <div style={{ background: 'rgba(24, 24, 27, 0.4)', border: '1px solid rgba(39, 39, 42, 0.5)', borderRadius: '0.75rem', padding: '1.25rem' }}>
-                    <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#71717a', marginBottom: '0.25rem' }}>Voice Time Used / Remaining</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#6D5DFB' }}>
-                      {getVoiceTimeUsed()} / {getVoiceTimeRemaining()} <span style={{ fontSize: '0.85rem', color: '#71717a', fontWeight: 500 }}>min</span>
+                  <div className="bg-secondary/20 border border-white/5 rounded-xl p-5">
+                    <div className="text-[10px] uppercase tracking-wider font-extrabold text-white/40 mb-1">Voice Time Used / Remaining</div>
+                    <div className="text-2xl font-bold text-primary">
+                      {getVoiceTimeUsed()} / {getVoiceTimeRemaining()} <span className="text-xs font-medium text-white/40">min</span>
                     </div>
                   </div>
 
-                  <div style={{ background: 'rgba(24, 24, 27, 0.4)', border: '1px solid rgba(39, 39, 42, 0.5)', borderRadius: '0.75rem', padding: '1.25rem' }}>
-                    <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#71717a', marginBottom: '0.25rem' }}>Total Voice Purchased</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#fff' }}>
-                      {getTotalVoiceMinutes()} <span style={{ fontSize: '0.85rem', color: '#71717a', fontWeight: 500 }}>min</span>
+                  <div className="bg-secondary/20 border border-white/5 rounded-xl p-5">
+                    <div className="text-[10px] uppercase tracking-wider font-extrabold text-white/40 mb-1">Total Voice Purchased</div>
+                    <div className="text-2xl font-bold text-white">
+                      {getTotalVoiceMinutes()} <span className="text-xs font-medium text-white/40">min</span>
                     </div>
                   </div>
 
-                  <div style={{ background: 'rgba(24, 24, 27, 0.4)', border: '1px solid rgba(39, 39, 42, 0.5)', borderRadius: '0.75rem', padding: '1.25rem' }}>
-                    <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#71717a', marginBottom: '0.25rem' }}>Predictions</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#fff' }}>{userData?.predictions?.length || 0}</div>
+                  <div className="bg-secondary/20 border border-white/5 rounded-xl p-5">
+                    <div className="text-[10px] uppercase tracking-wider font-extrabold text-white/40 mb-1">Predictions</div>
+                    <div className="text-2xl font-bold text-white">{userData?.predictions?.length || 0}</div>
                   </div>
                 </div>
               </div>
 
               {/* Transactions History */}
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', borderBottom: '1px solid rgba(39,39,42,0.8)', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
-                  <CreditCard color="#a855f7" size={20} />
-                  <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#f4f4f5', fontWeight: 600 }}>Billing & Passes</h3>
+                <div className="flex items-center gap-3 border-b border-card-border pb-4 mb-6">
+                  <CreditCard className="text-purple-400" size={20} />
+                  <h3 className="text-lg font-bold text-white">Billing & Passes</h3>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '250px', overflowY: 'auto', paddingRight: '0.25rem' }}>
+                <div className="flex flex-col gap-3 max-h-[250px] overflow-y-auto pr-1">
                   {userData?.payments && userData.payments.length > 0 ? (
                     userData.payments.map((payment: any, index: number) => (
-                      <div key={index} style={{ background: 'rgba(24, 24, 27, 0.3)', border: '1px solid rgba(39, 39, 42, 0.4)', borderRadius: '0.75rem', padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div key={index} className="bg-secondary/20 border border-white/5 rounded-xl p-4 flex justify-between items-center">
                         <div>
-                          <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff' }}>{payment.durationInMinutes} Minutes Pass</div>
-                          <div style={{ fontSize: '0.7rem', color: '#71717a', marginTop: '0.15rem' }}>ID: {payment.paymentId}</div>
+                          <div className="text-sm font-semibold text-white">{payment.durationInMinutes} Minutes Pass</div>
+                          <div className="text-[10px] text-white/40 mt-0.5">ID: {payment.paymentId}</div>
                         </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#fff' }}>${payment.amount}</div>
-                          <div style={{ fontSize: '0.7rem', color: '#71717a', marginTop: '0.15rem' }}>{new Date(payment.date).toLocaleDateString()}</div>
+                        <div className="text-right">
+                          <div className="text-sm font-bold text-white">${payment.amount}</div>
+                          <div className="text-[10px] text-white/40 mt-0.5">{new Date(payment.date).toLocaleDateString()}</div>
                         </div>
                       </div>
                     ))
                   ) : (
-                    <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#71717a', fontSize: '0.85rem' }}>
+                    <div className="text-center py-8 text-white/40 text-sm">
                       No transactions recorded yet
                     </div>
                   )}
@@ -595,6 +568,86 @@ export default function ProfilePage() {
               </div>
             </motion.section>
           </div>
+
+          {/* Cosmic Origins Dashboard */}
+          {userData?.hasBirthDetails && (() => {
+            const origins = getCosmicOrigins(userData.birthDate, userData.birthTime);
+            if (!origins) return null;
+
+            return (
+              <motion.section
+                className="mt-10 bg-secondary/40 backdrop-blur-lg border border-card-border rounded-2xl p-8 shadow-xl"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.2 }}
+              >
+                <div className="border-b border-card-border pb-6 mb-6">
+                  <div className="flex items-center gap-3">
+                    <Compass className="text-primary animate-pulse" size={24} />
+                    <div>
+                      <h3 className="text-xl font-bold text-white">Cosmic Origin Alignments</h3>
+                      <p className="text-xs text-white/50 mt-1">Astronomical alignments calculated directly from your birth parameters</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Planetary Day Ruler */}
+                  <div className="bg-[#18181b]/35 border border-white/5 hover:border-primary/20 rounded-xl p-6 flex flex-col justify-between transition-all duration-300">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider font-extrabold text-white/40 mb-2">Planetary Day Ruler</div>
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className="text-3xl">{origins.ruler?.symbol}</span>
+                        <div>
+                          <div className="text-base font-bold text-white">{origins.weekday}</div>
+                          <div className="text-xs text-primary font-medium">Ruled by the {origins.ruler?.planet}</div>
+                        </div>
+                      </div>
+                      <p className="text-xs text-white/60 leading-relaxed">
+                        {origins.ruler?.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Sect Info */}
+                  <div className="bg-[#18181b]/35 border border-white/5 hover:border-primary/20 rounded-xl p-6 flex flex-col justify-between transition-all duration-300">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider font-extrabold text-white/40 mb-2">Diurnal/Nocturnal Sect</div>
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className="text-3xl">{origins.sectIcon}</span>
+                        <div>
+                          <div className="text-base font-bold text-white">
+                            {origins.sect.includes('Diurnal') ? 'Day Birth' : 'Night Birth'}
+                          </div>
+                          <div className="text-xs text-primary font-medium">{origins.sect}</div>
+                        </div>
+                      </div>
+                      <p className="text-xs text-white/60 leading-relaxed">
+                        {origins.sectDescription}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Solstice/Equinox */}
+                  <div className="bg-[#18181b]/35 border border-white/5 hover:border-primary/20 rounded-xl p-6 flex flex-col justify-between transition-all duration-300">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider font-extrabold text-white/40 mb-2">Solar Season Alignment</div>
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className="text-3xl">{origins.seasonIcon}</span>
+                        <div>
+                          <div className="text-base font-bold text-white">{origins.season}</div>
+                          <div className="text-xs text-primary font-medium">Solar Grid Placement</div>
+                        </div>
+                      </div>
+                      <p className="text-xs text-white/60 leading-relaxed">
+                        Determines the balance of light and darkness on Earth at the exact moment of your arrival.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </motion.section>
+            );
+          })()}
         </div>
       </main>
     </div>

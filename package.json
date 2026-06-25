@@ -12,6 +12,7 @@
     "@ai-sdk/openai": "^3.0.58",
     "@ai-sdk/react": "^3.0.176",
     "@clerk/nextjs": "^7.3.0",
+    "@tailwindcss/postcss": "^4.3.1",
     "ai": "^6.0.174",
     "framer-motion": "^12.38.0",
     "lucide-react": "^1.14.0",
@@ -19,10 +20,12 @@
     "mongoose": "^9.6.1",
     "next": "16.2.4",
     "openai": "^6.35.0",
+    "postcss": "^8.5.15",
     "razorpay": "^2.9.6",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "react-hot-toast": "^2.6.0"
+    "react-hot-toast": "^2.6.0",
+    "tailwindcss": "^4.3.1"
   },
   "devDependencies": {
     "@types/node": "^20",

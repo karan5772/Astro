@@ -3,44 +3,40 @@
 import { useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import "../astraeus.css";
 
 export default function PrivacyPage() {
   useEffect(() => {
-    document.body.classList.add("astraeus-active");
-    return () => {
-      document.body.classList.remove("astraeus-active");
-    };
+    // Body styling is handled via Tailwind and globals.css
   }, []);
 
   return (
-    <div className="theme-astraeus page-shell">
+    <div className="min-h-screen bg-[#0F1115] text-white flex flex-col justify-between selection:bg-primary/30 selection:text-white">
       <Navbar variant="legal" />
-      <main className="page-main astral-container">
-        <div className="page-heading">
-          <p className="section-kicker">Legal</p>
-          <h1 className="page-title">Privacy Policy</h1>
-          <p className="page-lead">
+      <main className="relative z-10 pt-32 pb-16 max-w-[1280px] mx-auto px-6 flex-1 w-full">
+        <div className="flex flex-col gap-3 mb-10">
+          <p className="text-xs uppercase tracking-widest font-bold text-primary">Legal</p>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white">Privacy Policy</h1>
+          <p className="text-sm text-white/50 leading-relaxed">
             Your privacy is important to us. This policy explains what we collect, how we use it, and how we protect it when you use Astraeus.
           </p>
         </div>
 
-        <section className="glass-panel page-card shared-surface">
-          <h2 className="section-title" style={{ fontSize: "1.5rem" }}>Information We Collect</h2>
-          <ul className="legal-list">
+        <section className="p-8 bg-secondary/40 backdrop-blur-lg border border-card-border rounded-lg shadow-xl">
+          <h2 className="text-white font-semibold text-lg mb-4" style={{ fontSize: "1.5rem" }}>Information We Collect</h2>
+          <ul className="list-disc pl-5 flex flex-col gap-3 text-sm text-white/50">
             <li>Personal data you provide when signing up, such as name and email address.</li>
             <li>Interaction data from chat and voice sessions stored securely for personalization.</li>
           </ul>
 
-          <h2 className="section-title" style={{ fontSize: "1.5rem", marginTop: "2rem" }}>Data Security</h2>
-          <p className="page-lead">
+          <h2 className="text-white font-semibold text-lg mb-4" style={{ fontSize: "1.5rem", marginTop: "2rem" }}>Data Security</h2>
+          <p className="text-sm text-white/50 leading-relaxed">
             We use encryption, secure servers, and routine checks to help protect your data. Access is limited to authorized personnel only.
           </p>
 
-          <h2 className="section-title" style={{ fontSize: "1.5rem", marginTop: "2rem" }}>Contact Us</h2>
-          <p className="page-lead">
+          <h2 className="text-white font-semibold text-lg mb-4" style={{ fontSize: "1.5rem", marginTop: "2rem" }}>Contact Us</h2>
+          <p className="text-sm text-white/50 leading-relaxed">
             For privacy questions, email{" "}
-            <a href="mailto:karankumar8239@gmail.com">karankumar8239@gmail.com</a>.
+            <a href="mailto:karankumar8239@gmail.com" className="text-primary hover:underline">karankumar8239@gmail.com</a>.
           </p>
         </section>
       </main>

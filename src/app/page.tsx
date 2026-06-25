@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import "./astraeus.css";
 
 type DemoTab = "chart" | "oracle" | "transits";
 
@@ -90,10 +89,7 @@ export default function LandingPage() {
   const [oracleText, setOracleText] = useState("");
 
   useEffect(() => {
-    document.body.classList.add("astraeus-active");
-    return () => {
-      document.body.classList.remove("astraeus-active");
-    };
+    // Body styling is handled via Tailwind and globals.css
   }, []);
 
   useEffect(() => {
@@ -141,68 +137,64 @@ export default function LandingPage() {
   } as const;
 
   return (
-    <div className="theme-astraeus landing-shell selection:bg-[#6D5DFB]/30 selection:text-white">
+    <div className="min-h-screen bg-[#0F1115] text-white overflow-hidden relative selection:bg-primary/30 selection:text-white">
       <Navbar variant="landing" />
 
-      <main className="landing-main">
-        <section className="landing-hero astral-container">
+      <main className="relative z-10 pt-24 pb-16">
+        <section className="max-w-[1280px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center py-12 md:py-20">
           <motion.div
-            className="landing-copy"
+            className="lg:col-span-7 flex flex-col gap-6"
             initial="initial"
             animate="animate"
             variants={stagger}
           >
-            <motion.div className="landing-eyebrow" variants={heroMotion}>
-              <Stars size={14} />
-              <span>Astro AI live showcase</span>
-            </motion.div>
 
-            <motion.h1 className="landing-title" variants={heroMotion}>
+            <motion.h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1] bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-primary" variants={heroMotion}>
               Astrology that looks polished, reads clearly, and answers fast.
             </motion.h1>
 
-            <motion.p className="landing-lead" variants={heroMotion}>
+            <motion.p className="text-base md:text-lg text-white/60 leading-relaxed max-w-[580px]" variants={heroMotion}>
               Astro AI blends Vedic charting, transit tracking, and AI-guided interpretation into one focused experience for text or voice readings.
             </motion.p>
 
-            <motion.div className="landing-actions" variants={heroMotion}>
-              <Link href={userId ? "/chat" : "/sign-up"} className="glow-button-primary">
+            <motion.div className="flex flex-wrap gap-4 items-center" variants={heroMotion}>
+              <Link href={userId ? "/chat" : "/sign-up"} className="inline-flex items-center justify-center gap-2 py-3.5 px-8 bg-gradient-to-r from-primary to-[#4f46e5] text-white rounded-lg font-bold text-xs uppercase tracking-wider shadow-[0_0_20px_rgba(109,93,251,0.3)] hover:shadow-[0_0_30px_rgba(109,93,251,0.5)] hover:-translate-y-0.5 transition-all duration-300">
                 Open Chat Terminal
               </Link>
-              <Link href={userId ? "/voice" : "/sign-up"} className="glow-button-secondary">
+              <Link href={userId ? "/voice" : "/sign-up"} className="inline-flex items-center justify-center gap-2 py-3.5 px-8 bg-secondary/80 border border-card-border hover:border-white/20 text-white rounded-lg font-bold text-xs uppercase tracking-wider shadow-[0_0_15px_rgba(255,255,255,0.02)] hover:-translate-y-0.5 transition-all duration-300">
                 Try Voice Reading
               </Link>
             </motion.div>
 
-            <motion.div className="landing-metrics" variants={heroMotion}>
+            <motion.div className="flex flex-wrap gap-6 mt-4" variants={heroMotion}>
               {quickFacts.map((fact) => (
-                <div key={fact.label} className="metric-card">
-                  <span className="metric-label">{fact.label}</span>
-                  <span className="metric-value">{fact.value}</span>
+                <div key={fact.label} className="flex flex-col gap-1 border-l-2 border-primary/40 pl-4">
+                  <span className="text-[10px] uppercase tracking-widest font-semibold text-white/40">{fact.label}</span>
+                  <span className="text-sm font-semibold text-white">{fact.value}</span>
                 </div>
               ))}
             </motion.div>
           </motion.div>
 
           <motion.div
-            className="landing-demo"
+            className="lg:col-span-5 w-full flex justify-center"
             initial={{ opacity: 0, y: 18, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
           >
-            <div className="glass-panel demo-panel">
-              <div className="demo-header">
-                <div className="demo-window-controls" aria-hidden="true">
-                  <span />
-                  <span />
-                  <span />
+            <div className="w-full max-w-[480px] bg-secondary/60 backdrop-blur-xl border border-card-border rounded-lg overflow-hidden shadow-2xl transition-all duration-300 hover:border-primary/50 hover:shadow-[0_0_30px_rgba(109,93,251,0.08)]">
+              <div className="flex items-center justify-between px-4 py-3 bg-[#0c0d12]/80 border-b border-card-border">
+                <div className="flex gap-1.5" aria-hidden="true">
+                  <span className="w-2 h-2 rounded-full bg-white/10" />
+                  <span className="w-2 h-2 rounded-full bg-white/10" />
+                  <span className="w-2 h-2 rounded-full bg-white/10" />
                 </div>
-                <div className="demo-tabs" role="tablist" aria-label="Preview modes">
+                <div className="flex gap-1" role="tablist" aria-label="Preview modes">
                   {(["chart", "oracle", "transits"] as DemoTab[]).map((tab) => (
                     <button
                       key={tab}
                       type="button"
-                      className={`demo-tab ${activeTab === tab ? "active" : ""}`}
+                      className={`px-3 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${activeTab === tab ? "bg-primary/20 text-primary border border-primary/30" : "text-white/40 hover:text-white/80"}`}
                       onClick={() => setActiveTab(tab)}
                     >
                       {tab === "chart" ? "Chart" : tab === "oracle" ? "Oracle" : "Transits"}
@@ -211,87 +203,85 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              <div className="demo-body">
+              <div className="p-6 min-h-[300px] flex flex-col justify-between">
                 <AnimatePresence mode="wait">
                   {activeTab === "chart" && (
                     <motion.div
                       key="chart"
-                      className="demo-panel-content"
+                      className="w-full flex flex-col justify-between"
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
                       transition={{ duration: 0.25 }}
                     >
-                      <div className="orbit-stage">
-                        <div className="orbit-halo" />
-                        <div className="orbit-ring orbit-ring-large" />
-                        <div className="orbit-ring orbit-ring-medium" />
-                        <div className="orbit-ring orbit-ring-small" />
-                        <div className="orbit-core">
-                          <Sparkles size={22} />
-                          <span>ASC</span>
+                      <div className="relative w-full aspect-square max-w-[200px] mx-auto flex items-center justify-center mb-4">
+                        <div className="absolute inset-0 rounded-full border border-primary/10 animate-pulse" />
+                        <div className="absolute rounded-full border border-white/5 w-[90%] h-[90%] animate-spin-slow" />
+                        <div className="absolute rounded-full border border-white/5 w-[65%] h-[65%] animate-spin-slow-reverse" />
+                        <div className="absolute rounded-full border border-white/5 w-[40%] h-[40%] animate-spin-slow" />
+                        <div className="relative w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-[#0F1115] border border-primary/30 shadow-[0_0_15px_rgba(109,93,251,0.2)]">
+                          <img src="/logo.png" width={100} height={100} alt="" className="w-6 h-6 object-contain" />
                         </div>
                         {orbitPoints.map((point) => (
                           <div
                             key={point.label}
-                            className="orbit-point"
+                            className="absolute flex items-center justify-center"
                             style={{ top: point.top, left: point.left }}
                           >
-                            <span className="orbit-label">{point.label}</span>
+                            <span className="absolute whitespace-nowrap text-[9px] uppercase tracking-widest font-semibold px-2 py-0.5 bg-[#0F1115] border border-white/10 rounded-full text-white/60 shadow-lg">{point.label}</span>
                           </div>
                         ))}
                       </div>
-                      <p className="demo-caption">{panelCopy.chart}</p>
+                      <p className="text-xs text-white/50 text-center leading-relaxed mt-4">{panelCopy.chart}</p>
                     </motion.div>
                   )}
 
                   {activeTab === "oracle" && (
                     <motion.div
                       key="oracle"
-                      className="demo-panel-content"
+                      className="w-full flex flex-col justify-between"
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
                       transition={{ duration: 0.25 }}
                     >
-                      <div className="terminal-line">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-primary/80 uppercase tracking-wider mb-3">
                         <Cpu size={13} />
                         <span>AI oracle response</span>
                       </div>
-                      <div className="terminal-copy">{oracleText}</div>
-                      <div className="terminal-cursor" aria-hidden="true" />
+                      <div className="text-sm text-white/80 font-mono leading-relaxed min-h-[140px]">{oracleText}<span className="w-1.5 h-4 bg-primary inline-block animate-pulse ml-0.5" aria-hidden="true" /></div>
                     </motion.div>
                   )}
 
                   {activeTab === "transits" && (
                     <motion.div
                       key="transits"
-                      className="demo-panel-content"
+                      className="w-full flex flex-col justify-between"
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
                       transition={{ duration: 0.25 }}
                     >
-                      <div className="transit-grid">
-                        <div className="transit-card">
-                          <span className="transit-label">Mercury</span>
-                          <strong>Active</strong>
+                      <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div className="flex flex-col gap-1 p-3 rounded-lg bg-[#0c0d12]/60 border border-card-border">
+                          <span className="text-[9px] uppercase tracking-widest text-white/40">Mercury</span>
+                          <strong className="text-white text-sm">Active</strong>
                         </div>
-                        <div className="transit-card">
-                          <span className="transit-label">Lunar phase</span>
-                          <strong>Waxing gibbous</strong>
+                        <div className="flex flex-col gap-1 p-3 rounded-lg bg-[#0c0d12]/60 border border-card-border">
+                          <span className="text-[9px] uppercase tracking-widest text-white/40">Lunar phase</span>
+                          <strong className="text-white text-sm">Waxing gibbous</strong>
                         </div>
-                        <div className="transit-card">
-                          <span className="transit-label">Mode</span>
-                          <strong>Raman sidereal</strong>
+                        <div className="flex flex-col gap-1 p-3 rounded-lg bg-[#0c0d12]/60 border border-card-border">
+                          <span className="text-[9px] uppercase tracking-widest text-white/40">Mode</span>
+                          <strong className="text-white text-sm">Raman sidereal</strong>
                         </div>
-                        <div className="transit-card">
-                          <span className="transit-label">Latency</span>
-                          <strong>14ms</strong>
+                        <div className="flex flex-col gap-1 p-3 rounded-lg bg-[#0c0d12]/60 border border-card-border">
+                          <span className="text-[9px] uppercase tracking-widest text-white/40">Latency</span>
+                          <strong className="text-white text-sm">14ms</strong>
                         </div>
                       </div>
-                      <div className="transit-bar">
-                        <Activity size={14} />
+                      <div className="flex items-center gap-2 text-xs text-white/50 bg-primary/10 border border-primary/20 rounded-lg p-3 leading-relaxed">
+                        <Activity size={14} className="shrink-0 text-primary" />
                         <span>{panelCopy.transits}</span>
                       </div>
                     </motion.div>
@@ -302,63 +292,63 @@ export default function LandingPage() {
           </motion.div>
         </section>
 
-        <section className="astral-container content-section">
-          <div className="section-heading">
-            <p className="section-kicker">What it does</p>
-            <h2 className="section-title">One product, three useful surfaces.</h2>
-            <p className="section-copy">
+        <section className="max-w-[1280px] mx-auto px-6 py-16 md:py-24 border-t border-white/5">
+          <div className="flex flex-col gap-3 max-w-[620px] mb-12">
+            <p className="text-xs uppercase tracking-widest font-bold text-primary">What it does</p>
+            <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">One product, three useful surfaces.</h2>
+            <p className="text-sm text-white/50 leading-relaxed">
               The app is designed to feel like a premium dashboard, not a cluttered astrology template.
             </p>
           </div>
 
-          <div className="feature-grid">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((feature) => {
               const Icon = feature.icon;
               return (
-                <article key={feature.title} className="feature-card glass-panel">
-                  <div className="feature-icon">
+                <article key={feature.title} className="p-6 bg-secondary/40 backdrop-blur-lg border border-card-border rounded-lg shadow-xl hover:border-primary/50 hover:shadow-[0_8px_32px_rgba(109,93,251,0.05)] hover:-translate-y-1 transition-all duration-300">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 text-primary flex items-center justify-center mb-4">
                     <Icon size={22} />
                   </div>
-                  <h3>{feature.title}</h3>
-                  <p>{feature.copy}</p>
+                  <h3 className="text-white font-semibold text-lg mb-2">{feature.title}</h3>
+                  <p className="text-sm text-white/50 leading-relaxed">{feature.copy}</p>
                 </article>
               );
             })}
           </div>
         </section>
 
-        <section className="astral-container content-section">
-          <div className="section-heading">
-            <p className="section-kicker">How it works</p>
-            <h2 className="section-title">A short path from birth data to useful insight.</h2>
+        <section className="max-w-[1280px] mx-auto px-6 py-16 md:py-24 border-t border-white/5">
+          <div className="flex flex-col gap-3 max-w-[620px] mb-12">
+            <p className="text-xs uppercase tracking-widest font-bold text-primary">How it works</p>
+            <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">A short path from birth data to useful insight.</h2>
           </div>
 
-          <div className="steps-grid">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {steps.map((step) => (
-              <article key={step.index} className="step-card glass-panel">
-                <span className="step-index">{step.index}</span>
-                <h3>{step.title}</h3>
-                <p>{step.copy}</p>
+              <article key={step.index} className="p-6 bg-secondary/40 backdrop-blur-lg border border-card-border rounded-lg shadow-xl hover:border-primary/50 hover:shadow-[0_8px_32px_rgba(109,93,251,0.05)] hover:-translate-y-1 transition-all duration-300">
+                <span className="text-3xl font-black text-primary/30 mb-2 block">{step.index}</span>
+                <h3 className="text-white font-semibold text-lg mb-2">{step.title}</h3>
+                <p className="text-sm text-white/50 leading-relaxed">{step.copy}</p>
               </article>
             ))}
           </div>
         </section>
 
-        <section className="astral-container cta-section">
-          <div className="cta-card glass-panel">
-            <div className="cta-copy">
-              <p className="section-kicker">Ready when you are</p>
-              <h2 className="cta-title">Open the chat terminal or switch to voice when you want a deeper reading.</h2>
-              <p className="section-copy">
+        <section className="max-w-[1280px] mx-auto px-6 py-12 md:py-16">
+          <div className="p-8 md:p-12 bg-secondary/40 backdrop-blur-lg border border-card-border rounded-lg flex flex-col md:flex-row gap-8 items-center justify-between shadow-2xl">
+            <div className="flex flex-col gap-3 max-w-[620px]">
+              <p className="text-xs uppercase tracking-widest font-bold text-primary">Ready when you are</p>
+              <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight leading-tight text-white">Open the chat terminal or switch to voice when you want a deeper reading.</h2>
+              <p className="text-sm text-white/50 leading-relaxed">
                 The rebuilt interface keeps the focus on clarity, so users can move from curiosity to action without fighting the UI.
               </p>
             </div>
-            <div className="cta-actions">
-              <Link href={userId ? "/chat" : "/sign-up"} className="glow-button-primary">
+            <div className="flex flex-wrap gap-4 items-center shrink-0">
+              <Link href={userId ? "/chat" : "/sign-up"} className="inline-flex items-center justify-center gap-2 py-3.5 px-8 bg-gradient-to-r from-primary to-[#4f46e5] text-white rounded-lg font-bold text-xs uppercase tracking-wider shadow-[0_0_20px_rgba(109,93,251,0.3)] hover:shadow-[0_0_30px_rgba(109,93,251,0.5)] hover:-translate-y-0.5 transition-all duration-300">
                 Start Reading
                 <ArrowRight size={14} />
               </Link>
-              <Link href="/pricing" className="glow-button-secondary">
+              <Link href="/pricing" className="inline-flex items-center justify-center gap-2 py-3.5 px-8 bg-secondary/80 border border-card-border hover:border-white/20 text-white rounded-lg font-bold text-xs uppercase tracking-wider shadow-[0_0_15px_rgba(255,255,255,0.02)] hover:-translate-y-0.5 transition-all duration-300">
                 See Plans
               </Link>
             </div>

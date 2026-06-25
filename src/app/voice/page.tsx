@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
 import Sidebar from "@/components/Sidebar";
-import "../astraeus.css";
 
 export default function VoicePage() {
   const [isSessionActive, setIsSessionActive] = useState(false);
@@ -217,128 +216,114 @@ export default function VoicePage() {
   }
 
   return (
-    <div className="theme-astraeus sidebar-layout min-h-screen">
+    <div className="min-h-screen bg-[#0F1115] text-white flex flex-col lg:flex-row selection:bg-primary/30 selection:text-white">
       <Sidebar />
       
-      <main className="page-main voice-container fade-in relative z-10">
-        <div className="glow-orb glow-orb-1"></div>
-        <div className="glow-orb glow-orb-2"></div>
+      <main className="flex-1 pt-24 lg:pt-8 pb-16 px-4 md:px-12 lg:pl-[300px] flex flex-col items-center overflow-y-auto w-full relative z-10">
+        {/* Glow Background Orbs */}
+        <div className="absolute w-[400px] h-[400px] rounded-full bg-primary/5 blur-3xl pointer-events-none" style={{ top: '15%', left: '10%' }}></div>
+        <div className="absolute w-[400px] h-[400px] rounded-full bg-[#9d4edd]/5 blur-3xl pointer-events-none" style={{ bottom: '15%', right: '10%' }}></div>
 
-        <div className="astral-container" style={{ maxWidth: '1280px' }}>
-          <div className="page-heading" style={{ marginBottom: '1.5rem' }}>
-            <p className="section-kicker">Voice session</p>
-            <h1 className="page-title" style={{ maxWidth: '12ch' }}>A cleaner control room for live readings.</h1>
-            <p className="page-lead" style={{ maxWidth: '48rem' }}>
+        <div className="w-full max-w-[1280px]">
+          <div className="mb-6">
+            <p className="text-xs uppercase tracking-widest font-bold text-primary mb-2">Voice session</p>
+            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white mb-2">A cleaner control room for live readings.</h1>
+            <p className="text-sm text-white/50 leading-relaxed max-w-[580px]">
               The voice page now opens with a lighter shell, clearer telemetry, and more intentional session controls.
             </p>
           </div>
 
-          <div className="chat-status-strip">
-            <div className="chart-meta-chip">
-              <span className="metric-label">Mode</span>
-              <strong>Voice room</strong>
+          <div className="flex gap-3 flex-wrap mb-8">
+            <div className="px-4 py-2 rounded-full bg-[#18181b]/40 border border-card-border flex items-center gap-2 text-xs">
+              <span className="text-white/40 uppercase tracking-widest text-[9px] font-bold">Mode</span>
+              <strong className="text-white/80">Voice room</strong>
             </div>
-            <div className="chart-meta-chip">
-              <span className="metric-label">Status</span>
-              <strong>{isSessionActive ? 'Live' : 'Idle'}</strong>
+            <div className="px-4 py-2 rounded-full bg-[#18181b]/40 border border-card-border flex items-center gap-2 text-xs">
+              <span className="text-white/40 uppercase tracking-widest text-[9px] font-bold">Status</span>
+              <strong className="text-white/80">{isSessionActive ? 'Live' : 'Idle'}</strong>
             </div>
-            <div className="chart-meta-chip">
-              <span className="metric-label">Time Remaining</span>
-              <strong>{formatTime(voiceBalanceInSeconds)}</strong>
+            <div className="px-4 py-2 rounded-full bg-[#18181b]/40 border border-card-border flex items-center gap-2 text-xs">
+              <span className="text-white/40 uppercase tracking-widest text-[9px] font-bold">Time Remaining</span>
+              <strong className="text-white/80">{formatTime(voiceBalanceInSeconds)}</strong>
             </div>
-            <div className="chart-meta-chip">
-              <span className="metric-label">Controls</span>
-              <strong>{isLoading ? 'Connecting...' : 'Ready'}</strong>
+            <div className="px-4 py-2 rounded-full bg-[#18181b]/40 border border-card-border flex items-center gap-2 text-xs">
+              <span className="text-white/40 uppercase tracking-widest text-[9px] font-bold">Controls</span>
+              <strong className="text-white/80">{isLoading ? 'Connecting...' : 'Ready'}</strong>
             </div>
           </div>
 
-        <div className="voice-shell">
-          <motion.section
-            className="voice-stage glass-panel shared-surface"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.05 }}
-          >
-            <div className="voice-stage-header">
-              <div>
-                <p className="section-kicker">Voice room</p>
-                <h2 className="voice-title">
-                  One button, one job: start the live reading.
-                </h2>
-                <p className="voice-copy">
-                  Keep the screen quiet, keep the controls obvious, and let the session do the talking.
-                </p>
+          <div className="flex justify-center w-full pb-12">
+            <motion.section
+              className="w-full max-w-[700px] bg-secondary/40 backdrop-blur-lg border border-card-border rounded-2xl p-8 shadow-2xl relative flex flex-col items-center gap-8"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.05 }}
+            >
+              <div className="w-full border-b border-card-border pb-6 flex flex-col gap-4 text-center md:text-left">
+                <div>
+                  <p className="text-xs uppercase tracking-widest font-bold text-primary mb-2">Voice room</p>
+                  <h2 className="text-lg font-bold text-white mb-2">
+                    One button, one job: start the live reading.
+                  </h2>
+                  <p className="text-xs text-white/50 leading-relaxed">
+                    Keep the screen quiet, keep the controls obvious, and let the session do the talking.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-2.5 justify-center md:justify-start mt-3">
+                  <span className="flex items-center gap-1.5 px-3 py-1 bg-secondary/80 border border-white/5 rounded-full text-[10px] uppercase tracking-wider font-semibold text-white/70">
+                    <Activity size={12} className="text-primary" />
+                    {isSessionActive ? 'Live' : isLoading ? 'Connecting' : 'Idle'}
+                  </span>
+                  <span className="flex items-center gap-1.5 px-3 py-1 bg-secondary/80 border border-white/5 rounded-full text-[10px] uppercase tracking-wider font-semibold text-white/70">
+                    <Shield size={12} className="text-primary" />
+                    {isSessionActive ? 'Secure stream' : 'Microphone ready'}
+                  </span>
+                  <span className="flex items-center gap-1.5 px-3 py-1 bg-secondary/80 border border-white/5 rounded-full text-[10px] uppercase tracking-wider font-semibold text-white/70">
+                    <Wifi size={12} className="text-primary" />
+                    {formatTime(elapsedTime)}
+                  </span>
+                </div>
               </div>
 
-              <div className="voice-status-strip">
-                <span className="voice-status-chip">
-                  <Activity size={12} />
-                  {isSessionActive ? 'Live' : isLoading ? 'Connecting' : 'Idle'}
-                </span>
-                <span className="voice-status-chip">
-                  <Shield size={12} />
-                  {isSessionActive ? 'Secure stream' : 'Microphone ready'}
-                </span>
-                <span className="voice-status-chip">
-                  <Wifi size={12} />
-                  {formatTime(elapsedTime)}
-                </span>
+              <div className={`w-32 h-32 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center relative cursor-pointer hover:bg-primary/15 transition-all shadow-[0_0_50px_rgba(109,93,251,0.15)] ${isSessionActive ? 'border-primary/50 bg-primary/20 animate-pulse shadow-[0_0_80px_rgba(109,93,251,0.35)]' : ''}`}>
+                {isLoading ? (
+                  <Loader2 size={42} className="animate-spin text-primary" />
+                ) : isSessionActive ? (
+                  <Mic size={42} className="text-primary animate-pulse" />
+                ) : (
+                  <Mic size={42} className="text-white/40" />
+                )}
               </div>
-            </div>
 
-            <div className={`voice-orb ${isSessionActive ? 'active' : ''}`}>
-              {isLoading ? (
-                <Loader2 size={42} className="spin text-primary" />
-              ) : isSessionActive ? (
-                <Mic size={42} className="text-primary animate-pulse" />
-              ) : (
-                <Mic size={42} style={{ color: 'var(--on-surface-variant)' }} />
-              )}
-            </div>
+              <div className="text-center w-full p-4 bg-[#0c0d12]/40 border border-card-border rounded-xl">
+                <span className="text-[9px] uppercase tracking-widest font-extrabold text-white/40 block mb-1">Status</span>
+                <p className="text-sm text-white/80 leading-relaxed">{status}</p>
+              </div>
 
-            <div className="voice-feedback">
-              <span className="voice-feedback-label">Status</span>
-              <p>{status}</p>
-            </div>
-
-            <div id="voice-control" className="voice-actions">
-              {!isSessionActive ? (
-                <button
-                  onClick={startSession}
-                  className="glow-button-primary cursor-pointer"
-                  style={{ width: '100%', padding: '1rem', fontSize: '13px' }}
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Connecting...' : 'Start Voice Session'}
-                </button>
-              ) : (
-                <button
-                  onClick={stopSession}
-                  className="glow-button-secondary cursor-pointer"
-                  style={{ width: '100%', padding: '1rem', fontSize: '13px' }}
-                >
-                  <Square size={14} style={{ marginRight: '8px' }} />
-                  End Session
-                </button>
-              )}
-            </div>
-          </motion.section>
-        </div>
+              <div id="voice-control" className="w-full mt-4">
+                {!isSessionActive ? (
+                  <button
+                    onClick={startSession}
+                    className="w-full text-center py-4 rounded-lg font-bold text-xs uppercase tracking-wider cursor-pointer transition-all duration-300 bg-gradient-to-r from-primary to-[#4f46e5] text-white shadow-[0_0_20px_rgba(109,93,251,0.3)] hover:shadow-[0_0_30px_rgba(109,93,251,0.5)]"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Connecting...' : 'Start Voice Session'}
+                  </button>
+                ) : (
+                  <button
+                    onClick={stopSession}
+                    className="w-full text-center py-4 rounded-lg font-bold text-xs uppercase tracking-wider cursor-pointer transition-all duration-300 bg-secondary/80 border border-card-border hover:border-white/20 text-white flex items-center justify-center gap-2"
+                  >
+                    <Square size={14} className="shrink-0" />
+                    End Session
+                  </button>
+                )}
+              </div>
+            </motion.section>
+          </div>
         </div>
       </main>
-
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-        .spin {
-          animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-          100% { transform: rotate(360deg); }
-        }
-      `,
-        }}
-      />
     </div>
   );
 }

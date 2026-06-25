@@ -3,26 +3,22 @@
 import { useEffect } from 'react';
 import { SignIn } from "@clerk/nextjs";
 import Navbar from '@/components/Navbar';
-import '../../astraeus.css';
 
 export default function Page() {
   useEffect(() => {
-    document.body.classList.add('astraeus-active');
-    return () => {
-      document.body.classList.remove('astraeus-active');
-    };
+    // Body styling is handled via Tailwind and globals.css
   }, []);
 
   return (
-    <div className="theme-astraeus min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[#0F1115] text-white">
       <Navbar variant="legal" />
 
-      <main className="astral-container relative z-10" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexGrow: 1, minHeight: 'calc(100vh - 130px)', paddingTop: '130px', paddingBottom: '60px' }}>
+      <main className="max-w-[1280px] mx-auto px-6 relative z-10 flex items-center justify-center flex-grow min-h-[calc(100vh-130px)] pt-[130px] pb-[60px] w-full">
         {/* Glow Background Orbs */}
-        <div className="glow-orb glow-orb-1" style={{ top: '20%', left: '10%' }}></div>
-        <div className="glow-orb glow-orb-2" style={{ bottom: '20%', right: '10%' }}></div>
+        <div className="absolute w-[300px] h-[300px] rounded-full bg-primary/10 blur-3xl pointer-events-none" style={{ top: '20%', left: '10%' }}></div>
+        <div className="absolute w-[300px] h-[300px] rounded-full bg-[#9d4edd]/10 blur-3xl pointer-events-none" style={{ bottom: '20%', right: '10%' }}></div>
         
-        <div className="relative z-10 fade-in">
+        <div className="relative z-10">
           <SignIn 
             path="/sign-in" 
             routing="path" 

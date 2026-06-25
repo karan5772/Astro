@@ -25,10 +25,9 @@ const NAV_ITEMS = [
   { href: '/chat', label: 'Live Chat', icon: MessageCircle },
   { href: '/voice', label: 'Voice', icon: Mic },
   { href: '/pricing', label: 'Pricing', icon: CreditCard },
-  { href: '/profile', label: 'Profile', icon: User },
 ];
 
-type SidebarMode = 'home' | 'chart' | 'chat' | 'voice' | 'pricing' | 'profile' | 'other';
+type SidebarMode = 'home' | 'chart' | 'chat' | 'voice' | 'pricing' | 'other';
 
 const MODE_META: Record<SidebarMode, {
   label: string;
@@ -78,14 +77,7 @@ const MODE_META: Record<SidebarMode, {
     secondaryHref: '/voice',
     secondaryLabel: 'Voice Room',
   },
-  profile: {
-    label: 'Profile',
-    description: 'Manage birth details, view predictions, and check subscription.',
-    primaryHref: '/chart',
-    primaryLabel: 'View Chart',
-    secondaryHref: '/chat',
-    secondaryLabel: 'Ask AI',
-  },
+
   other: {
     label: 'Astro AI',
     description: 'Navigate the product and open the most useful surface.',
@@ -131,9 +123,7 @@ export default function Sidebar() {
           ? 'voice'
           : pathname.startsWith('/pricing')
             ? 'pricing'
-            : pathname.startsWith('/profile')
-              ? 'profile'
-              : 'other';
+            : 'other';
 
   const modeMeta = MODE_META[mode];
   const withAnchor = (href: string) => (href.startsWith('#') ? `${pathname}${href}` : href);
@@ -141,13 +131,13 @@ export default function Sidebar() {
   return (
     <>
       {/* Mobile Top Bar */}
-      <div className="sidebar-mobile-bar">
-        <Link href="/" className="sidebar-mobile-brand">
-          <img src="/logo.png" alt="Astraeus Logo" className="sidebar-mobile-logo" />
-          <span className="nav-logo">Astro.AI</span>
+      <div className="flex lg:hidden items-center justify-between px-6 py-4 bg-[#0a0c10] border-b border-card-border fixed top-0 left-0 right-0 z-40 h-[64px]">
+        <Link href="/" className="flex items-center gap-2 text-xl font-bold text-white">
+          <img src="/logo.png" alt="Astraeus Logo" className="w-6 h-6 object-contain" />
+          <span className="font-bold">Astro.AI</span>
         </Link>
         <button
-          className="sidebar-mobile-toggle"
+          className="text-white/80 hover:text-white focus:outline-none"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label="Toggle sidebar"
         >
@@ -159,7 +149,7 @@ export default function Sidebar() {
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
-            className="sidebar-overlay"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -170,14 +160,14 @@ export default function Sidebar() {
       </AnimatePresence>
 
       {/* Sidebar */}
-      <aside className={`app-sidebar ${collapsed ? 'collapsed' : ''} ${mobileOpen ? 'mobile-open' : ''}`}>
+      <aside className={`fixed top-0 bottom-0 left-0 z-50 flex flex-col bg-[#0f1115]/98 border-r border-card-border backdrop-blur-md transition-all duration-300 ${collapsed ? 'w-[72px]' : 'w-[280px]'} ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} h-full pt-16 lg:pt-0`}>
         {/* Brand */}
-        <div className="sidebar-brand">
-          <Link href="/" className="sidebar-brand-link">
-            <img src="/logo.png" alt="Astraeus Logo" className="sidebar-logo-img" />
+        <div className="flex items-center justify-between px-6 py-5 border-b border-white/5">
+          <Link href="/" className="flex items-center gap-3 text-lg font-bold text-white">
+            <img src="/logo.png" alt="Astraeus Logo" className="w-7 h-7 object-contain" />
             {!collapsed && (
               <motion.span
-                className="sidebar-brand-text"
+                className="text-lg font-extrabold tracking-tight"
                 initial={{ opacity: 0, width: 0 }}
                 animate={{ opacity: 1, width: 'auto' }}
                 exit={{ opacity: 0, width: 0 }}
@@ -188,7 +178,7 @@ export default function Sidebar() {
             )}
           </Link>
           <button
-            className="sidebar-collapse-btn"
+            className="hidden lg:flex items-center justify-center w-6 h-6 rounded-md bg-[#18181b] border border-card-border text-white/60 hover:text-white hover:border-primary/50 transition-colors cursor-pointer"
             onClick={() => setCollapsed(!collapsed)}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
@@ -196,14 +186,14 @@ export default function Sidebar() {
           </button>
         </div>
 
-        <div className="sidebar-mode-card">
-          <span className="sidebar-mode-label">{modeMeta.label}</span>
-          {!collapsed && <p className="sidebar-mode-copy">{modeMeta.description}</p>}
+        <div className="mx-4 my-4 p-4 rounded-lg bg-[#18181b]/50 border border-card-border">
+          <span className="text-xs uppercase tracking-wider font-semibold text-primary block mb-1">{modeMeta.label}</span>
+          {!collapsed && <p className="text-xs text-white/50 leading-relaxed">{modeMeta.description}</p>}
         </div>
 
         {/* Navigation */}
-        <nav className="sidebar-nav">
-          <ul className="sidebar-nav-list">
+        <nav className="flex-1 px-3 overflow-y-auto">
+          <ul className="flex flex-col gap-1.5 list-none p-0 m-0">
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
@@ -211,18 +201,18 @@ export default function Sidebar() {
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className={`sidebar-nav-link ${active ? 'active' : ''}`}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg text-white/60 hover:text-white hover:bg-white/5 transition-all relative ${active ? 'bg-primary/10 text-primary hover:text-primary hover:bg-primary/15' : ''}`}
                     title={collapsed ? item.label : undefined}
                   >
-                    <span className="sidebar-nav-icon">
+                    <span className="flex items-center justify-center w-5 h-5">
                       <Icon size={20} />
                     </span>
                     {!collapsed && (
-                      <span className="sidebar-nav-label">{item.label}</span>
+                      <span className="text-sm font-medium">{item.label}</span>
                     )}
                     {active && !collapsed && (
                       <motion.span
-                        className="sidebar-active-dot"
+                        className="absolute right-4 w-1.5 h-1.5 rounded-full bg-primary"
                         layoutId="sidebar-active"
                         transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                       />
@@ -235,14 +225,14 @@ export default function Sidebar() {
         </nav>
 
         {/* Bottom section */}
-        <div className="sidebar-bottom">
+        <div className="p-4 border-t border-white/5 flex flex-col gap-4 bg-[#0f1115]/98">
           {!collapsed && (
-            <div className="sidebar-quick-actions">
-              <Link href={withAnchor(modeMeta.primaryHref)} className="sidebar-quick-action">
+            <div className="flex flex-col gap-2">
+              <Link href={withAnchor(modeMeta.primaryHref)} className="w-full text-center py-2 px-3 bg-gradient-to-r from-primary to-[#4f46e5] text-white rounded-lg font-semibold text-xs uppercase tracking-wider shadow-[0_0_15px_rgba(109,93,251,0.2)] hover:shadow-[0_0_25px_rgba(109,93,251,0.4)] transition-all duration-300">
                 {modeMeta.primaryLabel}
               </Link>
               {modeMeta.secondaryHref && modeMeta.secondaryLabel && (
-                <Link href={withAnchor(modeMeta.secondaryHref)} className="sidebar-quick-action secondary">
+                <Link href={withAnchor(modeMeta.secondaryHref)} className="w-full text-center py-2 px-3 bg-[#18181b] border border-card-border hover:border-white/10 text-white rounded-lg font-semibold text-xs uppercase tracking-wider transition-all">
                   {modeMeta.secondaryLabel}
                 </Link>
               )}
@@ -250,27 +240,25 @@ export default function Sidebar() {
           )}
 
           {userId ? (
-            <Link href="/profile" className="sidebar-user-section" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', textDecoration: 'none', color: 'var(--on-surface)' }}>
-
-              {!collapsed && (
-                <motion.span
-                  className="sidebar-user-label"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.1 }}
-                  style={{ fontSize: '0.875rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                >
-                  <div style={{ marginRight: '0.5rem' }}>
-                    <UserButton />
-                  </div>
-                  Profile
-                </motion.span>
-              )}
+            <Link href="/profile" className="flex items-center gap-3 p-3 rounded-lg bg-[#18181b]/50 border border-card-border hover:border-primary/30 transition-all text-white/90 hover:text-white" style={{ textDecoration: 'none' }}>
+              <div className="flex items-center gap-2">
+                <UserButton />
+                {!collapsed && (
+                  <motion.span
+                    className="text-sm font-medium"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.1 }}
+                  >
+                    Profile
+                  </motion.span>
+                )}
+              </div>
             </Link>
           ) : (
             <Link
               href="/sign-in"
-              className="sidebar-cta-btn"
+              className="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 rounded-lg text-sm font-bold transition-all shadow-[0_0_15px_rgba(109,93,251,0.1)]"
               title={collapsed ? 'Consult Stars' : undefined}
             >
               <Sparkles size={18} />

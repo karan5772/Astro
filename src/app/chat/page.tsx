@@ -1,24 +1,25 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { 
-  Send, 
-  Sparkles, 
-  User, 
-  Copy, 
-  Check, 
-  Briefcase, 
-  Heart, 
-  Compass, 
-  Moon, 
-  MapPin, 
-  Calendar, 
-  Clock, 
-  Globe, 
-  Search, 
-  Lock, 
+import {
+  Send,
+  Sparkles,
+  User,
+  Copy,
+  Check,
+  Briefcase,
+  Heart,
+  Compass,
+  Moon,
+  MapPin,
+  Calendar,
+  Clock,
+  Globe,
+  Search,
+  Lock,
   Info,
-  X
+  X,
+  Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -26,7 +27,6 @@ import toast from 'react-hot-toast';
 import { useUser } from '@clerk/nextjs';
 import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from '@/components/Sidebar';
-import '../astraeus.css';
 
 type Message = { id: string; role: 'user' | 'assistant'; content: string };
 
@@ -102,12 +102,12 @@ function MarkdownText({ text }: { text: string }) {
   if (!text) return null;
 
   const lines = text.split('\n');
-  
+
   return (
     <div className="markdown-content">
       {lines.map((line, index) => {
         const trimmed = line.trim();
-        
+
         if (trimmed.startsWith('### ')) {
           return (
             <h4 key={index} className="font-semibold text-accent text-sm md:text-base mt-3 mb-1">
@@ -129,7 +129,7 @@ function MarkdownText({ text }: { text: string }) {
             </h2>
           );
         }
-        
+
         if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
           return (
             <div key={index} className="flex items-start gap-2 my-1 pl-2 text-sm md:text-base">
@@ -179,13 +179,13 @@ const getMockPlacements = (dateStr?: string) => {
   const date = new Date(dateStr);
   const month = date.getMonth();
   const day = date.getDate();
-  
+
   const signs = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"];
   const sunSign = signs[(month + (day > 20 ? 1 : 0)) % 12];
   const moonSign = signs[(month + day) % 12];
   const lagnaSign = signs[(day * 3 + 1) % 12];
   const venusSign = signs[(month + 2) % 12];
-  
+
   return [
     { body: "Sun", sign: sunSign, degree: `${(day * 1.3).toFixed(1)}°` },
     { body: "Moon", sign: moonSign, degree: `${(day * 2.1).toFixed(1)}°` },
@@ -201,7 +201,7 @@ export default function ChatPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -362,7 +362,7 @@ export default function ChatPage() {
 
   const submitMessage = async (messageText: string) => {
     if (!messageText || !messageText.trim() || isLoading) return;
-    
+
     setIsLoading(true);
     setError(null);
 
@@ -397,8 +397,8 @@ export default function ChatPage() {
           const { done, value } = await reader.read();
           if (done) break;
           const chunk = decoder.decode(value, { stream: true });
-          
-          setMessages((prev) => 
+
+          setMessages((prev) =>
             prev.map(m => m.id === aiMessageId ? { ...m, content: m.content + chunk } : m)
           );
         }
@@ -425,17 +425,17 @@ export default function ChatPage() {
   };
 
   const showTypingIndicator = isLoading && (
-    messages.length === 0 || 
-    (messages[messages.length - 1].role === 'assistant' 
-      ? messages[messages.length - 1].content.length === 0 
+    messages.length === 0 ||
+    (messages[messages.length - 1].role === 'assistant'
+      ? messages[messages.length - 1].content.length === 0
       : true)
   );
 
   // 1. Render global loader while fetching user details
   if (checkingDetails) {
     return (
-      <div className="theme-astraeus min-h-screen flex items-center justify-center">
-        <div className="constellation-spinner"></div>
+      <div className="min-h-screen bg-[#0F1115] text-white flex items-center justify-center">
+        <Loader2 size={40} className="animate-spin text-primary" />
       </div>
     );
   }
@@ -443,15 +443,16 @@ export default function ChatPage() {
   // 2. Render onboarding details collection form if not configured
   if (showOnboardingForm) {
     return (
-      <div className="theme-astraeus sidebar-layout min-h-screen flex flex-col">
+      <div className="min-h-screen bg-[#0F1115] text-white flex flex-col lg:flex-row selection:bg-primary/30 selection:text-white">
         <Sidebar />
-        
-        <main className="page-main flex-1 flex items-center justify-center px-4 relative z-10">
-          <div className="glow-orb glow-orb-1"></div>
-          <div className="glow-orb glow-orb-2"></div>
 
-          <motion.div 
-            className="glass-panel p-8 w-full max-w-lg relative shared-surface"
+        <main className="flex-1 pt-24 lg:pt-8 pb-16 px-4 md:px-12 lg:pl-[300px] flex items-center justify-center relative z-10 w-full">
+          {/* Glow Background Orbs */}
+          <div className="absolute w-[400px] h-[400px] rounded-full bg-primary/5 blur-3xl pointer-events-none" style={{ top: '15%', left: '10%' }}></div>
+          <div className="absolute w-[400px] h-[400px] rounded-full bg-[#9d4edd]/5 blur-3xl pointer-events-none" style={{ bottom: '15%', right: '10%' }}></div>
+
+          <motion.div
+            className="p-8 w-full max-w-lg bg-[#18181b]/40 backdrop-blur-lg border border-card-border rounded-2xl shadow-2xl relative"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
@@ -460,80 +461,78 @@ export default function ChatPage() {
               <button
                 type="button"
                 onClick={() => setShowOnboardingForm(false)}
-                className="absolute top-4 right-4 text-muted hover:text-white transition-colors animate-pulse-slow"
-                style={{ background: 'transparent', border: 'none', cursor: 'pointer', outline: 'none' }}
+                className="absolute top-4 right-4 text-white/50 hover:text-white transition-colors cursor-pointer"
                 aria-label="Close"
               >
                 <X size={20} />
               </button>
             )}
-            
-            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-              <div className="feature-icon-wrapper mx-auto mb-4" style={{ width: '4.5rem', height: '4.5rem', borderRadius: '8px' }}>
+
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 rounded-xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center mx-auto mb-4">
                 {dbUser?.hasBirthDetails ? (
-                  <Sparkles size={32} className="text-primary" />
+                  <Sparkles size={32} />
                 ) : (
-                  <Lock size={32} className="text-primary" />
+                  <Lock size={32} />
                 )}
               </div>
-              <h1 className="page-title" style={{ fontSize: 'clamp(1.9rem, 4vw, 2.8rem)', marginBottom: '0.75rem' }}>
+              <h1 className="text-2xl md:text-3xl font-extrabold text-white mb-2">
                 {dbUser?.hasBirthDetails ? 'Update Cosmic Identity' : 'Unlock Cosmic Identity'}
               </h1>
-              <p className="page-lead" style={{ fontSize: '13px', lineHeight: 1.6, marginTop: 0 }}>
-                {dbUser?.hasBirthDetails 
-                  ? 'Modify your birth parameters to recalculate your planetary placements and predictions.' 
+              <p className="text-xs text-white/50 leading-relaxed mt-0">
+                {dbUser?.hasBirthDetails
+                  ? 'Modify your birth parameters to recalculate your planetary placements and predictions.'
                   : 'Before starting your chat reading, please enter your exact birth metadata. Our Vedic systems will map your placements to provide accurate horoscope predictions.'}
               </p>
             </div>
 
-            <form onSubmit={handleSaveDetails} className="chart-form-panel">
+            <form onSubmit={handleSaveDetails} className="flex flex-col gap-4">
               {/* Date & Time */}
-              <div className="chart-input-row">
-                <div className="chart-input-group">
-                  <label className="chart-input-label">
-                    <Calendar size={13} className="inline mr-1" /> Date of Birth
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="flex flex-col gap-2">
+                  <label className="text-[10px] uppercase tracking-wider font-extrabold text-white/50 flex items-center gap-1.5">
+                    <Calendar size={13} className="shrink-0" /> Date of Birth
                   </label>
-                  <input 
-                    type="date" 
-                    value={birthDate} 
-                    onChange={(e) => setBirthDate(e.target.value)} 
-                    className="chart-input-field" 
-                    required 
+                  <input
+                    type="date"
+                    value={birthDate}
+                    onChange={(e) => setBirthDate(e.target.value)}
+                    className="w-full p-3 text-sm rounded-lg bg-secondary/80 border border-card-border text-white outline-none focus:border-primary/50 transition-colors"
+                    required
                   />
                 </div>
 
-                <div className="chart-input-group">
-                  <label className="chart-input-label">
-                    <Clock size={13} className="inline mr-1" /> Time of Birth
+                <div className="flex flex-col gap-2">
+                  <label className="text-[10px] uppercase tracking-wider font-extrabold text-white/50 flex items-center gap-1.5">
+                    <Clock size={13} className="shrink-0" /> Time of Birth
                   </label>
-                  <input 
-                    type="time" 
-                    value={birthTime} 
-                    onChange={(e) => setBirthTime(e.target.value)} 
-                    className="chart-input-field" 
-                    required 
+                  <input
+                    type="time"
+                    value={birthTime}
+                    onChange={(e) => setBirthTime(e.target.value)}
+                    className="w-full p-3 text-sm rounded-lg bg-secondary/80 border border-card-border text-white outline-none focus:border-primary/50 transition-colors"
+                    required
                   />
                 </div>
               </div>
 
               {/* Location Autocomplete */}
-              <div className="chart-input-group" ref={searchContainerRef}>
-                <label className="chart-input-label">
-                  <MapPin size={13} className="inline mr-1" /> Birth Place
+              <div className="flex flex-col gap-2 relative" ref={searchContainerRef}>
+                <label className="text-[10px] uppercase tracking-wider font-extrabold text-white/50 flex items-center gap-1.5">
+                  <MapPin size={13} className="shrink-0" /> Birth Place
                 </label>
                 <div className="relative">
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     placeholder="Search city..."
                     value={locationQuery}
                     onChange={(e) => setLocationQuery(e.target.value)}
-                    className="chart-input-field"
-                    style={{ paddingRight: '2.5rem' }}
+                    className="w-full p-3 pr-10 text-sm rounded-lg bg-secondary/80 border border-card-border text-white outline-none focus:border-primary/50 transition-colors"
                     required
                   />
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center text-muted">
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center text-white/40">
                     {isSearchingLocation ? (
-                      <div className="w-4 h-4 border-2 border-t-transparent border-primary rounded-full animate-spin"></div>
+                      <Loader2 size={16} className="animate-spin text-primary" />
                     ) : (
                       <Search size={15} />
                     )}
@@ -542,8 +541,8 @@ export default function ChatPage() {
 
                 <AnimatePresence>
                   {locationSuggestions.length > 0 && (
-                    <motion.div 
-                      className="autocomplete-dropdown"
+                    <motion.div
+                      className="absolute top-[calc(100%+8px)] left-0 right-0 bg-[#18181B] border border-card-border rounded-lg z-50 max-h-[200px] overflow-y-auto shadow-2xl"
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
@@ -553,11 +552,11 @@ export default function ChatPage() {
                         <button
                           key={idx}
                           type="button"
-                          className="autocomplete-item"
+                          className="w-full text-left p-3 hover:bg-white/5 border-b border-white/5 text-white/80 text-xs flex items-center gap-2 cursor-pointer transition-colors"
                           onClick={() => handleSelectLocation(loc)}
                         >
                           <MapPin size={13} className="text-primary shrink-0" />
-                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{loc.name}</span>
+                          <span className="truncate">{loc.name}</span>
                         </button>
                       ))}
                     </motion.div>
@@ -566,15 +565,15 @@ export default function ChatPage() {
               </div>
 
               {/* Timezone offset and Coordinates */}
-              <div className="chart-input-row">
-                <div className="chart-input-group">
-                  <label className="chart-input-label">
-                    <Globe size={13} className="inline mr-1" /> UTC Timezone Offset
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="flex flex-col gap-2">
+                  <label className="text-[10px] uppercase tracking-wider font-extrabold text-white/50 flex items-center gap-1.5">
+                    <Globe size={13} className="shrink-0" /> UTC Timezone Offset
                   </label>
-                  <select 
-                    value={birthTimezone} 
-                    onChange={(e) => setBirthTimezone(e.target.value)} 
-                    className="chart-input-field"
+                  <select
+                    value={birthTimezone}
+                    onChange={(e) => setBirthTimezone(e.target.value)}
+                    className="w-full p-3 text-sm rounded-lg bg-secondary/80 border border-card-border text-white outline-none focus:border-primary/50 transition-colors"
                   >
                     <option value="-12:00">UTC-12:00</option>
                     <option value="-11:00">UTC-11:00</option>
@@ -608,38 +607,34 @@ export default function ChatPage() {
                   </select>
                 </div>
 
-                <div className="chart-input-group">
-                  <label className="chart-input-label">
-                    <Compass size={13} className="inline mr-1" /> Coordinates
+                <div className="flex flex-col gap-2">
+                  <label className="text-[10px] uppercase tracking-wider font-extrabold text-white/50 flex items-center gap-1.5">
+                    <Compass size={13} className="shrink-0" /> Coordinates
                   </label>
-                  <div 
-                    className="chart-input-field flex items-center justify-between" 
-                    style={{ background: 'rgba(255,255,255,0.02)', cursor: 'default' }}
+                  <div
+                    className="w-full p-3 text-xs rounded-lg flex items-center justify-between bg-secondary/40 border border-white/5 cursor-default"
                   >
                     {latitude !== null && longitude !== null ? (
-                      <span className="text-[#cebdff]" style={{ fontSize: '12px' }}>
+                      <span className="text-[#cebdff] text-xs">
                         Lat: {latitude.toFixed(2)} | Lon: {longitude.toFixed(2)}
                       </span>
                     ) : (
-                      <span className="text-muted" style={{ fontSize: '12px' }}>None</span>
+                      <span className="text-white/40 text-xs">None</span>
                     )}
-                    <Globe size={13} className="text-muted" />
+                    <Globe size={13} className="text-white/40 shrink-0" />
                   </div>
                 </div>
               </div>
 
-
-
               {/* Submit Details button */}
-              <button 
-                type="submit" 
-                className="glow-button-primary cursor-pointer mt-2"
-                style={{ width: '100%', padding: '0.875rem' }}
+              <button
+                type="submit"
+                className="w-full py-3.5 px-6 rounded-lg font-bold text-xs uppercase tracking-wider cursor-pointer bg-gradient-to-r from-primary to-[#4f46e5] text-white shadow-[0_0_20px_rgba(109,93,251,0.2)] hover:shadow-[0_0_30px_rgba(109,93,251,0.4)] mt-2 transition-all duration-300 disabled:opacity-75 disabled:cursor-not-allowed"
                 disabled={isSubmittingDetails}
               >
                 {isSubmittingDetails ? (
                   <span className="flex items-center gap-2 justify-center">
-                    <span className="w-4 h-4 border-2 border-t-transparent border-current rounded-full animate-spin"></span>
+                    <Loader2 size={16} className="animate-spin" />
                     SYNCHRONIZING CELESTIAL ALIGNMENTS...
                   </span>
                 ) : (
@@ -660,44 +655,45 @@ export default function ChatPage() {
   const mockPlacements = getMockPlacements(dbUser?.birthDate);
 
   return (
-    <div className="theme-astraeus sidebar-layout min-h-screen">
+    <div className="min-h-screen bg-[#0F1115] text-white flex flex-col lg:flex-row selection:bg-primary/30 selection:text-white">
       <Sidebar />
 
-      <main className="page-main chat-shell fade-in relative z-10">
-        <div className="glow-orb glow-orb-1"></div>
-        <div className="glow-orb glow-orb-2"></div>
+      <main className="flex-1 pt-24 lg:pt-8 pb-16 px-4 md:px-12 lg:pl-[300px] flex flex-col items-center h-screen relative z-10 w-full">
+        {/* Glow Background Orbs */}
+        <div className="absolute w-[400px] h-[400px] rounded-full bg-primary/5 blur-3xl pointer-events-none" style={{ top: '15%', left: '10%' }}></div>
+        <div className="absolute w-[400px] h-[400px] rounded-full bg-[#9d4edd]/5 blur-3xl pointer-events-none" style={{ bottom: '15%', right: '10%' }}></div>
 
-        <div className="chat-shell-inner">
-          <div className="chat-shell-header">
+        <div className="flex flex-col h-full w-full max-w-[1000px] mx-auto min-h-0">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5 pb-4 mb-6 shrink-0">
             <div>
-              <p className="section-kicker">Live chat</p>
-              <h1 className="chat-page-title">Talk to Astro AI</h1>
-              <p className="chat-page-copy">
+              <p className="text-xs uppercase tracking-widest font-bold text-primary mb-1">Live chat</p>
+              <h1 className="text-2xl font-extrabold text-white">Talk to Astro AI</h1>
+              <p className="text-xs text-white/50 leading-relaxed">
                 A focused text console for quick questions, follow-ups, and deeper readings.
               </p>
             </div>
-            <div className="chat-shell-pills">
-              <span>Text console</span>
-              <span>{messages.length} messages</span>
+            <div className="flex gap-2 text-[10px] uppercase tracking-wider font-extrabold text-white/50">
+              <span className="px-2.5 py-1 bg-secondary/60 border border-white/5 rounded-full">Text console</span>
+              <span className="px-2.5 py-1 bg-secondary/60 border border-white/5 rounded-full">{messages.length} messages</span>
             </div>
           </div>
 
-          <section className="chat-stage glass-panel shared-surface">
-            <div className="messages chat-messages">
+          <section className="flex-grow bg-secondary/40 backdrop-blur-lg border border-card-border rounded-2xl shadow-xl flex flex-col min-h-0 overflow-hidden relative">
+            <div className="flex-1 p-6 overflow-y-auto flex flex-col gap-6 min-h-0">
               {messages.length === 0 && (
-                <div className="chat-empty-state">
-                  <div className="feature-icon-wrapper mx-auto mb-6">
+                <div className="flex-1 flex flex-col items-center justify-center text-center p-6 gap-4">
+                  <div className="w-12 h-12 bg-primary/10 border border-primary/20 text-primary rounded-xl flex items-center justify-center mb-2">
                     <Sparkles size={28} />
                   </div>
-                  <h2>Ask one clear question.</h2>
-                  <p>Start with your career, love life, timing, or a general reading.</p>
+                  <h2 className="text-lg font-bold text-white">Ask one clear question.</h2>
+                  <p className="text-sm text-white/50 max-w-sm">Start with your career, love life, timing, or a general reading.</p>
 
-                  <div className="chat-suggestion-strip">
+                  <div className="flex flex-wrap gap-2.5 justify-center mt-4">
                     {SUGGESTIONS.map((s) => (
                       <button
                         type="button"
                         key={s.title}
-                        className="chat-suggestion-chip"
+                        className="px-4 py-2 bg-[#18181b]/50 border border-card-border hover:border-primary/50 hover:bg-primary/10 rounded-full text-xs text-white/70 hover:text-white transition-all cursor-pointer"
                         onClick={() => submitMessage(s.prompt)}
                       >
                         <span>{s.title}</span>
@@ -716,22 +712,22 @@ export default function ChatPage() {
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.25 }}
-                    className={`message-wrapper ${m.role === 'user' ? 'user' : 'ai'}`}
+                    className={`flex gap-4 max-w-[85%] items-end ${m.role === 'user' ? 'self-end flex-row-reverse' : 'self-start'}`}
                   >
                     {m.role === 'assistant' && (
-                      <div className="message-avatar ai">
-                        <Sparkles size={16} />
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-primary/10 text-primary border border-primary/20">
+                        <img src="/logo.png" alt="Astro.AI" className="w-full h-full object-cover" />
                       </div>
                     )}
 
-                    <div className="message-bubble">
+                    <div className={`p-4 rounded-2xl relative text-sm leading-relaxed group pr-8 ${m.role === 'user' ? 'bg-primary text-white rounded-br-none' : 'bg-[#18181b]/60 border border-card-border text-white/90 rounded-bl-none'}`}>
                       <MarkdownText text={m.content} />
                       {m.role === 'assistant' && <CopyButton text={m.content} />}
                     </div>
 
                     {m.role === 'user' && (
-                      <div className="message-avatar user">
-                        {user?.imageUrl ? <img src={user.imageUrl} alt="You" /> : <User size={16} />}
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-secondary border border-card-border overflow-hidden">
+                        {user?.imageUrl ? <img src={user.imageUrl} alt="You" className="w-full h-full object-cover" /> : <User size={16} className="text-white/40" />}
                       </div>
                     )}
                   </motion.div>
@@ -742,24 +738,24 @@ export default function ChatPage() {
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="message-wrapper ai"
+                  className="flex gap-4 max-w-[85%] items-end self-start"
                 >
-                  <div className="message-avatar ai">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-primary/10 text-primary border border-primary/20">
                     <Sparkles size={16} />
                   </div>
-                  <div className="message-bubble typing-bubble">
-                    <div className="typing-indicator">
-                      <span></span>
-                      <span></span>
-                      <span></span>
+                  <div className="p-4 bg-[#18181b]/60 border border-card-border text-white/90 rounded-2xl rounded-bl-none flex items-center gap-3">
+                    <div className="flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                      <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                      <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce"></span>
                     </div>
-                    <div className="typing-text">Consulting the stars...</div>
+                    <div className="text-xs text-white/50 font-medium">Consulting the stars...</div>
                   </div>
                 </motion.div>
               )}
 
               {error && (
-                <div className="chat-error-banner">
+                <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 text-xs rounded-xl mb-4">
                   <strong>Error:</strong> {error || 'Something went wrong. Please check your API keys.'}
                 </div>
               )}
@@ -767,22 +763,21 @@ export default function ChatPage() {
               <div ref={messagesEndRef} />
             </div>
 
-            <div className="chat-composer-shell">
-              <form onSubmit={onFormSubmit} className="chat-input-wrapper" id="chat-composer">
+            <div className="p-4 border-t border-card-border bg-[#0c0d12]/40 shrink-0">
+              <form onSubmit={onFormSubmit} className="flex items-center gap-3 w-full bg-secondary/80 border border-card-border rounded-xl px-4 py-3 focus-within:border-primary/50 transition-all" id="chat-composer">
                 <input
                   ref={inputRef}
-                  className="chat-input"
+                  className="flex-grow bg-transparent text-white placeholder-white/30 outline-none text-sm"
                   value={localInput}
                   onChange={(e) => setLocalInput(e.target.value)}
                   placeholder="Message Astro AI"
-                  style={{ paddingLeft: '0.75rem' }}
                 />
                 <button
                   type="submit"
-                  className={`chat-send-btn ${localInput.trim() ? 'active' : ''}`}
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white transition-colors cursor-pointer shrink-0 ${localInput.trim() ? 'bg-primary text-white' : ''}`}
                   disabled={isLoading || !localInput.trim()}
                 >
-                  <Send size={18} style={{ marginLeft: localInput.trim() ? '-2px' : '0px' }} />
+                  <Send size={18} />
                 </button>
               </form>
             </div>
