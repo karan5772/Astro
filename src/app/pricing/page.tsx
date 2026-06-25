@@ -31,7 +31,7 @@ const PLANS: Plan[] = [
     durationInMinutes: 5,
     description: "A fast, focused cosmic check-in when you only need a clean answer.",
     icon: "star",
-    iconColor: "var(--secondary)",
+    iconColor: "var(--tertiary)",
     features: ["Live voice access", "Fast emotional support", "Private and secure"],
   },
   {
@@ -55,7 +55,7 @@ const PLANS: Plan[] = [
     durationInMinutes: 40,
     description: "A full session for deeper forecasting and a broader life review.",
     icon: "stars",
-    iconColor: "var(--secondary)",
+    iconColor: "var(--tertiary)",
     features: ["Everything in Deep Healing", "Complete future forecasting", "Maximum session depth"],
   },
 ];
