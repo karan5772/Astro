@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useState, useRef, useEffect } from 'react';
 import {
@@ -19,7 +19,9 @@ import {
   Lock,
   Info,
   X,
-  Loader2
+  Loader2,
+  Paperclip,
+  Sun
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -98,10 +100,11 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-function MarkdownText({ text }: { text: string }) {
+function MarkdownText({ text, isUser }: { text: string; isUser?: boolean }) {
   if (!text) return null;
 
   const lines = text.split('\n');
+  const textSizeClass = isUser ? 'text-sm' : 'text-sm md:text-base';
 
   return (
     <div className="markdown-content">
@@ -110,21 +113,21 @@ function MarkdownText({ text }: { text: string }) {
 
         if (trimmed.startsWith('### ')) {
           return (
-            <h4 key={index} className="font-semibold text-accent text-sm md:text-base mt-3 mb-1">
+            <h4 key={index} className={`font-semibold text-accent mt-3 mb-1 ${isUser ? 'text-sm' : 'text-sm md:text-base'}`}>
               {renderInline(trimmed.slice(4))}
             </h4>
           );
         }
         if (trimmed.startsWith('## ')) {
           return (
-            <h3 key={index} className="font-bold text-accent text-base md:text-lg mt-4 mb-1.5">
+            <h3 key={index} className={`font-bold text-accent mt-4 mb-1.5 ${isUser ? 'text-base' : 'text-base md:text-lg'}`}>
               {renderInline(trimmed.slice(3))}
             </h3>
           );
         }
         if (trimmed.startsWith('# ')) {
           return (
-            <h2 key={index} className="font-bold text-accent text-lg md:text-xl mt-5 mb-2">
+            <h2 key={index} className={`font-bold text-accent mt-5 mb-2 ${isUser ? 'text-lg' : 'text-lg md:text-xl'}`}>
               {renderInline(trimmed.slice(2))}
             </h2>
           );
@@ -132,7 +135,7 @@ function MarkdownText({ text }: { text: string }) {
 
         if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
           return (
-            <div key={index} className="flex items-start gap-2 my-1 pl-2 text-sm md:text-base">
+            <div key={index} className={`flex items-start gap-2 my-1 pl-2 ${textSizeClass}`}>
               <span className="text-primary mt-1.5 flex-shrink-0" style={{ fontSize: '0.65rem' }}>◆</span>
               <span className="leading-relaxed">{renderInline(trimmed.slice(2))}</span>
             </div>
@@ -144,7 +147,7 @@ function MarkdownText({ text }: { text: string }) {
         }
 
         return (
-          <p key={index} className="my-1.5 leading-relaxed text-sm md:text-base">
+          <p key={index} className={`my-1.5 leading-relaxed ${textSizeClass}`}>
             {renderInline(line)}
           </p>
         );
@@ -197,6 +200,19 @@ const getMockPlacements = (dateStr?: string) => {
 export default function ChatPage() {
   const { user } = useUser();
   const [messages, setMessages] = useState<Message[]>([]);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    const handleSync = () => {
+      if (typeof window !== 'undefined') {
+        setSidebarCollapsed(localStorage.getItem('sidebar-collapsed') === 'true');
+      }
+    };
+    handleSync();
+    window.addEventListener('sidebar-collapse-change', handleSync);
+    return () => window.removeEventListener('sidebar-collapse-change', handleSync);
+  }, []);
+
   const [localInput, setLocalInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -204,6 +220,15 @@ export default function ChatPage() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      // Limit minimum height to 24px and dynamically expand based on scrollHeight
+      textareaRef.current.style.height = `${Math.max(24, textareaRef.current.scrollHeight)}px`;
+    }
+  }, [localInput]);
 
   // Profile status check
   const [checkingDetails, setCheckingDetails] = useState(true);
@@ -655,133 +680,155 @@ export default function ChatPage() {
   const mockPlacements = getMockPlacements(dbUser?.birthDate);
 
   return (
-    <div className="min-h-screen bg-[#0F1115] text-white flex flex-col lg:flex-row selection:bg-primary/30 selection:text-white">
+    <div className="min-h-screen bg-white dark:bg-[#0c0d12] text-gray-900 dark:text-white flex flex-col lg:flex-row selection:bg-primary/30 selection:text-white relative overflow-hidden">
+      {/* Sidebar on the Left */}
       <Sidebar />
 
-      <main className="flex-1 pt-24 lg:pt-8 pb-16 px-4 md:px-12 lg:pl-[300px] flex flex-col items-center h-screen relative z-10 w-full">
-        {/* Glow Background Orbs */}
-        <div className="absolute w-[400px] h-[400px] rounded-full bg-primary/5 blur-3xl pointer-events-none" style={{ top: '15%', left: '10%' }}></div>
-        <div className="absolute w-[400px] h-[400px] rounded-full bg-[#9d4edd]/5 blur-3xl pointer-events-none" style={{ bottom: '15%', right: '10%' }}></div>
+      {/* Main Chat Workspace */}
+      <main className={`flex-1 flex flex-col h-screen min-w-0 relative z-10 w-full bg-transparent overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:pl-[72px]' : 'lg:pl-[260px]'
+        }`}>
+        {/* Subtle Linear Grid Pattern Background */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#f3f4f6_1px,transparent_1px),linear-gradient(to_bottom,#f3f4f6_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#1e2230_0.5px,transparent_0.5px),linear-gradient(to_bottom,#1e2230_0.5px,transparent_0.5px)] bg-[size:24px_24px] pointer-events-none opacity-40 z-0" />
 
-        <div className="flex flex-col h-full w-full max-w-[1000px] mx-auto min-h-0">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5 pb-4 mb-6 shrink-0">
-            <div>
-              <p className="text-xs uppercase tracking-widest font-bold text-primary mb-1">Live chat</p>
-              <h1 className="text-2xl font-extrabold text-white">Talk to Astro AI</h1>
-              <p className="text-xs text-white/50 leading-relaxed">
-                A focused text console for quick questions, follow-ups, and deeper readings.
-              </p>
-            </div>
-            <div className="flex gap-2 text-[10px] uppercase tracking-wider font-extrabold text-white/50">
-              <span className="px-2.5 py-1 bg-secondary/60 border border-white/5 rounded-full">Text console</span>
-              <span className="px-2.5 py-1 bg-secondary/60 border border-white/5 rounded-full">{messages.length} messages</span>
-            </div>
-          </div>
 
-          <section className="flex-grow bg-secondary/40 backdrop-blur-lg border border-card-border rounded-2xl shadow-xl flex flex-col min-h-0 overflow-hidden relative">
-            <div className="flex-1 p-6 overflow-y-auto flex flex-col gap-6 min-h-0">
-              {messages.length === 0 && (
-                <div className="flex-1 flex flex-col items-center justify-center text-center p-6 gap-4">
-                  <div className="w-12 h-12 bg-primary/10 border border-primary/20 text-primary rounded-xl flex items-center justify-center mb-2">
-                    <Sparkles size={28} />
-                  </div>
-                  <h2 className="text-lg font-bold text-white">Ask one clear question.</h2>
-                  <p className="text-sm text-white/50 max-w-sm">Start with your career, love life, timing, or a general reading.</p>
 
-                  <div className="flex flex-wrap gap-2.5 justify-center mt-4">
-                    {SUGGESTIONS.map((s) => (
-                      <button
-                        type="button"
-                        key={s.title}
-                        className="px-4 py-2 bg-[#18181b]/50 border border-card-border hover:border-primary/50 hover:bg-primary/10 rounded-full text-xs text-white/70 hover:text-white transition-all cursor-pointer"
-                        onClick={() => submitMessage(s.prompt)}
-                      >
-                        <span>{s.title}</span>
-                      </button>
-                    ))}
-                  </div>
+        {/* Message Panel Scroll Area - Full width scrollable container so you can scroll anywhere on the page */}
+        <div className="flex-1 overflow-y-auto w-full z-10 min-h-0 flex flex-col">
+          <div className="px-4 md:px-8 py-6 flex flex-col gap-6 w-full max-w-4xl mx-auto flex-grow">
+            {messages.length === 0 && (
+              <div className="flex-1 flex flex-col items-center justify-center text-center p-6 gap-4 my-auto">
+                <div className="w-12 h-12 bg-primary/10 border border-primary/20 text-primary rounded-full flex items-center justify-center mb-2">
+                  <img src="logo.png" />
                 </div>
-              )}
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white">Ask one clear question.</h2>
+                <p className="text-sm text-gray-500 dark:text-white/50 max-w-sm">Start with your career, love life, timing, or a general reading.</p>
 
-              {messages.map((m) => {
-                if (m.role === 'assistant' && m.content.length === 0) return null;
+                <div className="flex flex-wrap gap-2.5 justify-center mt-4">
+                  {SUGGESTIONS.map((s) => (
+                    <button
+                      type="button"
+                      key={s.title}
+                      className="px-4 py-2 bg-gray-50 hover:bg-gray-100 dark:bg-[#18181b]/50 border border-gray-200 dark:border-card-border hover:border-primary/50 hover:dark:bg-primary/10 rounded-full text-xs text-gray-600 dark:text-white/70 hover:text-gray-900 hover:dark:text-white transition-all cursor-pointer"
+                      onClick={() => submitMessage(s.prompt)}
+                    >
+                      <span>{s.title}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
-                return (
-                  <motion.div
-                    key={m.id}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.25 }}
-                    className={`flex gap-4 max-w-[85%] items-end ${m.role === 'user' ? 'self-end flex-row-reverse' : 'self-start'}`}
-                  >
-                    {m.role === 'assistant' && (
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-primary/10 text-primary border border-primary/20">
-                        <img src="/logo.png" alt="Astro.AI" className="w-full h-full object-cover" />
-                      </div>
-                    )}
+            {messages.map((m) => {
+              if (m.role === 'assistant' && m.content.length === 0) return null;
 
-                    <div className={`p-4 rounded-2xl relative text-sm leading-relaxed group pr-8 ${m.role === 'user' ? 'bg-primary text-white rounded-br-none' : 'bg-[#18181b]/60 border border-card-border text-white/90 rounded-bl-none'}`}>
-                      <MarkdownText text={m.content} />
-                      {m.role === 'assistant' && <CopyButton text={m.content} />}
-                    </div>
-
-                    {m.role === 'user' && (
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-secondary border border-card-border overflow-hidden">
-                        {user?.imageUrl ? <img src={user.imageUrl} alt="You" className="w-full h-full object-cover" /> : <User size={16} className="text-white/40" />}
-                      </div>
-                    )}
-                  </motion.div>
-                );
-              })}
-
-              {showTypingIndicator && (
+              return (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
+                  key={m.id}
+                  initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex gap-4 max-w-[85%] items-end self-start"
+                  transition={{ duration: 0.25 }}
+                  className={`flex ${m.role === 'user' ? 'items-start gap-3.5 self-end max-w-[80%]' : 'items-start gap-3.5 self-start max-w-[85%]'}`}
                 >
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-primary/10 text-primary border border-primary/20">
-                    <Sparkles size={16} />
-                  </div>
-                  <div className="p-4 bg-[#18181b]/60 border border-card-border text-white/90 rounded-2xl rounded-bl-none flex items-center gap-3">
-                    <div className="flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                      <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                      <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce"></span>
-                    </div>
-                    <div className="text-xs text-white/50 font-medium">Consulting the stars...</div>
-                  </div>
+                  {m.role === 'user' ? (
+                    <>
+                      <div className="flex items-center gap-3">
+                        <div className="bg-gray-950 dark:bg-white text-white dark:text-black px-4.5 py-2.5 rounded-2xl text-sm font-medium shadow-sm leading-relaxed">
+                          <MarkdownText text={m.content} isUser />
+                        </div>
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 border border-gray-200 dark:border-white/10 overflow-hidden shadow-sm">
+                          {user?.imageUrl ? <img src={user.imageUrl} alt="You" className="w-full h-full object-cover" /> : <User size={16} className="text-gray-400" />}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-[#18181b] border border-gray-200 dark:border-white/10 flex items-center justify-center shrink-0 shadow-sm">
+                        <img src="/logo.png" alt="Astro" className=" object-contain" />
+                      </div>
+                      <div className="bg-[#f4f4f5] dark:bg-[#18181b]/60 border border-gray-200 dark:border-white/5 text-gray-900 dark:text-white/95 px-5 py-3.5 rounded-2xl text-sm leading-relaxed max-w-xl shadow-sm">
+                        <MarkdownText text={m.content} isUser />
+                        <div className="mt-2.5 flex justify-end">
+                          <CopyButton text={m.content} />
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </motion.div>
-              )}
+              );
+            })}
 
-              {error && (
-                <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 text-xs rounded-xl mb-4">
-                  <strong>Error:</strong> {error || 'Something went wrong. Please check your API keys.'}
+            {showTypingIndicator && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-start gap-3.5 max-w-[85%] self-start"
+              >
+                <div className="w-8 h-8 rounded bg-gray-50 dark:bg-[#18181b] border border-gray-200 dark:border-white/10 flex items-center justify-center shrink-0 shadow-sm">
+                  <img src="/logo.png" alt="Astro" className="w-5 h-5 object-contain" />
                 </div>
-              )}
+                <div className="p-4 bg-[#f4f4f5] dark:bg-[#18181b]/60 border border-gray-200 dark:border-white/5 text-gray-900 dark:text-white/90 rounded-2xl flex items-center gap-3 shadow-sm">
+                  <div className="flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                    <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                    <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce"></span>
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-white/50 font-medium">Consulting the stars...</div>
+                </div>
+              </motion.div>
+            )}
 
-              <div ref={messagesEndRef} />
-            </div>
+            {error && (
+              <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 text-xs rounded-xl mb-4">
+                <strong>Error:</strong> {error || 'Something went wrong. Please check your API keys.'}
+              </div>
+            )}
 
-            <div className="p-4 border-t border-card-border bg-[#0c0d12]/40 shrink-0">
-              <form onSubmit={onFormSubmit} className="flex items-center gap-3 w-full bg-secondary/80 border border-card-border rounded-xl px-4 py-3 focus-within:border-primary/50 transition-all" id="chat-composer">
-                <input
-                  ref={inputRef}
-                  className="flex-grow bg-transparent text-white placeholder-white/30 outline-none text-sm"
-                  value={localInput}
-                  onChange={(e) => setLocalInput(e.target.value)}
-                  placeholder="Message Astro AI"
-                />
-                <button
-                  type="submit"
-                  className={`w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white transition-colors cursor-pointer shrink-0 ${localInput.trim() ? 'bg-primary text-white' : ''}`}
-                  disabled={isLoading || !localInput.trim()}
-                >
-                  <Send size={18} />
-                </button>
-              </form>
-            </div>
-          </section>
+            <div ref={messagesEndRef} />
+          </div>
+        </div>
+
+        {/* Composer Input Area */}
+        <div className="p-4 bg-transparent shrink-0 w-full flex justify-center z-10">
+          <div className="w-full max-w-2xl bg-white dark:bg-[#18181b] border border-gray-200 dark:border-white/10 rounded-full px-5 py-2 flex items-end gap-3 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] focus-within:border-gray-300 dark:focus-within:border-white/20 transition-all">
+            <textarea
+              ref={textareaRef}
+              rows={1}
+              value={localInput}
+              onChange={(e) => setLocalInput(e.target.value)}
+              placeholder="Continue the conversation..."
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  if (e.shiftKey) {
+                    // Allow Shift+Enter to create a new line without submitting
+                  } else {
+                    e.preventDefault();
+                    if (localInput.trim() && !isLoading) {
+                      const text = localInput;
+                      setLocalInput('');
+                      submitMessage(text);
+                    }
+                  }
+                }
+              }}
+              className="flex-grow bg-transparent text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none border-none resize-none py-1.5 min-h-[24px] max-h-[140px] leading-relaxed align-bottom"
+            />
+            <button
+              onClick={() => {
+                if (localInput.trim() && !isLoading) {
+                  const text = localInput;
+                  setLocalInput('');
+                  submitMessage(text);
+                }
+              }}
+              disabled={isLoading || !localInput.trim()}
+              className={`px-4.5 py-2 rounded-full text-xs font-bold transition-all shrink-0 mb-0.5 ${localInput.trim() && !isLoading
+                ? 'bg-gray-950 dark:bg-white text-white dark:text-black hover:opacity-90 cursor-pointer shadow-sm'
+                : 'bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-white/20 cursor-not-allowed'
+                }`}
+            >
+              Send
+            </button>
+          </div>
         </div>
       </main>
     </div>
