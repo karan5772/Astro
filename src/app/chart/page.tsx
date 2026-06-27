@@ -3,372 +3,375 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Sparkles,
-  MapPin,
-  Calendar,
-  Clock,
-  Download,
-  Printer,
-  Globe,
-  Compass,
-  Info,
-  Search,
-  X,
-  Loader2
+  Sparkles, MapPin, Globe, Search, Loader2, ArrowRight, RotateCcw, Download, Printer,
 } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 import Sidebar from '@/components/Sidebar';
 import toast from 'react-hot-toast';
+import { DatePicker } from '@/components/ui/date-time-picker';
+import { TimePicker } from '@/components/ui/date-time-picker';
 
-interface GeocodeResult {
-  name: string;
-  latitude: number;
-  longitude: number;
+interface GeocodeResult { name: string; latitude: number; longitude: number }
+
+// ── Spinning zodiac wheel (same as OnboardingFlow) ────────────────────────────
+
+const GLYPHS = ['♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓'];
+const COLORS = ['#ff6b35','#51cf66','#74c0fc','#4dabf7','#ffd43b','#63e6be','#f783ac','#e64980','#ff8c00','#868e96','#74c0fc','#cc5de8'];
+
+function SpinningZodiacWheel({ status }: { status: string }) {
+  const S = 260, CX = 130, CY = 130, OR = 118, IR = 72, GR = 95, GAP = 2;
+  const rad = (d: number) => (d * Math.PI) / 180;
+
+  const arc = (i: number) => {
+    const s = rad(i * 30 - 90 + GAP / 2);
+    const e = rad((i + 1) * 30 - 90 - GAP / 2);
+    const p = (a: number, r: number) => [CX + r * Math.cos(a), CY + r * Math.sin(a)] as const;
+    const [ox1, oy1] = p(s, OR); const [ox2, oy2] = p(e, OR);
+    const [ix2, iy2] = p(e, IR); const [ix1, iy1] = p(s, IR);
+    return `M ${ox1} ${oy1} A ${OR} ${OR} 0 0 1 ${ox2} ${oy2} L ${ix2} ${iy2} A ${IR} ${IR} 0 0 0 ${ix1} ${iy1} Z`;
+  };
+
+  const glyphAt = (i: number) => {
+    const mid = rad((i + 0.5) * 30 - 90);
+    return [CX + GR * Math.cos(mid), CY + GR * Math.sin(mid)] as const;
+  };
+
+  return (
+    <div className="relative flex items-center justify-center">
+      <div className="absolute w-40 h-40 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 22, repeat: Infinity, ease: 'linear' }}
+      >
+        <svg width={S} height={S} viewBox={`0 0 ${S} ${S}`}>
+          {GLYPHS.map((g, i) => {
+            const [gx, gy] = glyphAt(i);
+            return (
+              <g key={i}>
+                <path d={arc(i)} fill={COLORS[i]} opacity={0.45 + (i % 3) * 0.12} />
+                <text x={gx} y={gy} textAnchor="middle" dominantBaseline="middle"
+                  fontSize="11" fill="rgba(255,255,255,0.55)">{g}</text>
+              </g>
+            );
+          })}
+        </svg>
+      </motion.div>
+      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+        <div className="w-[140px] h-[140px] rounded-full bg-[#0c0d12] flex flex-col items-center justify-center gap-2">
+          <motion.div
+            animate={{ opacity: [0.3, 1, 0.3], scale: [0.95, 1.05, 0.95] }}
+            transition={{ duration: 2.2, repeat: Infinity }}
+          >
+            <Sparkles size={22} className="text-primary" />
+          </motion.div>
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={status}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.3 }}
+              className="text-[9px] text-white/35 text-center px-4 leading-tight"
+            >
+              {status}
+            </motion.p>
+          </AnimatePresence>
+        </div>
+      </div>
+    </div>
+  );
 }
 
-interface UserData {
-  clerkId: string;
-  email: string;
-  isPro: boolean;
-  birthDate: string | null;
-  birthTime: string | null;
-  birthTimezone: string | null;
-  birthLocation: string | null;
-  birthLatitude: number | null;
-  birthLongitude: number | null;
-}
+// ── Shared styles + transitions ───────────────────────────────────────────────
+
+const FIELD = 'w-full px-4 py-3.5 bg-white/[0.04] border border-white/[0.07] rounded-xl text-sm text-white placeholder-white/20 outline-none focus:border-primary/40 transition-colors';
+const LABEL = 'block text-[10px] uppercase tracking-widest text-white/30 mb-2 font-medium';
+
+const stepVariants = {
+  enter: (d: number) => ({ x: d > 0 ? 56 : -56, opacity: 0 }),
+  center: { x: 0, opacity: 1 },
+  exit:  (d: number) => ({ x: d > 0 ? -56 : 56, opacity: 0 }),
+};
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function BirthChartPage() {
-  const { user, isLoaded: clerkLoaded } = useUser();
-  const [userData, setUserData] = useState<UserData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [date, setDate] = useState('1990-06-15');
-  const [time, setTime] = useState('12:00');
-  const [timezoneOffset, setTimezoneOffset] = useState('+05:30');
-  const [locationQuery, setLocationQuery] = useState('Pilani, Surajgarh, Rajasthan, India');
-  const [selectedLocationName, setSelectedLocationName] = useState('Pilani, Surajgarh, Rajasthan, India');
-  const [latitude, setLatitude] = useState<number | null>(28.364);
-  const [longitude, setLongitude] = useState<number | null>(75.601);
+  const { isLoaded: clerkLoaded } = useUser();
 
+  // Multi-step state
+  const [step, setStep] = useState<1|2|3|4>(1);
+  const [dir, setDir] = useState(1);
+  const [calcStatus, setCalcStatus] = useState('Reading the stars…');
+
+  // Form state (prefilled from user data)
+  const [date, setDate] = useState('');
+  const [time, setTime] = useState('');
+  const [timezoneOffset, setTimezoneOffset] = useState('+05:30');
+  const [locationQuery, setLocationQuery] = useState('');
+  const [selectedLocation, setSelectedLocation] = useState('');
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
   const [suggestions, setSuggestions] = useState<GeocodeResult[]>([]);
-  const [isSearchingLocation, setIsSearchingLocation] = useState(false);
-  const [isGeneratingChart, setIsGeneratingChart] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  // Result state
   const [svgData, setSvgData] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  // Sidebar
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     const handleSync = () => {
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined')
         setSidebarCollapsed(localStorage.getItem('sidebar-collapsed') === 'true');
-      }
     };
     handleSync();
     window.addEventListener('sidebar-collapse-change', handleSync);
     return () => window.removeEventListener('sidebar-collapse-change', handleSync);
   }, []);
 
+  // Timezone auto-detect + user data prefill
   useEffect(() => {
     document.body.classList.add('astraeus-active');
 
     const offset = -new Date().getTimezoneOffset();
     const sign = offset >= 0 ? '+' : '-';
-    const absOffset = Math.abs(offset);
-    const hours = String(Math.floor(absOffset / 60)).padStart(2, '0');
-    const minutes = String(absOffset % 60).padStart(2, '0');
-    setTimezoneOffset(`${sign}${hours}:${minutes}`);
+    const abs = Math.abs(offset);
+    setTimezoneOffset(`${sign}${String(Math.floor(abs / 60)).padStart(2, '0')}:${String(abs % 60).padStart(2, '0')}`);
 
-    const fetchUserData = async () => {
-      try {
-        const response = await fetch('/api/user');
-        if (response.ok) {
-          const data = await response.json();
-          setUserData(data);
-          if (data.hasBirthDetails) {
-            setDate(data.birthDate || '');
-            setTime(data.birthTime || '');
-            setTimezoneOffset(data.birthTimezone || '+05:30');
-            setLocationQuery(data.birthLocation || '');
-            setSelectedLocationName(data.birthLocation || '');
-            setLatitude(data.birthLatitude);
-            setLongitude(data.birthLongitude);
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching user profile:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserData();
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
-        setSuggestions([]);
-      }
-    };
-
-    window.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.body.classList.remove('astraeus-active');
-      window.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!locationQuery || locationQuery === selectedLocationName || locationQuery.trim().length < 2) {
-      setSuggestions([]);
-      return;
-    }
-
-    const delayDebounceFn = setTimeout(async () => {
-      setIsSearchingLocation(true);
-      try {
-        const res = await fetch(`/api/geocode?q=${encodeURIComponent(locationQuery)}`);
-        if (res.ok) {
-          const data = await res.json();
-          setSuggestions(data);
-        }
-      } catch (err) {
-        console.error('Failed to autocomplete location:', err);
-      } finally {
-        setIsSearchingLocation(false);
-      }
-    }, 400);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [locationQuery, selectedLocationName]);
-
-  const fetchUserData = async () => {
-    try {
-      const response = await fetch('/api/user');
-      if (response.ok) {
-        const data = await response.json();
-        setUserData(data);
+    fetch('/api/user')
+      .then(r => r.json())
+      .then(data => {
         if (data.hasBirthDetails) {
           setDate(data.birthDate || '');
           setTime(data.birthTime || '');
           setTimezoneOffset(data.birthTimezone || '+05:30');
           setLocationQuery(data.birthLocation || '');
-          setSelectedLocationName(data.birthLocation || '');
+          setSelectedLocation(data.birthLocation || '');
           setLatitude(data.birthLatitude);
           setLongitude(data.birthLongitude);
         }
-      }
-    } catch (err) {
-      console.error('Error fetching user profile:', err);
-      toast.error('Failed to load profile details.');
+      })
+      .catch(() => {});
+
+    return () => { document.body.classList.remove('astraeus-active'); };
+  }, []);
+
+  // Location search debounce
+  useEffect(() => {
+    if (!locationQuery || locationQuery === selectedLocation || locationQuery.trim().length < 2) {
+      setSuggestions([]); return;
     }
-  };
-
-  const handleSelectLocation = (location: GeocodeResult) => {
-    setLocationQuery(location.name);
-    setSelectedLocationName(location.name);
-    setLatitude(location.latitude);
-    setLongitude(location.longitude);
-    setSuggestions([]);
-    toast.success(`Location set: ${location.name.split(',')[0]}`);
-  };
-
-  const handleGenerateChart = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!date || !time || latitude === null || longitude === null) {
-      toast.error('Please enter all required birth details.');
-      return;
-    }
-
-    setIsGeneratingChart(true);
-    setError(null);
-    setSvgData(null);
-
-    const generatePromise = new Promise(async (resolve, reject) => {
+    const t = setTimeout(async () => {
+      setSearching(true);
       try {
-        const response = await fetch('/api/chart', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            date, time, timezoneOffset, locationName: selectedLocationName,
-            latitude, longitude,
-          }),
-        });
+        const res = await fetch(`/api/geocode?q=${encodeURIComponent(locationQuery)}`);
+        if (res.ok) setSuggestions(await res.json());
+      } catch { /* swallow */ }
+      finally { setSearching(false); }
+    }, 380);
+    return () => clearTimeout(t);
+  }, [locationQuery, selectedLocation]);
 
-        if (!response.ok) {
-          const errData = await response.json();
-          throw new Error(errData.error || 'Server error generating chart.');
-        }
+  // Click outside suggestions
+  useEffect(() => {
+    const h = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) setSuggestions([]);
+    };
+    window.addEventListener('mousedown', h);
+    return () => window.removeEventListener('mousedown', h);
+  }, []);
 
-        const data = await response.json();
-        setSvgData(data.svg);
-        resolve(data);
-      } catch (err: any) {
-        setError(err.message || 'Something went wrong.');
-        reject(err);
-      } finally {
-        setIsGeneratingChart(false);
-      }
-    });
+  const go = (s: 1|2|3|4, d = 1) => { setDir(d); setStep(s); };
 
-    toast.promise(generatePromise, {
-      loading: 'Aligning planets and drawing natal chart...',
-      success: 'Cosmic chart successfully drawn!',
-      error: (err) => `Chart calculation failed: ${err.message || 'Unknown error'}`
-    });
+  const handleStep1 = () => {
+    if (!date || !time) { toast.error('Please enter your date and time of birth.'); return; }
+    go(2);
+  };
+
+  const handleStep2 = async () => {
+    if (!selectedLocation || latitude === null || longitude === null) {
+      toast.error('Select a location from the suggestions.'); return;
+    }
+    go(3);
+
+    const statuses = [
+      'Reading the stars…',
+      'Mapping planetary positions…',
+      'Calculating Vedic placements…',
+      'Drawing your natal chart…',
+    ];
+    let i = 0;
+    const iv = setInterval(() => { i = (i + 1) % statuses.length; setCalcStatus(statuses[i]); }, 1800);
+
+    try {
+      const res = await fetch('/api/chart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date, time, timezoneOffset,
+          locationName: selectedLocation,
+          latitude, longitude,
+        }),
+      });
+      clearInterval(iv);
+      if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Server error'); }
+      const data = await res.json();
+      setSvgData(data.svg);
+      setCalcStatus('Your chart is ready ✨');
+      setTimeout(() => go(4), 900);
+    } catch (err: any) {
+      clearInterval(iv);
+      toast.error(`Chart failed: ${err.message}`);
+      go(2, -1);
+    }
   };
 
   const handleDownloadSVG = () => {
     if (!svgData) return;
-    try {
-      const blob = new Blob([svgData], { type: 'image/svg+xml' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `astro_birth_chart_${date.replace(/-/g, '')}_${time.replace(/:/g, '')}.svg`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      toast.success('SVG chart downloaded successfully!');
-    } catch (err) {
-      toast.error('Failed to download chart.');
-    }
+    const blob = new Blob([svgData], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `birth_chart_${date.replace(/-/g, '')}_${time.replace(/:/g, '')}.svg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success('Chart downloaded!');
   };
 
-  const handlePrintChart = () => {
+  const handlePrint = () => {
     if (!svgData) return;
-    try {
-      const printWindow = window.open('', '_blank');
-      if (!printWindow) {
-        toast.error('Popup blocked! Please allow popups to print.');
-        return;
-      }
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>Birth Chart - Astraeus Astrology</title>
-            <style>
-              body { background: white; color: black; font-family: sans-serif; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
-              .container { text-align: center; max-width: 600px; width: 100%; }
-              svg { width: 100%; max-height: 500px; margin-top: 20px; }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <h2>Natal Birth Chart</h2>
-              <p>Date: ${date} | Time: ${time} (${timezoneOffset})</p>
-              <p>Location: ${selectedLocationName}</p>
-              ${svgData}
-            </div>
-          </body>
-        </html>
-      `);
-      printWindow.document.close();
-      printWindow.focus();
-      setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
-      }, 500);
-    } catch (err) {
-      toast.error('Failed to open print layout.');
-    }
+    const w = window.open('', '_blank');
+    if (!w) { toast.error('Popup blocked. Please allow popups.'); return; }
+    w.document.write(`
+      <html><head><title>Birth Chart</title>
+      <style>body{background:#fff;display:flex;flex-direction:column;align-items:center;padding:32px;font-family:sans-serif}
+      svg{width:100%;max-width:520px;height:auto;margin-top:16px}</style></head>
+      <body><h2>Natal Birth Chart</h2>
+      <p>${date} · ${time} (${timezoneOffset}) · ${selectedLocation}</p>
+      ${svgData}</body></html>
+    `);
+    w.document.close();
+    w.focus();
+    setTimeout(() => { w.print(); w.close(); }, 500);
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0c0d12] text-white flex flex-col lg:flex-row selection:bg-primary/30 selection:text-white">
+    <div className="min-h-screen bg-[#0c0d12] text-white flex flex-col lg:flex-row selection:bg-primary/30 selection:text-white">
       <Sidebar />
 
-      <main className={`flex-1 pt-24 lg:pt-8 pb-16 px-4 md:px-12 flex flex-col items-center overflow-y-auto w-full relative z-10 transition-all duration-300 ${sidebarCollapsed ? 'lg:pl-[72px]' : 'lg:pl-[260px]'
-        }`}>
-        {/* Glow Background Orbs */}
-        <div className="absolute w-[400px] h-[400px] rounded-full bg-primary/5 blur-3xl pointer-events-none" style={{ top: '15%', left: '10%' }}></div>
-        <div className="absolute w-[400px] h-[400px] rounded-full bg-[#9d4edd]/5 blur-3xl pointer-events-none" style={{ bottom: '15%', right: '10%' }}></div>
+      <main className={`flex-1 flex items-center justify-center min-h-screen px-5 py-16 relative z-10 transition-all duration-300 ${sidebarCollapsed ? 'lg:pl-[72px]' : 'lg:pl-[260px]'}`}>
 
-        <div className="w-full max-w-[1280px] my-auto">
+        {/* Ambient orbs */}
+        <div className="fixed w-[500px] h-[500px] rounded-full bg-primary/5 blur-3xl pointer-events-none -top-32 -left-32" />
+        <div className="fixed w-[400px] h-[400px] rounded-full bg-purple-900/8 blur-3xl pointer-events-none -bottom-20 -right-20" />
 
-          <div className="flex justify-center w-full pb-12">
-            <motion.section
-              className="w-full max-w-[750px] bg-secondary/40 backdrop-blur-lg border border-card-border rounded-2xl p-8 md:p-10 shadow-2xl relative"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.05 }}
-            >
-              {/* Subtle inner glow */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-4/5 h-[300px] bg-primary/5 filter blur-[80px] pointer-events-none" />
+        <div className={`w-full relative z-10 transition-all duration-300 ${step === 4 ? 'max-w-lg' : 'max-w-sm'}`}>
 
-              <div className="relative z-10">
-                <div className="flex items-center gap-3 border-b border-card-border pb-4 mb-6">
-                  <Sparkles className="text-primary" size={20} />
-                  <h3 className="text-lg font-bold text-white">Natal Details</h3>
+          {/* Step pill dots — visible on steps 1 & 2 */}
+          {(step === 1 || step === 2) && (
+            <div className="flex items-center justify-center gap-2 mb-12">
+              {[1, 2].map(s => (
+                <motion.div key={s} className="rounded-full"
+                  animate={{
+                    width: step === s ? 28 : 7,
+                    backgroundColor: step === s ? '#6D5DFB' : 'rgba(255,255,255,0.12)',
+                  }}
+                  style={{ height: 7 }}
+                  transition={{ duration: 0.3 }}
+                />
+              ))}
+            </div>
+          )}
+
+          <AnimatePresence mode="wait" custom={dir}>
+
+            {/* ── Step 1: Date & Time ──────────────────────────────────────── */}
+            {step === 1 && (
+              <motion.div key="s1" custom={dir} variants={stepVariants}
+                initial="enter" animate="center" exit="exit"
+                transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}>
+
+                <div className="text-center mb-10">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-primary/60 mb-3">Step 1 of 2</p>
+                  <h1 className="text-[28px] font-bold text-white mb-2 leading-tight">When were you born?</h1>
+                  <p className="text-[13px] text-white/30 leading-relaxed">
+                    Your exact birth time shapes every planetary placement in your chart.
+                  </p>
                 </div>
 
-                <form onSubmit={handleGenerateChart} className="flex flex-col gap-5">
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <div className="flex flex-col gap-2">
-                      <label className="text-[10px] uppercase tracking-wider font-extrabold text-white/50 flex items-center gap-1.5">
-                        <Calendar size={12} /> Date
-                      </label>
-                      <input
-                        type="date"
-                        value={date}
-                        onChange={(e) => setDate(e.target.value)}
-                        className="w-full p-3 text-sm rounded-lg bg-secondary/80 border border-card-border text-white outline-none focus:border-primary/50 transition-colors"
-                        required
-                      />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <label className="text-[10px] uppercase tracking-wider font-extrabold text-white/50 flex items-center gap-1.5">
-                        <Clock size={12} /> Time
-                      </label>
-                      <input
-                        type="time"
-                        value={time}
-                        onChange={(e) => setTime(e.target.value)}
-                        className="w-full p-3 text-sm rounded-lg bg-secondary/80 border border-card-border text-white outline-none focus:border-primary/50 transition-colors"
-                        required
-                      />
-                    </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className={LABEL}>Date of Birth</label>
+                    <DatePicker
+                      value={date}
+                      onChange={setDate}
+                      placeholder="Select your birth date"
+                    />
                   </div>
+                  <div>
+                    <label className={LABEL}>Time of Birth</label>
+                    <TimePicker
+                      value={time}
+                      onChange={setTime}
+                      placeholder="Select your birth time"
+                    />
+                    <p className="text-[10px] text-white/20 mt-1.5 pl-0.5">Timezone is set in the next step</p>
+                  </div>
+                  <button onClick={handleStep1}
+                    className="w-full mt-3 py-3.5 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-semibold uppercase tracking-widest flex items-center justify-center gap-2 transition-colors">
+                    Continue <ArrowRight size={13} />
+                  </button>
+                </div>
+              </motion.div>
+            )}
 
-                  <div ref={searchContainerRef} className="flex flex-col gap-2 relative">
-                    <label className="text-[10px] uppercase tracking-wider font-extrabold text-white/50 flex items-center gap-1.5">
-                      <MapPin size={12} /> Birth Place
-                    </label>
-                    <div className="relative w-full">
-                      <input
-                        type="text"
-                        placeholder="Search city/place..."
-                        value={locationQuery}
-                        onChange={(e) => setLocationQuery(e.target.value)}
-                        className="w-full p-3 pr-10 text-sm rounded-lg bg-secondary/80 border border-card-border text-white outline-none focus:border-primary/50 transition-colors"
-                        required
-                      />
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40">
-                        {isSearchingLocation ? (
-                          <Loader2 size={16} className="animate-spin text-primary" />
-                        ) : (
-                          <Search size={14} />
-                        )}
+            {/* ── Step 2: Location ─────────────────────────────────────────── */}
+            {step === 2 && (
+              <motion.div key="s2" custom={dir} variants={stepVariants}
+                initial="enter" animate="center" exit="exit"
+                transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}>
+
+                <div className="text-center mb-10">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-primary/60 mb-3">Step 2 of 2</p>
+                  <h1 className="text-[28px] font-bold text-white mb-2 leading-tight">Where were you born?</h1>
+                  <p className="text-[13px] text-white/30 leading-relaxed">
+                    Your birth location determines your ascendant and house positions.
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Location search */}
+                  <div ref={searchRef} className="relative">
+                    <label className={LABEL}><MapPin size={9} className="inline mr-1.5" />Birth Place</label>
+                    <div className="relative">
+                      <input type="text" placeholder="Search city…" value={locationQuery}
+                        onChange={e => { setLocationQuery(e.target.value); setSelectedLocation(''); }}
+                        className={`${FIELD} pr-11`} />
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-white/25">
+                        {searching ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
                       </div>
                     </div>
-
                     <AnimatePresence>
                       {suggestions.length > 0 && (
                         <motion.div
-                          className="absolute top-[calc(100%+8px)] left-0 right-0 bg-[#18181B] border border-card-border rounded-lg z-50 max-h-[200px] overflow-y-auto shadow-2xl"
-                          initial={{ opacity: 0, y: -5 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -5 }}
-                        >
+                          className="absolute top-[calc(100%+6px)] left-0 right-0 bg-[#16171e] border border-white/[0.08] rounded-xl z-50 max-h-48 overflow-y-auto shadow-2xl"
+                          initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
+                          transition={{ duration: 0.15 }}>
                           {suggestions.map((loc, idx) => (
-                            <button
-                              key={idx}
-                              type="button"
-                              onClick={() => handleSelectLocation(loc)}
-                              className="w-full text-left p-3 hover:bg-white/5 border-b border-white/5 text-white/80 text-xs flex items-center gap-2 cursor-pointer transition-colors"
-                            >
-                              <MapPin size={14} className="text-primary shrink-0" />
+                            <button key={idx} type="button"
+                              onClick={() => {
+                                setLocationQuery(loc.name);
+                                setSelectedLocation(loc.name);
+                                setLatitude(loc.latitude);
+                                setLongitude(loc.longitude);
+                                setSuggestions([]);
+                              }}
+                              className="w-full text-left px-4 py-3 hover:bg-white/5 border-b border-white/[0.04] last:border-0 text-white/65 text-xs flex items-center gap-2.5 transition-colors">
+                              <MapPin size={11} className="text-primary/60 shrink-0" />
                               <span className="truncate">{loc.name}</span>
                             </button>
                           ))}
@@ -377,118 +380,102 @@ export default function BirthChartPage() {
                     </AnimatePresence>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <div className="flex flex-col gap-2">
-                      <label className="text-[10px] uppercase tracking-wider font-extrabold text-white/50 flex items-center gap-1.5">
-                        <Globe size={12} /> Timezone
-                      </label>
-                      <select
-                        value={timezoneOffset}
-                        onChange={(e) => setTimezoneOffset(e.target.value)}
-                        className="w-full p-3 text-sm rounded-lg bg-secondary/80 border border-card-border text-white outline-none focus:border-primary/50 transition-colors"
-                      >
-                        <option value="-08:00">UTC-08:00 (PST)</option>
-                        <option value="-05:00">UTC-05:00 (EST)</option>
-                        <option value="+00:00">UTC+00:00 (GMT)</option>
-                        <option value="+05:30">UTC+05:30 (IST)</option>
-                        <option value="+08:00">UTC+08:00 (SGT)</option>
-                      </select>
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                      <label className="text-[10px] uppercase tracking-wider font-extrabold text-white/50 flex items-center gap-1.5">
-                        <Compass size={12} /> Coordinates
-                      </label>
-                      <div className="w-full p-3 text-xs rounded-lg flex items-center justify-between bg-secondary/40 border border-white/5 cursor-not-allowed">
-                        {latitude !== null && longitude !== null ? (
-                          <span className="text-[#cebdff] truncate">
-                            {latitude.toFixed(2)}°N | {longitude.toFixed(2)}°E
-                          </span>
-                        ) : (
-                          <span className="text-white/40">None</span>
-                        )}
-                        <Globe size={14} className="text-white/40 shrink-0" />
-                      </div>
-                    </div>
+                  {/* Timezone */}
+                  <div>
+                    <label className={LABEL}><Globe size={9} className="inline mr-1.5" />Timezone</label>
+                    <select value={timezoneOffset} onChange={e => setTimezoneOffset(e.target.value)} className={FIELD}>
+                      {[
+                        ['-12:00','UTC−12'],  ['-11:00','UTC−11'],  ['-10:00','UTC−10'],
+                        ['-09:00','UTC−09'],  ['-08:00','UTC−08 (PST)'], ['-07:00','UTC−07 (MST)'],
+                        ['-06:00','UTC−06 (CST)'], ['-05:00','UTC−05 (EST)'], ['-04:00','UTC−04 (AST)'],
+                        ['-03:00','UTC−03'],  ['+00:00','UTC+00 (GMT)'], ['+01:00','UTC+01 (CET)'],
+                        ['+02:00','UTC+02 (EET)'], ['+03:00','UTC+03'], ['+04:00','UTC+04 (GST)'],
+                        ['+05:00','UTC+05'],  ['+05:30','UTC+05:30 (IST)'], ['+05:45','UTC+05:45 (NPT)'],
+                        ['+06:00','UTC+06'],  ['+07:00','UTC+07'],  ['+08:00','UTC+08 (SGT)'],
+                        ['+09:00','UTC+09 (JST)'], ['+09:30','UTC+09:30'], ['+10:00','UTC+10 (AEST)'],
+                        ['+12:00','UTC+12 (NZST)'],
+                      ].map(([val, label]) => (
+                        <option key={val} value={val}>{label}</option>
+                      ))}
+                    </select>
                   </div>
 
-                  <div className="mt-4">
-                    <button
-                      type="submit"
-                      className={`w-full py-3.5 px-6 rounded-lg font-bold text-xs uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2 shadow-[0_8px_16px_-4px_rgba(109,93,251,0.4)] bg-gradient-to-r from-primary to-[#5b4be3] text-white hover:opacity-90 transition-all ${isGeneratingChart ? 'opacity-70 cursor-not-allowed' : ''}`}
-                      disabled={isGeneratingChart}
-                    >
-                      {isGeneratingChart ? (
-                        <>
-                          <Loader2 size={18} className="animate-spin" />
-                          CALCULATING HEAVENS...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles size={18} />
-                          GENERATE BLUEPRINT
-                        </>
-                      )}
+                  {/* Coordinates preview */}
+                  {latitude !== null && longitude !== null && (
+                    <motion.p
+                      initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }}
+                      className="text-[10px] text-white/25 pl-0.5 flex items-center gap-1.5">
+                      <MapPin size={9} className="text-primary/40" />
+                      {latitude.toFixed(3)}°, {longitude.toFixed(3)}°
+                    </motion.p>
+                  )}
+
+                  <div className="flex gap-3 pt-1">
+                    <button onClick={() => go(1, -1)}
+                      className="px-5 py-3.5 rounded-xl border border-white/[0.08] text-white/35 text-xs font-medium hover:text-white/55 transition-colors">
+                      Back
+                    </button>
+                    <button onClick={handleStep2}
+                      className="flex-1 py-3.5 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-semibold uppercase tracking-widest flex items-center justify-center gap-2 transition-colors">
+                      Generate chart <Sparkles size={13} />
                     </button>
                   </div>
-                </form>
-              </div>
+                </div>
+              </motion.div>
+            )}
 
-              {/* DYNAMIC RESULTS RENDERED BELOW FORM */}
-              <AnimatePresence mode="wait">
-                {(isGeneratingChart || svgData || error) && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                    animate={{ opacity: 1, height: 'auto', marginTop: '2.5rem' }}
-                    exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                    className="border-t border-card-border pt-8 overflow-hidden"
-                  >
-                    {error && (
-                      <div className="flex flex-col items-center text-center">
-                        <div className="w-12 h-12 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center justify-center mb-4">
-                          <X className="text-red-500" size={24} />
-                        </div>
-                        <h3 className="text-lg font-bold text-red-500 mb-1">Calculation Failed</h3>
-                        <p className="text-white/50 text-sm">{error}</p>
-                      </div>
-                    )}
+            {/* ── Step 3: Calculating ──────────────────────────────────────── */}
+            {step === 3 && (
+              <motion.div key="s3"
+                initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}>
+                <div className="flex flex-col items-center gap-10">
+                  <SpinningZodiacWheel status={calcStatus} />
+                  <p className="text-[11px] text-white/20 uppercase tracking-widest">This may take a moment</p>
+                </div>
+              </motion.div>
+            )}
 
-                    {svgData && !isGeneratingChart && (
-                      <div className="flex flex-col items-center">
-                        <div className="text-center mb-6 w-full">
-                          <span className="text-primary text-[10px] font-extrabold uppercase tracking-widest block mb-1">Generated Output</span>
-                          <h3 className="text-xl font-extrabold text-white">
-                            Rasi D-1 Chart
-                          </h3>
-                        </div>
+            {/* ── Step 4: Chart result ─────────────────────────────────────── */}
+            {step === 4 && svgData && (
+              <motion.div key="s4"
+                initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}>
 
-                        <div
-                          className="w-full flex justify-center bg-[#0c0d12]/60 border border-card-border rounded-xl p-6 [&>svg]:w-full [&>svg]:h-auto [&>svg]:max-h-[480px] [&>svg]:object-contain"
-                          dangerouslySetInnerHTML={{ __html: svgData }}
-                        />
+                <div className="text-center mb-8">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-primary/60 mb-3">Rasi D-1 Chart</p>
+                  <h1 className="text-[24px] font-bold text-white mb-2 leading-tight">Your Natal Blueprint</h1>
+                  <p className="text-[12px] text-white/30">
+                    {date} · {time} · {selectedLocation.split(',')[0]}
+                  </p>
+                </div>
 
-                        <div className="flex items-center gap-4 mt-8">
-                          <button
-                            onClick={handleDownloadSVG}
-                            className="px-5 py-2.5 rounded-lg flex items-center gap-2 bg-[#18181b] border border-card-border hover:border-white/10 text-white cursor-pointer text-xs font-bold uppercase tracking-wider transition-colors"
-                          >
-                            <Download size={16} /> SVG
-                          </button>
-                          <button
-                            onClick={handlePrintChart}
-                            className="px-5 py-2.5 rounded-lg flex items-center gap-2 bg-[#18181b] border border-card-border hover:border-white/10 text-white cursor-pointer text-xs font-bold uppercase tracking-wider transition-colors"
-                          >
-                            <Printer size={16} /> Print
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                {/* SVG chart */}
+                <div
+                  className="w-full bg-white/[0.025] border border-white/[0.07] rounded-2xl p-5 mb-6 [&>svg]:w-full [&>svg]:h-auto"
+                  dangerouslySetInnerHTML={{ __html: svgData }}
+                />
 
-            </motion.section>
-          </div>
+                {/* Actions */}
+                <div className="flex gap-3">
+                  <button onClick={handleDownloadSVG}
+                    className="flex-1 py-3 rounded-xl border border-white/[0.08] text-white/50 text-xs font-semibold flex items-center justify-center gap-2 hover:text-white/75 hover:border-white/15 transition-colors">
+                    <Download size={13} /> Download SVG
+                  </button>
+                  <button onClick={handlePrint}
+                    className="flex-1 py-3 rounded-xl border border-white/[0.08] text-white/50 text-xs font-semibold flex items-center justify-center gap-2 hover:text-white/75 hover:border-white/15 transition-colors">
+                    <Printer size={13} /> Print
+                  </button>
+                </div>
+
+                <button onClick={() => { setSvgData(null); go(1); }}
+                  className="w-full mt-4 flex items-center justify-center gap-1.5 text-[11px] text-white/25 hover:text-white/45 transition-colors">
+                  <RotateCcw size={11} /> Calculate another chart
+                </button>
+              </motion.div>
+            )}
+
+          </AnimatePresence>
         </div>
       </main>
     </div>

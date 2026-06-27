@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { UserButton, useAuth } from '@clerk/nextjs';
 import {
   Home,
@@ -43,6 +43,7 @@ function relativeTime(iso: string) {
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { userId } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -70,15 +71,13 @@ export default function Sidebar() {
     }
   }, [userId]);
 
-  // Load conversations when on /chat
+  // Load conversations on all pages
   useEffect(() => {
-    if (!isOnChat) return;
     chatStorage.listConversations().then(setConversations);
-  }, [isOnChat]);
+  }, []);
 
   // Re-read list when chat page signals a change
   useEffect(() => {
-    if (!isOnChat) return;
     const handler = (e: Event) => {
       chatStorage.listConversations().then(setConversations);
       const detail = (e as CustomEvent).detail;
@@ -86,15 +85,14 @@ export default function Sidebar() {
     };
     window.addEventListener('chat:list-changed', handler);
     return () => window.removeEventListener('chat:list-changed', handler);
-  }, [isOnChat]);
+  }, []);
 
   // Sync active conversation from chat page
   useEffect(() => {
-    if (!isOnChat) return;
     const handler = (e: Event) => setActiveConvId((e as CustomEvent).detail?.id ?? null);
     window.addEventListener('chat:active-changed', handler);
     return () => window.removeEventListener('chat:active-changed', handler);
-  }, [isOnChat]);
+  }, []);
 
   const toggleCollapsed = () => {
     const next = !collapsed;
@@ -115,12 +113,22 @@ export default function Sidebar() {
   };
 
   const handleNewConversation = () => {
+    if (!isOnChat) {
+      router.push('/chat');
+      return;
+    }
     setActiveConvId(null);
     window.dispatchEvent(new CustomEvent('sidebar:new'));
   };
 
   const handleSwitchConversation = (id: string) => {
     setActiveConvId(id);
+    if (!isOnChat) {
+      localStorage.setItem('sidebar:pending-conv', id);
+      router.push('/chat');
+      setMobileOpen(false);
+      return;
+    }
     window.dispatchEvent(new CustomEvent('sidebar:switch', { detail: { id } }));
     setMobileOpen(false);
   };
@@ -210,9 +218,8 @@ export default function Sidebar() {
           </ul>
         </nav>
 
-        {/* ── Readings section — only on /chat ─────────────────────────── */}
-        {isOnChat && (
-          <div className="flex-1 flex flex-col min-h-0 border-t border-gray-100 dark:border-white/5">
+        {/* ── Readings section ─────────────────────────────────────────── */}
+        <div className="flex-1 flex flex-col min-h-0 border-t border-gray-100 dark:border-white/5">
             {/* Section header + New button */}
             <div className={`flex items-center px-3 pt-3 pb-2 shrink-0 ${collapsed ? 'justify-center' : 'justify-between'}`}>
               {!collapsed && (
@@ -287,7 +294,6 @@ export default function Sidebar() {
               )}
             </div>
           </div>
-        )}
         {/* ──────────────────────────────────────────────────────────────── */}
 
         {/* Bottom Profile */}

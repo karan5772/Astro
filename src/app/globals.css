@@ -174,3 +174,6 @@
   --sidebar-border: #27272a;
   --sidebar-ring: #6D5DFB;
 }
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

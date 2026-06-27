@@ -7,6 +7,8 @@ import {
   Sparkles, MapPin, Calendar, Clock, Globe, Compass,
   Loader2, Search, ShieldCheck, ShieldAlert, Pencil, X,
 } from 'lucide-react';
+import { DatePicker } from '@/components/ui/date-time-picker';
+import { TimePicker } from '@/components/ui/date-time-picker';
 import Navbar from '@/components/Navbar';
 import toast from 'react-hot-toast';
 
@@ -415,7 +417,7 @@ export default function ProfilePage() {
                       {[
                         { icon: <Calendar size={11} />, label: 'Date', value: date ? new Date(date + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : '—', wide: false },
                         { icon: <Clock size={11} />, label: 'Time', value: time || '—', wide: false },
-                        { icon: <MapPin size={11} />, label: 'Place', value: selectedLocationName ? selectedLocationName.split(',').slice(0, 2).join(', ') : '—', wide: true },
+                        { icon: <MapPin size={11} />, label: 'Place', value: selectedLocationName || '—', wide: true },
                         { icon: <Globe size={11} />, label: 'Timezone', value: timezoneOffset ? `UTC${timezoneOffset}` : '—', wide: false },
                         { icon: <Compass size={11} />, label: 'Coordinates', value: latitude !== null && longitude !== null ? `${latitude.toFixed(2)}° · ${longitude.toFixed(2)}°` : '—', wide: false },
                       ].map(({ icon, label, value, wide }) => (
@@ -442,12 +444,12 @@ export default function ProfilePage() {
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className={LABEL}><Calendar size={9} className="inline mr-1" />Date</label>
-                      <input type="date" value={date} onChange={e => setDate(e.target.value)} className={FIELD} required />
+                      <label className={LABEL}>Date</label>
+                      <DatePicker value={date} onChange={setDate} placeholder="Birth date" />
                     </div>
                     <div>
-                      <label className={LABEL}><Clock size={9} className="inline mr-1" />Time</label>
-                      <input type="time" value={time} onChange={e => setTime(e.target.value)} className={FIELD} required />
+                      <label className={LABEL}>Time</label>
+                      <TimePicker value={time} onChange={setTime} placeholder="Birth time" />
                     </div>
                   </div>
                   <div ref={searchContainerRef} className="relative">
@@ -479,11 +481,19 @@ export default function ProfilePage() {
                     <div>
                       <label className={LABEL}><Globe size={9} className="inline mr-1" />Timezone</label>
                       <select value={timezoneOffset} onChange={e => setTimezoneOffset(e.target.value)} className={FIELD}>
-                        <option value="-08:00">UTC−08 (PST)</option>
-                        <option value="-05:00">UTC−05 (EST)</option>
-                        <option value="+00:00">UTC+00 (GMT)</option>
-                        <option value="+05:30">UTC+05:30 (IST)</option>
-                        <option value="+08:00">UTC+08 (SGT)</option>
+                        {[
+                          ['-12:00','UTC−12'],  ['-11:00','UTC−11'],  ['-10:00','UTC−10'],
+                          ['-09:00','UTC−09'],  ['-08:00','UTC−08 (PST)'], ['-07:00','UTC−07 (MST)'],
+                          ['-06:00','UTC−06 (CST)'], ['-05:00','UTC−05 (EST)'], ['-04:00','UTC−04 (AST)'],
+                          ['-03:00','UTC−03'],  ['+00:00','UTC+00 (GMT)'], ['+01:00','UTC+01 (CET)'],
+                          ['+02:00','UTC+02 (EET)'], ['+03:00','UTC+03'], ['+04:00','UTC+04 (GST)'],
+                          ['+05:00','UTC+05'],  ['+05:30','UTC+05:30 (IST)'], ['+05:45','UTC+05:45 (NPT)'],
+                          ['+06:00','UTC+06'],  ['+07:00','UTC+07'],  ['+08:00','UTC+08 (SGT)'],
+                          ['+09:00','UTC+09 (JST)'], ['+09:30','UTC+09:30'], ['+10:00','UTC+10 (AEST)'],
+                          ['+12:00','UTC+12 (NZST)'],
+                        ].map(([val, label]) => (
+                          <option key={val} value={val}>{label}</option>
+                        ))}
                       </select>
                     </div>
                     <div>
