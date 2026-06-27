@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { razorpay_payment_id, razorpay_order_id, razorpay_signature, amount, durationInMinutes = 10 } = body;
+    const { razorpay_payment_id, razorpay_order_id, razorpay_signature, amount, durationInMinutes = 10, plan } = body;
 
     const secret = process.env.RAZORPAY_KEY_SECRET;
     
@@ -46,14 +46,16 @@ export async function POST(req: NextRequest) {
       clerkId: userId,
       paymentId: razorpay_payment_id,
       orderId: razorpay_order_id,
+      plan: plan || null,
       amount: amount || 999,
+      currency: 'INR',
       durationInMinutes
     });
 
     const dbUser = await User.findOneAndUpdate(
       { clerkId: userId },
-      { 
-        $set: { isPro: true },
+      {
+        $set: { isPro: true, lastActiveAt: new Date() },
         $inc: { voiceBalanceInSeconds: durationInMinutes * 60 }
       },
       { new: true }

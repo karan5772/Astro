@@ -20,18 +20,20 @@ export async function POST(req: NextRequest) {
     await connectToDatabase();
     const dbUser = await User.findOne({ clerkId: userId });
 
-    // Enforce Pro trial limit for text chat
+    // Enforce free trial limit
     if (dbUser && !dbUser.isPro) {
       if (dbUser.messageCount >= 15) {
         return new Response('TRIAL_LIMIT_REACHED', { status: 403 });
       }
-      
-      // Increment message count for free user
       dbUser.messageCount += 1;
-      await dbUser.save();
     }
 
-    const actualUserId = userId;
+    // Track lifetime message count for all users and bump lastActiveAt
+    if (dbUser) {
+      dbUser.totalChatMessages = (dbUser.totalChatMessages || 0) + 1;
+      dbUser.lastActiveAt = new Date();
+      await dbUser.save();
+    }
 
     const { messages } = await req.json();
     const lastMessage = messages[messages.length - 1];
@@ -102,27 +104,6 @@ Critical rules:
       model: openai('gpt-4.1-nano'),
       system: systemPrompt,
       messages,
-      // Temporarily disabling tools until the JSON schema bug in ai SDK is resolved
-      // tools: {
-      //   getDailyHoroscope: tool({
-      //     description: 'Get the daily horoscope for a specific zodiac sign.',
-      //     parameters: z.object({
-      //       sign: z.string(),
-      //     }),
-      //     execute: async ({ sign }) => {
-      //       // Mock dynamic horoscope generation
-      //       const readings = [
-      //         "The stars favor bold moves today.",
-      //         "Take a step back and reflect; planetary retrogrades suggest caution.",
-      //         "A surprising financial or personal opportunity is on the horizon.",
-      //         "Your ruling planet is strong today, enhancing your natural charisma."
-      //       ];
-      //       const reading = readings[Math.floor(Math.random() * readings.length)];
-      //       return `Today's reading for ${sign}: ${reading}`;
-      //     },
-      //   }),
-      // },
-      // maxSteps: 5, // allows the model to use tools and then respond
     });
 
     return result.toTextStreamResponse();

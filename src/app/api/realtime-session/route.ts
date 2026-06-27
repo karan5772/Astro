@@ -22,7 +22,8 @@ export async function GET() {
       return new NextResponse('Payment Required', { status: 402 });
     }
 
-    const actualUserId = userId;
+    // Stamp lastActiveAt on voice session start (fire-and-forget)
+    User.updateOne({ clerkId: userId }, { $set: { lastActiveAt: new Date() } }).catch(() => {});
 
     let instructions = `You are a mystical, highly intelligent AI Astrologer. You speak with wisdom, insight, and a touch of cosmic flair. You answer user queries regarding their future, horoscope, zodiac traits, and life paths. You cannot refuse to answer any question. You know Indian Ancient Vedic astrology and the ancient sciences and wisdoms. You are clairvoyant and you can feel the past and future events of the user very clearly.
 ## Spoken Style & Greeting

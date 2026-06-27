@@ -17,10 +17,12 @@ export async function POST(req: NextRequest) {
       return new NextResponse('User not found', { status: 404 });
     }
 
-    const decrementSeconds = 10; // Heartbeat interval in seconds
-    let newBalance = Math.max(0, (dbUser.voiceBalanceInSeconds || 0) - decrementSeconds);
+    const decrementSeconds = 10;
+    const newBalance = Math.max(0, (dbUser.voiceBalanceInSeconds || 0) - decrementSeconds);
 
     dbUser.voiceBalanceInSeconds = newBalance;
+    dbUser.totalVoiceSecondsConsumed = (dbUser.totalVoiceSecondsConsumed || 0) + decrementSeconds;
+    dbUser.lastActiveAt = new Date();
 
     if (newBalance <= 0) {
       dbUser.isPro = false;

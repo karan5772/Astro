@@ -5,7 +5,7 @@ import { auth } from '@clerk/nextjs/server';
 export async function POST(req: NextRequest) {
   try {
     const { userId } = await auth();
-    // if (!userId) return new NextResponse('Unauthorized', { status: 401 });
+    if (!userId) return new NextResponse('Unauthorized', { status: 401 });
 
     const body = await req.json();
     const { amount, plan } = body;

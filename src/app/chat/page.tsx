@@ -266,25 +266,6 @@ function relativeTime(iso: string) {
   return new Date(iso).toLocaleDateString();
 }
 
-const getMockPlacements = (dateStr?: string) => {
-  if (!dateStr) return [];
-  const date = new Date(dateStr);
-  const month = date.getMonth();
-  const day = date.getDate();
-
-  const signs = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"];
-  const sunSign = signs[(month + (day > 20 ? 1 : 0)) % 12];
-  const moonSign = signs[(month + day) % 12];
-  const lagnaSign = signs[(day * 3 + 1) % 12];
-  const venusSign = signs[(month + 2) % 12];
-
-  return [
-    { body: "Sun", sign: sunSign, degree: `${(day * 1.3).toFixed(1)}°` },
-    { body: "Moon", sign: moonSign, degree: `${(day * 2.1).toFixed(1)}°` },
-    { body: "Ascendant", sign: lagnaSign, degree: `${(day * 0.7).toFixed(1)}°` },
-    { body: "Venus", sign: venusSign, degree: `${(day * 1.5).toFixed(1)}°` }
-  ];
-};
 
 export default function ChatPage() {
   const { user } = useUser();
@@ -891,7 +872,6 @@ export default function ChatPage() {
   }
 
   // 3. Main Chat Interface
-  const mockPlacements = getMockPlacements(dbUser?.birthDate);
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#0c0d12] text-gray-900 dark:text-white flex flex-col lg:flex-row selection:bg-primary/30 selection:text-white relative overflow-hidden">
