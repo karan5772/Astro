@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import connectToDatabase from '@/lib/mongodb';
 import User from '@/lib/models/User';
 import Payment from '@/lib/models/Payment';
+import { logEvent } from '@/lib/log-event';
 
 export async function POST(req: NextRequest) {
   try {
@@ -60,6 +61,14 @@ export async function POST(req: NextRequest) {
       },
       { new: true }
     );
+
+    logEvent(userId, 'payment_completed', {
+      paymentId: razorpay_payment_id,
+      orderId: razorpay_order_id,
+      plan: plan || null,
+      amount: amount || 999,
+      durationInMinutes,
+    });
 
     return NextResponse.json({ success: true, isPro: dbUser.isPro, voiceBalanceInSeconds: dbUser.voiceBalanceInSeconds });
   } catch (error) {

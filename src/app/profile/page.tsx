@@ -4,150 +4,236 @@ import { useUser, UserButton } from '@clerk/nextjs';
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Sparkles,
-  MapPin,
-  Calendar,
-  Clock,
-  Globe,
-  Compass,
-  Loader2,
-  Search,
-  User as UserIcon,
-  Mail,
-  ShieldCheck,
-  ShieldAlert,
-  Star,
-  BookOpen,
-  Activity,
-  CreditCard,
-  ChevronDown,
-  ChevronUp,
-  Filter,
+  Sparkles, MapPin, Calendar, Clock, Globe, Compass,
+  Loader2, Search, ShieldCheck, ShieldAlert, Pencil, X,
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import toast from 'react-hot-toast';
 
-interface Prediction {
-  name: string;
-  description: string;
-  tags: string[];
-}
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 interface UserData {
-  clerkId: string;
-  email: string;
-  isPro: boolean;
-  birthDate: string | null;
-  birthTime: string | null;
-  birthTimezone: string | null;
-  birthLocation: string | null;
-  birthLatitude: number | null;
-  birthLongitude: number | null;
-  hasBirthDetails: boolean;
-  predictions: Prediction[];
-  messageCount: number;
-  voiceBalanceInSeconds: number;
-  payments: any[];
+  clerkId: string; email: string; isPro: boolean;
+  birthDate: string | null; birthTime: string | null;
+  birthTimezone: string | null; birthLocation: string | null;
+  birthLatitude: number | null; birthLongitude: number | null;
+  hasBirthDetails: boolean; predictionsCount: number;
+  messageCount: number; voiceBalanceInSeconds: number; payments: any[];
 }
+interface GeocodeResult { name: string; latitude: number; longitude: number }
 
-interface GeocodeResult {
-  name: string;
-  latitude: number;
-  longitude: number;
-}
+// ── Vedic Rashi data ──────────────────────────────────────────────────────────
 
-const getCosmicOrigins = (dateStr: string | null, timeStr: string | null) => {
-  if (!dateStr) return null;
-
-  // Weekday and ruler
-  // Parse YYYY-MM-DD safely
-  const parts = dateStr.split('-');
-  const year = parseInt(parts[0], 10);
-  const month = parseInt(parts[1], 10) - 1; // months are 0-indexed
-  const day = parseInt(parts[2], 10);
-  const birthDateObj = new Date(Date.UTC(year, month, day));
-  
-  const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const weekday = weekdays[birthDateObj.getUTCDay()];
-  
-  const rulers: Record<string, { planet: string; symbol: string; description: string }> = {
-    Sunday: { planet: 'Sun', symbol: '☀️', description: 'Represents expression, life force, and the true self.' },
-    Monday: { planet: 'Moon', symbol: '🌙', description: 'Governs emotion, intuition, and the subconscious mind.' },
-    Tuesday: { planet: 'Mars', symbol: '♂️', description: 'Rules drive, determination, energy, and physical action.' },
-    Wednesday: { planet: 'Mercury', symbol: '☿', description: 'Governs communication, intellect, logic, and travel.' },
-    Thursday: { planet: 'Jupiter', symbol: '♃', description: 'Rules luck, expansion, wisdom, and higher learning.' },
-    Friday: { planet: 'Venus', symbol: '♀', description: 'Governs love, beauty, value, and personal relationships.' },
-    Saturday: { planet: 'Saturn', symbol: '♄', description: 'Rules structure, boundaries, discipline, and life lessons.' },
-  };
-  const ruler = rulers[weekday];
-
-  // Sect (Day vs Night)
-  let sect = 'Unknown';
-  let sectIcon = '✨';
-  let sectDescription = '';
-  if (timeStr) {
-    const hour = parseInt(timeStr.split(':')[0], 10);
-    const isDay = hour >= 6 && hour < 18;
-    sect = isDay ? 'Diurnal (Day Birth)' : 'Nocturnal (Night Birth)';
-    sectIcon = isDay ? '☀️' : '🌙';
-    sectDescription = isDay 
-      ? 'The Sun is your primary luminary. Your chart favors external expression, active focus, and conscious goals.' 
-      : 'The Moon is your primary luminary. Your chart leans toward emotional depth, intuition, and subconscious processes.';
-  }
-
-  // Solar Season
-  const m = month + 1; // 1-12
-  const d = day;
-  let season = 'Unknown';
-  let seasonIcon = '✨';
-  
-  if ((m === 12 && d >= 21) || m === 1 || m === 2 || (m === 3 && d < 20)) {
-    season = 'Winter Solstice Cycle';
-    seasonIcon = '❄️';
-  } else if ((m === 3 && d >= 20) || m === 4 || m === 5 || (m === 6 && d < 21)) {
-    season = 'Spring Equinox Cycle';
-    seasonIcon = '🌱';
-  } else if ((m === 6 && d >= 21) || m === 7 || m === 8 || (m === 9 && d < 22)) {
-    season = 'Summer Solstice Cycle';
-    seasonIcon = '☀️';
-  } else {
-    season = 'Autumn Equinox Cycle';
-    seasonIcon = '🍂';
-  }
-
-  return {
-    weekday,
-    ruler,
-    sect,
-    sectIcon,
-    sectDescription,
-    season,
-    seasonIcon,
-  };
+type RashiData = {
+  name: string; english: string; glyph: string;
+  element: string; quality: string; ruler: string;
+  elementEmoji: string; elementColor: string; glowColor: string;
 };
+
+const VEDIC_RASHIS: RashiData[] = [
+  { name: 'Mesha', english: 'Aries', glyph: '♈', element: 'Fire', quality: 'Movable', ruler: 'Mars', elementEmoji: '🔥', elementColor: '#ff6b35', glowColor: 'rgba(255,107,53,0.15)' },
+  { name: 'Vrishabha', english: 'Taurus', glyph: '♉', element: 'Earth', quality: 'Fixed', ruler: 'Venus', elementEmoji: '🌿', elementColor: '#51cf66', glowColor: 'rgba(81,207,102,0.15)' },
+  { name: 'Mithuna', english: 'Gemini', glyph: '♊', element: 'Air', quality: 'Dual', ruler: 'Mercury', elementEmoji: '💨', elementColor: '#74c0fc', glowColor: 'rgba(116,192,252,0.15)' },
+  { name: 'Karka', english: 'Cancer', glyph: '♋', element: 'Water', quality: 'Movable', ruler: 'Moon', elementEmoji: '💧', elementColor: '#4dabf7', glowColor: 'rgba(77,171,247,0.15)' },
+  { name: 'Simha', english: 'Leo', glyph: '♌', element: 'Fire', quality: 'Fixed', ruler: 'Sun', elementEmoji: '🔥', elementColor: '#ffd43b', glowColor: 'rgba(255,212,59,0.15)' },
+  { name: 'Kanya', english: 'Virgo', glyph: '♍', element: 'Earth', quality: 'Dual', ruler: 'Mercury', elementEmoji: '🌿', elementColor: '#63e6be', glowColor: 'rgba(99,230,190,0.15)' },
+  { name: 'Tula', english: 'Libra', glyph: '♎', element: 'Air', quality: 'Movable', ruler: 'Venus', elementEmoji: '💨', elementColor: '#f783ac', glowColor: 'rgba(247,131,172,0.15)' },
+  { name: 'Vrischika', english: 'Scorpio', glyph: '♏', element: 'Water', quality: 'Fixed', ruler: 'Mars', elementEmoji: '💧', elementColor: '#e64980', glowColor: 'rgba(230,73,128,0.15)' },
+  { name: 'Dhanu', english: 'Sagittarius', glyph: '♐', element: 'Fire', quality: 'Dual', ruler: 'Jupiter', elementEmoji: '🔥', elementColor: '#ff8c00', glowColor: 'rgba(255,140,0,0.15)' },
+  { name: 'Makara', english: 'Capricorn', glyph: '♑', element: 'Earth', quality: 'Movable', ruler: 'Saturn', elementEmoji: '🌿', elementColor: '#868e96', glowColor: 'rgba(134,142,150,0.15)' },
+  { name: 'Kumbha', english: 'Aquarius', glyph: '♒', element: 'Air', quality: 'Fixed', ruler: 'Saturn', elementEmoji: '💨', elementColor: '#74c0fc', glowColor: 'rgba(116,192,252,0.15)' },
+  { name: 'Meena', english: 'Pisces', glyph: '♓', element: 'Water', quality: 'Dual', ruler: 'Jupiter', elementEmoji: '💧', elementColor: '#cc5de8', glowColor: 'rgba(204,93,232,0.15)' },
+];
+
+// Vedic sidereal date ranges (Lahiri ayanamsa ≈ 23.85°)
+const RASHI_RANGES: [number, number, number, number, number][] = [
+  [1, 1, 1, 14, 8], [1, 15, 2, 12, 9], [2, 13, 3, 14, 10],
+  [3, 15, 4, 13, 11], [4, 14, 5, 14, 0], [5, 15, 6, 14, 1],
+  [6, 15, 7, 16, 2], [7, 17, 8, 16, 3], [8, 17, 9, 16, 4],
+  [9, 17, 10, 17, 5], [10, 18, 11, 16, 6], [11, 17, 12, 15, 7],
+  [12, 16, 12, 31, 8],
+];
+
+function getVedicRashi(dateStr: string | null): RashiData | null {
+  if (!dateStr) return null;
+  const [, ms, ds] = dateStr.split('-');
+  const month = parseInt(ms, 10), day = parseInt(ds, 10);
+  for (const [sm, sd, em, ed, idx] of RASHI_RANGES) {
+    if ((month > sm || (month === sm && day >= sd)) && (month < em || (month === em && day <= ed)))
+      return VEDIC_RASHIS[idx];
+  }
+  return VEDIC_RASHIS[8];
+}
+
+// ── Zodiac Wheel ──────────────────────────────────────────────────────────────
+
+function ZodiacWheel({ userRashi }: { userRashi: RashiData | null }) {
+  const SIZE = 280, CX = 140, CY = 140;
+  const OUTER_R = 126, INNER_R = 79, GLYPH_R = 102;
+  const GAP = 1.5;
+  const r = (d: number) => (d * Math.PI) / 180;
+
+  const arc = (i: number) => {
+    const s = r(i * 30 - 90 + GAP / 2);
+    const e = r((i + 1) * 30 - 90 - GAP / 2);
+    const c = (a: number, R: number) => [CX + R * Math.cos(a), CY + R * Math.sin(a)] as const;
+    const [ox1, oy1] = c(s, OUTER_R); const [ox2, oy2] = c(e, OUTER_R);
+    const [ix2, iy2] = c(e, INNER_R); const [ix1, iy1] = c(s, INNER_R);
+    return `M ${ox1} ${oy1} A ${OUTER_R} ${OUTER_R} 0 0 1 ${ox2} ${oy2} L ${ix2} ${iy2} A ${INNER_R} ${INNER_R} 0 0 0 ${ix1} ${iy1} Z`;
+  };
+
+  const glyphAt = (i: number) => {
+    const mid = r((i + 0.5) * 30 - 90);
+    return [CX + GLYPH_R * Math.cos(mid), CY + GLYPH_R * Math.sin(mid)] as const;
+  };
+
+  return (
+    <div className="relative flex items-center justify-center">
+      {userRashi && (
+        <div
+          className="absolute w-44 h-44 rounded-full blur-3xl pointer-events-none"
+          style={{ backgroundColor: userRashi.elementColor, opacity: 0.18 }}
+        />
+      )}
+      <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}>
+        <defs>
+          <filter id="rg" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="5" result="b" />
+            <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+        </defs>
+
+        {/* Outer dashed decoration ring */}
+        <circle cx={CX} cy={CY} r={OUTER_R + 9} fill="none"
+          stroke="rgba(255,255,255,0.04)" strokeWidth="1" strokeDasharray="2 10" />
+
+        {VEDIC_RASHIS.map((rashi, i) => {
+          const active = userRashi?.name === rashi.name;
+          const [gx, gy] = glyphAt(i);
+          return (
+            <g key={rashi.name}>
+              <path
+                d={arc(i)}
+                fill={active ? rashi.elementColor : 'rgba(255,255,255,0.035)'}
+                filter={active ? 'url(#rg)' : 'none'}
+              />
+              <text
+                x={gx} y={gy}
+                textAnchor="middle" dominantBaseline="middle"
+                fontSize={active ? 15 : 11}
+                fill={active ? '#fff' : 'rgba(255,255,255,0.18)'}
+                fontWeight={active ? '700' : '400'}
+              >
+                {rashi.glyph}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* Center fill */}
+        <circle cx={CX} cy={CY} r={INNER_R - 1} fill="#0c0d12" />
+
+        {/* Center content */}
+        {userRashi ? (
+          <>
+            <text x={CX} y={CY - 13} textAnchor="middle" dominantBaseline="middle"
+              fontSize="30" fill="white">{userRashi.glyph}</text>
+            <text x={CX} y={CY + 11} textAnchor="middle"
+              fill="white" fontSize="12" fontWeight="600" fontFamily="Inter,sans-serif">
+              {userRashi.name}
+            </text>
+            <text x={CX} y={CY + 26} textAnchor="middle"
+              fill="rgba(255,255,255,0.32)" fontSize="9" fontFamily="Inter,sans-serif">
+              {userRashi.english}
+            </text>
+          </>
+        ) : (
+          <text x={CX} y={CY} textAnchor="middle" dominantBaseline="middle"
+            fill="rgba(255,255,255,0.18)" fontSize="9.5" fontFamily="Inter,sans-serif">
+            add birth date
+          </text>
+        )}
+      </svg>
+    </div>
+  );
+}
+
+// ── Message Gauge ─────────────────────────────────────────────────────────────
+
+function MessageGauge({ used, total, isPro }: { used: number; total: number; isPro: boolean }) {
+  const pct = isPro ? 1 : Math.min(1, used / total);
+  const left = Math.max(0, total - used);
+  const R = 52, circ = 2 * Math.PI * R;
+  const offset = circ * (1 - pct);
+  const stroke = isPro ? '#6D5DFB' : (pct < 0.6 ? '#51cf66' : pct < 0.87 ? '#ffd43b' : '#ff6b6b');
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <div className="relative">
+        <svg width="132" height="132" viewBox="0 0 128 128">
+          <circle cx="64" cy="64" r={R} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="9" />
+          <circle cx="64" cy="64" r={R} fill="none" stroke={stroke} strokeWidth="9"
+            strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={isPro ? 0 : offset}
+            transform="rotate(-90 64 64)"
+            style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1), stroke 0.3s' }} />
+          <text x="64" y="57" textAnchor="middle" fill="white" fontSize="22"
+            fontWeight="700" fontFamily="Inter,sans-serif">{isPro ? '∞' : String(left)}</text>
+          <text x="64" y="72" textAnchor="middle" fill="rgba(255,255,255,0.35)"
+            fontSize="9" fontFamily="Inter,sans-serif">{isPro ? 'unlimited' : 'left'}</text>
+        </svg>
+        <div className="absolute inset-0 rounded-full blur-2xl opacity-15 pointer-events-none"
+          style={{ backgroundColor: stroke }} />
+      </div>
+      <p className="text-[11px] text-white/25">{isPro ? 'Unlimited messages' : `${left} of ${total} remaining`}</p>
+    </div>
+  );
+}
+
+// ── Voice Gauge ───────────────────────────────────────────────────────────────
+
+function VoiceGauge({ remainingMin, totalMin }: { remainingMin: number; totalMin: number }) {
+  const pct = totalMin > 0 ? Math.min(1, remainingMin / totalMin) : 0;
+  const R = 52, circ = 2 * Math.PI * R;
+  const offset = circ * (1 - pct);
+  const stroke = pct > 0.5 ? '#51cf66' : pct > 0.2 ? '#ffd43b' : '#ff6b6b';
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <div className="relative">
+        <svg width="132" height="132" viewBox="0 0 128 128">
+          <circle cx="64" cy="64" r={R} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="9" />
+          <circle cx="64" cy="64" r={R} fill="none" stroke={stroke} strokeWidth="9"
+            strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={offset}
+            transform="rotate(-90 64 64)"
+            style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1), stroke 0.3s' }} />
+          <text x="64" y="57" textAnchor="middle" fill="white" fontSize="22"
+            fontWeight="700" fontFamily="Inter,sans-serif">{remainingMin}</text>
+          <text x="64" y="72" textAnchor="middle" fill="rgba(255,255,255,0.35)"
+            fontSize="9" fontFamily="Inter,sans-serif">min left</text>
+        </svg>
+        <div className="absolute inset-0 rounded-full blur-2xl opacity-15 pointer-events-none"
+          style={{ backgroundColor: stroke }} />
+      </div>
+      <p className="text-[11px] text-white/25">{remainingMin} of {totalMin} min remaining</p>
+    </div>
+  );
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
   const { user, isLoaded: clerkLoaded } = useUser();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const getVoiceTimeRemaining = () => {
-    if (!userData) return 0;
-    return Math.max(0, Math.ceil((userData.voiceBalanceInSeconds || 0) / 60));
-  };
+  const getVoiceTimeRemaining = () =>
+    Math.max(0, Math.ceil(((userData?.voiceBalanceInSeconds) || 0) / 60));
 
-  const getTotalVoiceMinutes = () => {
-    if (!userData?.payments) return 0;
-    return userData.payments.reduce((acc, p) => acc + (p.durationInMinutes || 0), 0);
-  };
+  const getTotalVoiceMinutes = () =>
+    (userData?.payments ?? []).reduce((a, p) => a + (p.durationInMinutes || 0), 0);
 
-  const getVoiceTimeUsed = () => {
-    const total = getTotalVoiceMinutes();
-    const remaining = getVoiceTimeRemaining();
-    return Math.max(0, total - remaining);
-  };
+  const getVoiceTimeUsed = () =>
+    Math.max(0, getTotalVoiceMinutes() - getVoiceTimeRemaining());
 
-  // Form State
+  // Form state
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [timezoneOffset, setTimezoneOffset] = useState('+05:30');
@@ -155,17 +241,17 @@ export default function ProfilePage() {
   const [selectedLocationName, setSelectedLocationName] = useState('');
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
-
   const [suggestions, setSuggestions] = useState<GeocodeResult[]>([]);
   const [isSearchingLocation, setIsSearchingLocation] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isEditingBirth, setIsEditingBirth] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
   const fetchUserData = async () => {
     try {
-      const response = await fetch('/api/user');
-      if (response.ok) {
-        const data = await response.json();
+      const res = await fetch('/api/user');
+      if (res.ok) {
+        const data = await res.json();
         setUserData(data);
         if (data.hasBirthDetails) {
           setDate(data.birthDate || '');
@@ -177,478 +263,349 @@ export default function ProfilePage() {
           setLongitude(data.birthLongitude);
         }
       }
-    } catch (err) {
-      console.error('Error fetching user profile:', err);
-      toast.error('Failed to load profile details.');
-    } finally {
-      setLoading(false);
-    }
+    } catch { toast.error('Failed to load profile.'); }
+    finally { setLoading(false); }
   };
 
   useEffect(() => {
-    document.body.classList.add('astraeus-active');
     fetchUserData();
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+    const outside = (e: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node))
         setSuggestions([]);
-      }
     };
-
-    window.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.body.classList.remove('astraeus-active');
-      window.removeEventListener('mousedown', handleClickOutside);
-    };
+    window.addEventListener('mousedown', outside);
+    return () => window.removeEventListener('mousedown', outside);
   }, []);
 
-  // Geocoding autocompletion
   useEffect(() => {
     if (!locationQuery || locationQuery === selectedLocationName || locationQuery.trim().length < 2) {
-      setSuggestions([]);
-      return;
+      setSuggestions([]); return;
     }
-
-    const delayDebounceFn = setTimeout(async () => {
+    const t = setTimeout(async () => {
       setIsSearchingLocation(true);
       try {
         const res = await fetch(`/api/geocode?q=${encodeURIComponent(locationQuery)}`);
-        if (res.ok) {
-          const data = await res.json();
-          setSuggestions(data);
-        }
-      } catch (err) {
-        console.error('Failed to autocomplete location:', err);
-      } finally {
-        setIsSearchingLocation(false);
-      }
+        if (res.ok) setSuggestions(await res.json());
+      } catch { /* swallow */ }
+      finally { setIsSearchingLocation(false); }
     }, 400);
-
-    return () => clearTimeout(delayDebounceFn);
+    return () => clearTimeout(t);
   }, [locationQuery, selectedLocationName]);
 
-  const handleSelectLocation = (location: GeocodeResult) => {
-    setLocationQuery(location.name);
-    setSelectedLocationName(location.name);
-    setLatitude(location.latitude);
-    setLongitude(location.longitude);
+  const handleSelectLocation = (loc: GeocodeResult) => {
+    setLocationQuery(loc.name); setSelectedLocationName(loc.name);
+    setLatitude(loc.latitude); setLongitude(loc.longitude);
     setSuggestions([]);
-    toast.success(`Location set to ${location.name.split(',')[0]}`);
+    toast.success(`Location set to ${loc.name.split(',')[0]}`);
   };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!date || !time || latitude === null || longitude === null) {
-      toast.error('Please enter all required birth details.');
-      return;
+      toast.error('Please complete all birth details.'); return;
     }
-
     setIsUpdating(true);
-    const updatePromise = new Promise(async (resolve, reject) => {
+    const p = new Promise<void>(async (resolve, reject) => {
       try {
-        const response = await fetch('/api/user', {
+        const res = await fetch('/api/user', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            birthDate: date,
-            birthTime: time,
-            birthTimezone: timezoneOffset,
+            birthDate: date, birthTime: time, birthTimezone: timezoneOffset,
             birthLocation: selectedLocationName,
-            birthLatitude: latitude,
-            birthLongitude: longitude,
+            birthLatitude: latitude, birthLongitude: longitude,
           }),
         });
-
-        if (!response.ok) {
-          const errData = await response.json();
-          throw new Error(errData.error || 'Server error updating profile.');
-        }
-
-        const data = await response.json();
-        // Refresh details, including predictions
+        if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Server error'); }
         await fetchUserData();
-        resolve(data);
-      } catch (err: any) {
-        reject(err);
-      } finally {
-        setIsUpdating(false);
-      }
+        setIsEditingBirth(false);
+        resolve();
+      } catch (err: any) { reject(err); }
+      finally { setIsUpdating(false); }
     });
-
-    toast.promise(updatePromise, {
-      loading: 'Recalculating predictions & updating profile...',
-      success: 'Profile and planetary alignments successfully updated!',
-      error: (err) => `Failed to update: ${err.message || 'Unknown error'}`
+    toast.promise(p, {
+      loading: 'Recalculating destiny…',
+      success: 'Birth chart updated!',
+      error: (err) => `Failed: ${err.message || 'Unknown error'}`,
     });
   };
 
   if (!clerkLoaded || loading) {
     return (
-      <div className="min-h-screen bg-[#0c0d12] text-white flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4 mt-[20vh] w-full">
-          <Loader2 size={40} className="animate-spin text-primary" />
-          <p className="text-white/50 text-sm">Aligning solar system details...</p>
-        </div>
+      <div className="min-h-screen bg-[#0c0d12] flex items-center justify-center">
+        <Loader2 size={32} className="animate-spin text-white/20" />
       </div>
     );
   }
 
+  const rashi = getVedicRashi(userData?.birthDate ?? null);
+  const msgCount = userData?.messageCount || 0;
+  const msgPct = msgCount / 15;
+  const msgLeft = Math.max(0, 15 - msgCount);
+
+  const FIELD = 'w-full px-3 py-2.5 bg-white/[0.04] border border-white/[0.07] rounded-lg text-sm text-white placeholder-white/20 outline-none focus:border-white/20 transition-colors';
+  const LABEL = 'block text-[10px] uppercase tracking-widest text-white/30 mb-1.5 font-medium';
+  const SECTION = 'text-[10px] uppercase tracking-[0.14em] text-white/25 font-semibold mb-5';
+
   return (
-    <div className="min-h-screen bg-[#0c0d12] text-white flex flex-col selection:bg-primary/30 selection:text-white">
+    <div className="min-h-screen bg-[#0c0d12] text-white selection:bg-primary/20">
       <Navbar variant="dashboard" />
 
-      <main className="flex-grow pt-32 pb-16 px-4 md:px-12 flex flex-col items-center overflow-y-auto w-full relative z-10">
-        {/* Glow Background Orbs */}
-        <div className="absolute w-[400px] h-[400px] rounded-full bg-primary/5 blur-3xl pointer-events-none" style={{ top: '15%', left: '10%' }}></div>
-        <div className="absolute w-[400px] h-[400px] rounded-full bg-[#9d4edd]/5 blur-3xl pointer-events-none" style={{ bottom: '15%', right: '10%' }}></div>
+      <main className="max-w-3xl mx-auto px-5 pt-28 pb-20 space-y-16">
 
-        <div className="w-full max-w-[1280px]">
-
-          {/* Page Heading */}
-          <div className="mb-8">
-            <p className="text-xs uppercase tracking-widest font-bold text-primary mb-2">Account & Destiny</p>
-            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white">User Profile</h1>
-          </div>
-
-          {/* User Info Header Block */}
-          <div className="w-full bg-secondary/40 backdrop-blur-lg border border-card-border rounded-2xl p-8 mb-10 flex flex-wrap gap-8 items-center justify-between shadow-xl">
-            <div className="flex items-center gap-6">
-              <div className="scale-125 md:scale-150 pl-2 flex items-center justify-center">
-                <UserButton appearance={{ elements: { avatarBox: { width: '40px', height: '40px', border: '2px solid #6D5DFB' } } }} />
+        {/* ══ 1. BIRTH DETAILS ══════════════════════════════════════════════════ */}
+        <section>
+          {/* Zodiac wheel hero */}
+          <div className="flex items-center justify-between mb-8 p-4 bg-white/[0.025] border border-white/[0.06] rounded-xl">
+            <div className="flex items-center gap-3.5">
+              <div className="scale-110 flex items-center">
+                <UserButton appearance={{ elements: { avatarBox: { width: '38px', height: '38px', border: '1.5px solid rgba(255,255,255,0.1)' } } }} />
               </div>
               <div>
-                <h2 className="text-xl md:text-2xl font-bold text-white mb-1">
-                  {user?.fullName || userData?.email.split('@')[0] || 'Astro Traveler'}
-                </h2>
-                <div className="flex items-center gap-2 text-white/50 text-sm">
-                  <Mail size={14} />
-                  <span>{userData?.email}</span>
-                </div>
+                <p className="text-[15px] font-semibold text-white leading-tight">
+                  {user?.fullName || userData?.email?.split('@')[0] || 'Astro Traveler'}
+                </p>
+                <p className="text-[12px] text-white/35 mt-0.5">{userData?.email}</p>
               </div>
             </div>
+            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] border ${userData?.isPro ? 'border-primary/30 text-primary bg-primary/5' : 'border-white/[0.08] text-white/35'}`}>
+              {userData?.isPro ? <><ShieldCheck size={11} /> Pro</> : <><ShieldAlert size={11} /> Free</>}
+            </div>
+          </div>
+          <motion.div
+            className="flex flex-col items-center gap-5 mb-10"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <ZodiacWheel userRashi={rashi} />
+            {rashi ? (
+              <div className="flex items-center gap-2 flex-wrap justify-center">
+                {[`${rashi.elementEmoji} ${rashi.element}`, rashi.quality, `♦ ${rashi.ruler}`].map(tag => (
+                  <span key={tag} className="text-[11px] text-white/45 bg-white/[0.04] border border-white/[0.07] px-3 py-1 rounded-full">{tag}</span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[12px] text-white/25">Add your birth date to reveal your Vedic Rashi</p>
+            )}
+          </motion.div>
 
-            {/* Plan Status Card */}
-            <div className={`flex items-center gap-3.5 px-6 py-4 rounded-xl border ${userData?.isPro ? 'bg-[#1e2e3d]/40 border-blue-600/80 shadow-[0_0_20px_rgba(0,76,255,0.1)]' : 'bg-[#18181b]/35 border-card-border'}`}>
-              {userData?.isPro ? (
-                <>
-                  <ShieldCheck size={24} className="text-blue-500" />
-                  <div>
-                    <div className="text-[10px] uppercase tracking-wider font-extrabold text-purple-400">Plan tier</div>
-                    <div className="text-white text-base font-bold">Pro Member</div>
-                  </div>
-                </>
+          {/* Birth detail cards + edit */}
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+            <div className="flex items-center justify-between mb-5">
+              <p className={`${SECTION} mb-0`}>Birth Details</p>
+              {!isEditingBirth ? (
+                <button onClick={() => setIsEditingBirth(true)}
+                  className="flex items-center gap-1.5 text-[11px] font-semibold text-primary border border-primary/25 bg-primary/[0.08] px-2.5 py-1.5 rounded-lg hover:bg-primary/15 transition-colors">
+                  <Pencil size={11} /> Edit
+                </button>
               ) : (
-                <>
-                  <ShieldAlert size={24} className="text-white/40" />
-                  <div>
-                    <div className="text-[10px] uppercase tracking-wider font-extrabold text-white/40">Plan tier</div>
-                    <div className="text-white text-base font-bold">Free Account</div>
-                  </div>
-                </>
+                <button onClick={() => setIsEditingBirth(false)}
+                  className="flex items-center gap-1.5 text-[11px] text-white/40 border border-white/[0.08] px-2.5 py-1.5 rounded-lg hover:text-white/60 transition-colors">
+                  <X size={11} /> Cancel
+                </button>
               )}
             </div>
-          </div>
 
-          {/* Grid: Left - Edit Natal Info, Right - Predictions */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-10 items-start pb-12">
-
-            {/* Left: Natal Form */}
-            <motion.section
-              className="bg-secondary/40 backdrop-blur-lg border border-card-border rounded-2xl p-8 shadow-xl"
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-            >
-              <div className="flex items-center gap-3 border-b border-card-border pb-4 mb-6">
-                <Sparkles className="text-primary" size={20} />
-                <h3 className="text-lg font-bold text-white">Birth Parameters</h3>
-              </div>
-
-              <form onSubmit={handleUpdateProfile} className="flex flex-col gap-5">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div className="flex flex-col gap-2">
-                    <label className="text-[10px] uppercase tracking-wider font-extrabold text-white/50 flex items-center gap-1.5">
-                      <Calendar size={12} /> Date
-                    </label>
-                    <input
-                      type="date"
-                      value={date}
-                      onChange={(e) => setDate(e.target.value)}
-                      className="w-full p-3 text-sm rounded-lg bg-secondary/80 border border-card-border text-white outline-none focus:border-primary/50 transition-colors"
-                      required
-                    />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <label className="text-[10px] uppercase tracking-wider font-extrabold text-white/50 flex items-center gap-1.5">
-                      <Clock size={12} /> Time
-                    </label>
-                    <input
-                      type="time"
-                      value={time}
-                      onChange={(e) => setTime(e.target.value)}
-                      className="w-full p-3 text-sm rounded-lg bg-secondary/80 border border-card-border text-white outline-none focus:border-primary/50 transition-colors"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div ref={searchContainerRef} className="flex flex-col gap-2 relative">
-                  <label className="text-[10px] uppercase tracking-wider font-extrabold text-white/50 flex items-center gap-1.5">
-                    <MapPin size={12} /> Birth Place
-                  </label>
-                  <div className="relative w-full">
-                    <input
-                      type="text"
-                      placeholder="Search city/place..."
-                      value={locationQuery}
-                      onChange={(e) => setLocationQuery(e.target.value)}
-                      className="w-full p-3 pr-10 text-sm rounded-lg bg-secondary/80 border border-card-border text-white outline-none focus:border-primary/50 transition-colors"
-                      required
-                    />
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40">
-                      {isSearchingLocation ? (
-                        <Loader2 size={16} className="animate-spin text-primary" />
-                      ) : (
-                        <Search size={14} />
-                      )}
-                    </div>
-                  </div>
-
-                  <AnimatePresence>
-                    {suggestions.length > 0 && (
-                      <motion.div
-                        className="absolute top-[calc(100%+8px)] left-0 right-0 bg-[#18181B] border border-card-border rounded-lg z-50 max-h-[200px] overflow-y-auto shadow-2xl"
-                        initial={{ opacity: 0, y: -5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -5 }}
-                      >
-                        {suggestions.map((loc, idx) => (
-                          <button
-                            key={idx}
-                            type="button"
-                            onClick={() => handleSelectLocation(loc)}
-                            className="w-full text-left p-3 hover:bg-white/5 border-b border-white/5 text-white/80 text-xs flex items-center gap-2 cursor-pointer transition-colors"
-                          >
-                            <MapPin size={14} className="text-primary shrink-0" />
-                            <span className="truncate">{loc.name}</span>
-                          </button>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div className="flex flex-col gap-2">
-                    <label className="text-[10px] uppercase tracking-wider font-extrabold text-white/50 flex items-center gap-1.5">
-                      <Globe size={12} /> Timezone
-                    </label>
-                    <select
-                      value={timezoneOffset}
-                      onChange={(e) => setTimezoneOffset(e.target.value)}
-                      className="w-full p-3 text-sm rounded-lg bg-secondary/80 border border-card-border text-white outline-none focus:border-primary/50 transition-colors"
-                    >
-                      <option value="-08:00">UTC-08:00 (PST)</option>
-                      <option value="-05:00">UTC-05:00 (EST)</option>
-                      <option value="+00:00">UTC+00:00 (GMT)</option>
-                      <option value="+05:30">UTC+05:30 (IST)</option>
-                      <option value="+08:00">UTC+08:00 (SGT)</option>
-                    </select>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <label className="text-[10px] uppercase tracking-wider font-extrabold text-white/50 flex items-center gap-1.5">
-                      <Compass size={12} /> Coordinates
-                    </label>
-                    <div className="w-full p-3 text-xs rounded-lg flex items-center justify-between bg-secondary/40 border border-white/5 cursor-not-allowed">
-                      {latitude !== null && longitude !== null ? (
-                        <span className="text-[#cebdff] truncate">
-                          {latitude.toFixed(2)}°N | {longitude.toFixed(2)}°E
-                        </span>
-                      ) : (
-                        <span className="text-white/40">None</span>
-                      )}
-                      <Globe size={14} className="text-white/40 shrink-0" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-4">
-                  <button
-                    type="submit"
-                    className={`w-full py-3.5 px-6 rounded-lg font-bold text-xs uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2 shadow-[0_8px_16px_-4px_rgba(109,93,251,0.4)] bg-gradient-to-r from-primary to-[#5b4be3] text-white hover:opacity-90 transition-all ${isUpdating ? 'opacity-70 cursor-not-allowed' : ''}`}
-                    disabled={isUpdating}
-                  >
-                    {isUpdating ? (
-                      <>
-                        <Loader2 size={16} className="animate-spin" />
-                        RECALCULATING DESTINY...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles size={16} />
-                        UPDATE BLUEPRINT
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
-            </motion.section>
-
-            {/* Right: Stats & Payments */}
-            <motion.section
-              className="bg-secondary/40 backdrop-blur-lg border border-card-border rounded-2xl p-8 shadow-xl flex flex-col gap-8"
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.1 }}
-            >
-              {/* Telemetry Stats */}
-              <div>
-                <div className="flex items-center gap-3 border-b border-card-border pb-4 mb-6">
-                  <Activity className="text-primary" size={20} />
-                  <h3 className="text-lg font-bold text-white">Cosmic Telemetry</h3>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="bg-secondary/20 border border-white/5 rounded-xl p-5">
-                    <div className="text-[10px] uppercase tracking-wider font-extrabold text-white/40 mb-1">Messages Sent / Remaining</div>
-                    <div className="text-2xl font-bold text-white">
-                      {userData?.messageCount || 0} / {userData?.isPro ? '∞' : Math.max(0, 15 - (userData?.messageCount || 0))}
-                    </div>
-                  </div>
-
-                  <div className="bg-secondary/20 border border-white/5 rounded-xl p-5">
-                    <div className="text-[10px] uppercase tracking-wider font-extrabold text-white/40 mb-1">Voice Time Used / Remaining</div>
-                    <div className="text-2xl font-bold text-primary">
-                      {getVoiceTimeUsed()} / {getVoiceTimeRemaining()} <span className="text-xs font-medium text-white/40">min</span>
-                    </div>
-                  </div>
-
-                  <div className="bg-secondary/20 border border-white/5 rounded-xl p-5">
-                    <div className="text-[10px] uppercase tracking-wider font-extrabold text-white/40 mb-1">Total Voice Purchased</div>
-                    <div className="text-2xl font-bold text-white">
-                      {getTotalVoiceMinutes()} <span className="text-xs font-medium text-white/40">min</span>
-                    </div>
-                  </div>
-
-                  <div className="bg-secondary/20 border border-white/5 rounded-xl p-5">
-                    <div className="text-[10px] uppercase tracking-wider font-extrabold text-white/40 mb-1">Predictions</div>
-                    <div className="text-2xl font-bold text-white">{userData?.predictions?.length || 0}</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Transactions History */}
-              <div>
-                <div className="flex items-center gap-3 border-b border-card-border pb-4 mb-6">
-                  <CreditCard className="text-purple-400" size={20} />
-                  <h3 className="text-lg font-bold text-white">Billing & Passes</h3>
-                </div>
-
-                <div className="flex flex-col gap-3 max-h-[250px] overflow-y-auto pr-1">
-                  {userData?.payments && userData.payments.length > 0 ? (
-                    userData.payments.map((payment: any, index: number) => (
-                      <div key={index} className="bg-secondary/20 border border-white/5 rounded-xl p-4 flex justify-between items-center">
-                        <div>
-                          <div className="text-sm font-semibold text-white">{payment.durationInMinutes} Minutes Pass</div>
-                          <div className="text-[10px] text-white/40 mt-0.5">ID: {payment.paymentId}</div>
+            <AnimatePresence mode="wait">
+              {!isEditingBirth ? (
+                <motion.div key="view" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
+                  {userData?.hasBirthDetails ? (
+                    <div className="grid grid-cols-2 gap-2.5">
+                      {[
+                        { icon: <Calendar size={11} />, label: 'Date', value: date ? new Date(date + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : '—', wide: false },
+                        { icon: <Clock size={11} />, label: 'Time', value: time || '—', wide: false },
+                        { icon: <MapPin size={11} />, label: 'Place', value: selectedLocationName ? selectedLocationName.split(',').slice(0, 2).join(', ') : '—', wide: true },
+                        { icon: <Globe size={11} />, label: 'Timezone', value: timezoneOffset ? `UTC${timezoneOffset}` : '—', wide: false },
+                        { icon: <Compass size={11} />, label: 'Coordinates', value: latitude !== null && longitude !== null ? `${latitude.toFixed(2)}° · ${longitude.toFixed(2)}°` : '—', wide: false },
+                      ].map(({ icon, label, value, wide }) => (
+                        <div key={label} className={`bg-white/[0.025] border border-white/[0.06] rounded-xl px-4 py-3 ${wide ? 'col-span-2' : ''}`}>
+                          <div className="flex items-center gap-1.5 text-white/30 mb-1.5">{icon}
+                            <span className="text-[9px] uppercase tracking-widest font-medium">{label}</span>
+                          </div>
+                          <p className="text-[13px] text-white/75 font-medium leading-snug">{value}</p>
                         </div>
-                        <div className="text-right">
-                          <div className="text-sm font-bold text-white">${payment.amount}</div>
-                          <div className="text-[10px] text-white/40 mt-0.5">{new Date(payment.date).toLocaleDateString()}</div>
-                        </div>
-                      </div>
-                    ))
+                      ))}
+                    </div>
                   ) : (
-                    <div className="text-center py-8 text-white/40 text-sm">
-                      No transactions recorded yet
+                    <div className="border border-dashed border-white/[0.08] rounded-xl p-8 text-center">
+                      <p className="text-[12px] text-white/25 mb-4">No birth details added yet</p>
+                      <button onClick={() => setIsEditingBirth(true)}
+                        className="text-[11px] font-semibold text-primary hover:opacity-75 transition-opacity">
+                        Add birth details →
+                      </button>
                     </div>
                   )}
-                </div>
+                </motion.div>
+              ) : (
+                <motion.form key="edit" onSubmit={handleUpdateProfile} className="space-y-4"
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className={LABEL}><Calendar size={9} className="inline mr-1" />Date</label>
+                      <input type="date" value={date} onChange={e => setDate(e.target.value)} className={FIELD} required />
+                    </div>
+                    <div>
+                      <label className={LABEL}><Clock size={9} className="inline mr-1" />Time</label>
+                      <input type="time" value={time} onChange={e => setTime(e.target.value)} className={FIELD} required />
+                    </div>
+                  </div>
+                  <div ref={searchContainerRef} className="relative">
+                    <label className={LABEL}><MapPin size={9} className="inline mr-1" />Birth Place</label>
+                    <div className="relative">
+                      <input type="text" placeholder="Search city…" value={locationQuery}
+                        onChange={e => setLocationQuery(e.target.value)} className={`${FIELD} pr-9`} />
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 text-white/25">
+                        {isSearchingLocation ? <Loader2 size={13} className="animate-spin" /> : <Search size={13} />}
+                      </div>
+                    </div>
+                    <AnimatePresence>
+                      {suggestions.length > 0 && (
+                        <motion.div
+                          className="absolute top-[calc(100%+6px)] left-0 right-0 bg-[#16171e] border border-white/[0.08] rounded-lg z-50 max-h-48 overflow-y-auto shadow-2xl"
+                          initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}>
+                          {suggestions.map((loc, idx) => (
+                            <button key={idx} type="button" onClick={() => handleSelectLocation(loc)}
+                              className="w-full text-left px-3 py-2.5 hover:bg-white/5 border-b border-white/[0.04] last:border-0 text-white/70 text-xs flex items-center gap-2 transition-colors">
+                              <MapPin size={12} className="text-primary/60 shrink-0" />
+                              <span className="truncate">{loc.name}</span>
+                            </button>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className={LABEL}><Globe size={9} className="inline mr-1" />Timezone</label>
+                      <select value={timezoneOffset} onChange={e => setTimezoneOffset(e.target.value)} className={FIELD}>
+                        <option value="-08:00">UTC−08 (PST)</option>
+                        <option value="-05:00">UTC−05 (EST)</option>
+                        <option value="+00:00">UTC+00 (GMT)</option>
+                        <option value="+05:30">UTC+05:30 (IST)</option>
+                        <option value="+08:00">UTC+08 (SGT)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className={LABEL}><Compass size={9} className="inline mr-1" />Coordinates</label>
+                      <div className={`${FIELD} cursor-default text-white/40 text-xs flex items-center`}>
+                        {latitude !== null && longitude !== null ? `${latitude.toFixed(2)}° · ${longitude.toFixed(2)}°` : 'Auto-filled on select'}
+                      </div>
+                    </div>
+                  </div>
+                  <button type="submit" disabled={isUpdating}
+                    className="w-full py-3 rounded-lg bg-primary/90 hover:bg-primary text-white text-xs font-semibold uppercase tracking-widest flex items-center justify-center gap-2 transition-colors disabled:opacity-50 mt-1">
+                    {isUpdating ? <><Loader2 size={13} className="animate-spin" /> Updating…</> : <><Sparkles size={13} /> Save Chart</>}
+                  </button>
+                </motion.form>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        </section>
+
+        {/* ══ 2. ACCOUNT & USAGE ═══════════════════════════════════════════════ */}
+        <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+          <p className={SECTION}>Account & Usage</p>
+
+          {/* User row */}
+
+
+          {/* Gauges row */}
+          <div className={`flex ${userData?.isPro ? 'justify-around' : 'justify-center'} gap-8 mb-8`}>
+            <div className="flex flex-col items-center gap-1">
+              <p className="text-[9px] uppercase tracking-widest text-white/25 mb-3">Messages</p>
+              <MessageGauge used={msgCount} total={15} isPro={userData?.isPro || false} />
+            </div>
+            {userData?.isPro && (
+              <div className="flex flex-col items-center gap-1">
+                <p className="text-[9px] uppercase tracking-widest text-white/25 mb-3">Voice Time</p>
+                <VoiceGauge remainingMin={getVoiceTimeRemaining()} totalMin={getTotalVoiceMinutes()} />
               </div>
-            </motion.section>
+            )}
           </div>
 
-          {/* Cosmic Origins Dashboard */}
-          {userData?.hasBirthDetails && (() => {
-            const origins = getCosmicOrigins(userData.birthDate, userData.birthTime);
-            if (!origins) return null;
-
-            return (
-              <motion.section
-                className="mt-10 bg-secondary/40 backdrop-blur-lg border border-card-border rounded-2xl p-8 shadow-xl"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.2 }}
-              >
-                <div className="border-b border-card-border pb-6 mb-6">
-                  <div className="flex items-center gap-3">
-                    <Compass className="text-primary animate-pulse" size={24} />
-                    <div>
-                      <h3 className="text-xl font-bold text-white">Cosmic Origin Alignments</h3>
-                      <p className="text-xs text-white/50 mt-1">Astronomical alignments calculated directly from your birth parameters</p>
-                    </div>
+          {/* Free: progress bar + dots */}
+          {!userData?.isPro && (
+            <div className="space-y-3 mb-8">
+              <div className="h-1.5 rounded-full bg-white/[0.05] overflow-hidden">
+                <motion.div className="h-full rounded-full"
+                  style={{ background: msgPct > 0.8 ? 'linear-gradient(90deg,#ff8c00,#ff3838)' : msgPct > 0.5 ? 'linear-gradient(90deg,#6D5DFB,#ffd43b)' : 'linear-gradient(90deg,#6D5DFB,#a78bfa)' }}
+                  initial={{ width: '0%' }}
+                  animate={{ width: `${Math.min(100, msgPct * 100)}%` }}
+                  transition={{ duration: 0.9, ease: 'easeOut', delay: 0.3 }} />
+              </div>
+              <div className="flex gap-1">
+                {Array.from({ length: 15 }).map((_, i) => (
+                  <motion.div key={i} className="flex-1 h-1 rounded-full"
+                    style={{ backgroundColor: i < msgCount ? (i >= 12 ? '#ff6b6b' : i >= 8 ? '#ffd43b' : '#6D5DFB') : 'rgba(255,255,255,0.05)' }}
+                    initial={{ scaleY: 0 }} animate={{ scaleY: 1 }}
+                    transition={{ duration: 0.12, delay: 0.4 + i * 0.035 }} />
+                ))}
+              </div>
+              {msgCount >= 8 && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}>
+                  <div className="border border-white/[0.07] rounded-xl p-4 bg-white/[0.02]">
+                    <p className="text-[11px] text-white/40 mb-2.5">
+                      {msgCount >= 15 ? 'All free messages used.' : `${msgLeft} ${msgLeft === 1 ? 'message' : 'messages'} remaining on free plan.`}
+                    </p>
+                    <a href="/pricing" className="text-[11px] font-semibold text-primary hover:opacity-75 transition-opacity">
+                      Upgrade for unlimited readings →
+                    </a>
                   </div>
+                </motion.div>
+              )}
+            </div>
+          )}
+
+          {/* Pro: low voice nudge */}
+          {userData?.isPro && getVoiceTimeRemaining() < 5 && (
+            <div className="border border-white/[0.07] rounded-xl p-4 text-center bg-white/[0.02] mb-8">
+              <p className="text-[11px] text-white/40 mb-2">Voice time running low</p>
+              <a href="/pricing" className="text-[11px] font-semibold text-primary hover:opacity-75 transition-opacity">Top up →</a>
+            </div>
+          )}
+
+          {/* Stat cells */}
+          <div className="grid grid-cols-2 gap-2.5">
+            {[
+              { label: 'Messages Left', value: userData?.isPro ? '∞' : String(msgLeft), sub: userData?.isPro ? 'unlimited' : 'remaining' },
+              { label: 'Predictions', value: String(userData?.predictionsCount || 0), sub: 'generated' },
+              ...(userData?.isPro ? [
+                { label: 'Voice Purchased', value: `${getTotalVoiceMinutes()}m`, sub: 'all time' },
+                { label: 'Voice Used', value: `${getVoiceTimeUsed()}m`, sub: 'consumed' },
+              ] : []),
+            ].map(({ label, value, sub }) => (
+              <div key={label} className="bg-white/[0.025] border border-white/[0.06] rounded-xl p-4">
+                <p className="text-[9px] uppercase tracking-widest text-white/30 mb-1">{label}</p>
+                <p className="text-xl font-bold text-white">{value}</p>
+                <p className="text-[10px] text-white/25 mt-0.5">{sub}</p>
+              </div>
+            ))}
+          </div>
+        </motion.section>
+
+        {/* ══ 3. BILLING ═══════════════════════════════════════════════════════ */}
+        {(userData?.payments?.length ?? 0) > 0 && (
+          <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
+            <p className={SECTION}>Billing</p>
+            <div className="border border-white/[0.07] rounded-xl overflow-hidden">
+              {userData!.payments.map((p: any, i: number) => (
+                <div key={i} className="flex justify-between items-center px-5 py-3.5 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.015] transition-colors">
+                  <div>
+                    <p className="text-sm text-white">{p.durationInMinutes} Min Pass
+                      {p.plan ? <span className="text-white/30 ml-1.5 text-xs">· {p.plan}</span> : null}
+                    </p>
+                    <p className="text-[11px] text-white/25 mt-0.5">
+                      {p.date || p.createdAt ? new Date(p.date || p.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                    </p>
+                  </div>
+                  <p className="text-sm font-semibold text-white">${p.amount}</p>
                 </div>
+              ))}
+            </div>
+          </motion.section>
+        )}
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Planetary Day Ruler */}
-                  <div className="bg-[#18181b]/35 border border-white/5 hover:border-primary/20 rounded-xl p-6 flex flex-col justify-between transition-all duration-300">
-                    <div>
-                      <div className="text-[10px] uppercase tracking-wider font-extrabold text-white/40 mb-2">Planetary Day Ruler</div>
-                      <div className="flex items-center gap-3 mb-3">
-                        <span className="text-3xl">{origins.ruler?.symbol}</span>
-                        <div>
-                          <div className="text-base font-bold text-white">{origins.weekday}</div>
-                          <div className="text-xs text-primary font-medium">Ruled by the {origins.ruler?.planet}</div>
-                        </div>
-                      </div>
-                      <p className="text-xs text-white/60 leading-relaxed">
-                        {origins.ruler?.description}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Sect Info */}
-                  <div className="bg-[#18181b]/35 border border-white/5 hover:border-primary/20 rounded-xl p-6 flex flex-col justify-between transition-all duration-300">
-                    <div>
-                      <div className="text-[10px] uppercase tracking-wider font-extrabold text-white/40 mb-2">Diurnal/Nocturnal Sect</div>
-                      <div className="flex items-center gap-3 mb-3">
-                        <span className="text-3xl">{origins.sectIcon}</span>
-                        <div>
-                          <div className="text-base font-bold text-white">
-                            {origins.sect.includes('Diurnal') ? 'Day Birth' : 'Night Birth'}
-                          </div>
-                          <div className="text-xs text-primary font-medium">{origins.sect}</div>
-                        </div>
-                      </div>
-                      <p className="text-xs text-white/60 leading-relaxed">
-                        {origins.sectDescription}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Solstice/Equinox */}
-                  <div className="bg-[#18181b]/35 border border-white/5 hover:border-primary/20 rounded-xl p-6 flex flex-col justify-between transition-all duration-300">
-                    <div>
-                      <div className="text-[10px] uppercase tracking-wider font-extrabold text-white/40 mb-2">Solar Season Alignment</div>
-                      <div className="flex items-center gap-3 mb-3">
-                        <span className="text-3xl">{origins.seasonIcon}</span>
-                        <div>
-                          <div className="text-base font-bold text-white">{origins.season}</div>
-                          <div className="text-xs text-primary font-medium">Solar Grid Placement</div>
-                        </div>
-                      </div>
-                      <p className="text-xs text-white/60 leading-relaxed">
-                        Determines the balance of light and darkness on Earth at the exact moment of your arrival.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </motion.section>
-            );
-          })()}
-        </div>
       </main>
     </div>
   );

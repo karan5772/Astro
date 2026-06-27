@@ -3,6 +3,7 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import connectToDatabase from '@/lib/mongodb';
 import User from '@/lib/models/User';
 import Payment from '@/lib/models/Payment';
+import { logEvent } from '@/lib/log-event';
 
 export async function GET() {
   try {
@@ -30,13 +31,10 @@ export async function GET() {
       });
     }
 
-    // Check if pro membership expired based on voice balance
-    if (dbUser.isPro) {
-      const balance = dbUser.voiceBalanceInSeconds || 0;
-      if (balance <= 0) {
-        dbUser.isPro = false;
-        await dbUser.save();
-      }
+    // Downgrade pro only when balance hits zero — fire-and-forget, don't block the response
+    if (dbUser.isPro && (dbUser.voiceBalanceInSeconds || 0) <= 0) {
+      User.updateOne({ clerkId: userId }, { $set: { isPro: false } }).catch(console.error);
+      dbUser.isPro = false;
     }
 
     // Retrieve payments from separate Payment model
@@ -55,7 +53,7 @@ export async function GET() {
       birthLatitude: dbUser.birthLatitude !== undefined ? dbUser.birthLatitude : null,
       birthLongitude: dbUser.birthLongitude !== undefined ? dbUser.birthLongitude : null,
       hasBirthDetails: !!dbUser.birthDate,
-      predictions: dbUser.predictions || [],
+      predictionsCount: (dbUser.predictions || []).length,
       payments: payments || [],
     });
   } catch (error) {
@@ -158,6 +156,11 @@ export async function POST(req: NextRequest) {
       },
       { new: true, upsert: true }
     );
+
+    logEvent(userId, 'onboarding_completed', {
+      birthLocation,
+      predictionsCount: mappedPredictions.length,
+    });
 
     return NextResponse.json({
       clerkId: updatedUser.clerkId,

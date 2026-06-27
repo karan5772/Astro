@@ -1,6 +1,7 @@
 import Razorpay from 'razorpay';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
+import { logEvent } from '@/lib/log-event';
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,12 +17,24 @@ export async function POST(req: NextRequest) {
       key_secret: process.env.RAZORPAY_KEY_SECRET || 'dummy_key_secret',
     });
 
-    // Convert USD to INR (approximate exchange rate)
-    const EXCHANGE_RATE = 83;
-    const amountInInr = amount * EXCHANGE_RATE;
+    // Fetch live USD → INR rate; fall back to 84 if the request fails
+    let exchangeRate = 84;
+    try {
+      const fxRes = await fetch('https://api.frankfurter.app/latest?from=USD&to=INR', {
+        next: { revalidate: 3600 }, // cache for 1 hour
+      });
+      if (fxRes.ok) {
+        const fxData = await fxRes.json();
+        exchangeRate = fxData.rates?.INR ?? 84;
+      }
+    } catch {
+      console.warn('[razorpay] FX fetch failed, using fallback rate');
+    }
+
+    const amountInInr = Math.round(amount * exchangeRate * 100); // paise
 
     const options = {
-      amount: Math.round(amountInInr * 100).toString(), // amount in smallest currency unit (paise)
+      amount: amountInInr.toString(),
       currency: 'INR',
       receipt: `rcpt_${Math.random().toString(36).substring(7)}`,
       notes: {
@@ -31,6 +44,13 @@ export async function POST(req: NextRequest) {
     };
 
     const order = await razorpay.orders.create(options);
+
+    logEvent(userId, 'order_created', {
+      orderId: order.id,
+      plan: plan || null,
+      amountUsd: amount,
+      exchangeRate,
+    });
 
     return NextResponse.json({
       orderId: order.id,

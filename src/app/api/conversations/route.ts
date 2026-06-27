@@ -2,6 +2,7 @@ import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongodb';
 import Conversation from '@/lib/models/Conversation';
+import { logEvent } from '@/lib/log-event';
 
 export async function GET() {
   const { userId } = await auth();
@@ -25,6 +26,11 @@ export async function POST(req: NextRequest) {
   const { title = 'New Reading' } = await req.json();
   await connectToDatabase();
   const conv = await Conversation.create({ clerkId: userId, title, messages: [] });
+
+  logEvent(userId, 'conversation_created', {
+    conversationId: conv._id.toString(),
+    title: conv.title,
+  });
 
   return NextResponse.json({ id: conv._id.toString(), title: conv.title, updatedAt: conv.updatedAt.toISOString() });
 }

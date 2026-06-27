@@ -10,6 +10,7 @@ const UserSchema = new mongoose.Schema({
   totalChatMessages: { type: Number, default: 0 },
   voiceBalanceInSeconds: { type: Number, default: 0 },
   totalVoiceSecondsConsumed: { type: Number, default: 0 },
+  voiceSessionCount: { type: Number, default: 0 },
   lastActiveAt: { type: Date },
   birthDate: { type: String },
   birthTime: { type: String },

@@ -8,6 +8,7 @@ export const maxDuration = 30;
 
 import connectToDatabase from '@/lib/mongodb';
 import User from '@/lib/models/User';
+import { logEvent } from '@/lib/log-event';
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,6 +24,7 @@ export async function POST(req: NextRequest) {
     // Enforce free trial limit
     if (dbUser && !dbUser.isPro) {
       if (dbUser.messageCount >= 15) {
+        logEvent(userId, 'trial_limit_hit', { messageCount: dbUser.messageCount });
         return new Response('TRIAL_LIMIT_REACHED', { status: 403 });
       }
       dbUser.messageCount += 1;
@@ -33,6 +35,11 @@ export async function POST(req: NextRequest) {
       dbUser.totalChatMessages = (dbUser.totalChatMessages || 0) + 1;
       dbUser.lastActiveAt = new Date();
       await dbUser.save();
+      logEvent(userId, 'chat_message_sent', {
+        isPro: dbUser.isPro,
+        messageCount: dbUser.messageCount,
+        totalChatMessages: dbUser.totalChatMessages,
+      });
     }
 
     const { messages } = await req.json();
