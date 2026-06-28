@@ -2,10 +2,11 @@ import { ClerkProvider } from '@clerk/nextjs'
 import './globals.css'
 import type { Metadata } from 'next'
 import { ToastProvider } from '@/components/ToastProvider';
-import { Geist } from "next/font/google";
+import { ThemeProvider } from '@/components/ThemeProvider';
+import { Poppins } from "next/font/google";
 import { cn } from "@/lib/utils";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+const poppins = Poppins({ subsets: ['latin'], weight: ['300','400','500','600','700'], variable: '--font-sans' });
 
 export const metadata: Metadata = {
   title: 'Astro AI',
@@ -22,11 +23,13 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
-      <html lang="en" className={cn("dark font-sans", geist.variable)}>
+      <html lang="en" className={cn("dark font-sans", poppins.variable)}>
         <body>
           <div className="stars"></div>
-          {children}
-          <ToastProvider />
+          <ThemeProvider>
+            {children}
+            <ToastProvider />
+          </ThemeProvider>
         </body>
       </html>
     </ClerkProvider>

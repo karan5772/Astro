@@ -7,20 +7,20 @@ export default function Footer() {
   const { userId } = useAuth();
 
   return (
-    <footer className="relative w-full border-t border-white/5 bg-[#0b0c10] py-16 overflow-hidden">
+    <footer className="relative w-full border-t border-border bg-card py-16 overflow-hidden">
       <div className="max-w-[1280px] mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 relative z-10">
 
           {/* Brand Block */}
           <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-2 text-xl font-bold text-white">
+            <div className="flex items-center gap-2 text-xl font-bold text-foreground">
               <img src="/logo.png" alt="Astraeus Logo" className="w-6 h-6 object-contain" />
               <span>Astraeus</span>
             </div>
-            <p className="text-sm text-white/50 leading-relaxed max-w-[280px]">
+            <p className="text-sm text-foreground/50 leading-relaxed max-w-[280px]">
               Celestial Modernism for the seeking soul. Connect with the cosmos.
             </p>
-            <div className="text-xs text-white/30 mt-4">
+            <div className="text-xs text-foreground/30 mt-4">
               © 2026 Astraeus Celestial Insights. Aligned with the Cosmos.
             </div>
           </div>
@@ -29,10 +29,10 @@ export default function Footer() {
           <div className="flex flex-col gap-4">
             <h4 className="text-xs uppercase tracking-wider font-semibold text-primary">The Elements</h4>
             <div className="flex flex-col gap-2">
-              <Link href="#birth-chart" className="text-sm text-white/60 hover:text-primary transition-colors">Fire Signs</Link>
-              <Link href="#birth-chart" className="text-sm text-white/60 hover:text-primary transition-colors">Earth Signs</Link>
-              <Link href="#birth-chart" className="text-sm text-white/60 hover:text-primary transition-colors">Air Signs</Link>
-              <Link href="#birth-chart" className="text-sm text-white/60 hover:text-primary transition-colors">Water Signs</Link>
+              <Link href="#birth-chart" className="text-sm text-foreground/60 hover:text-primary transition-colors">Fire Signs</Link>
+              <Link href="#birth-chart" className="text-sm text-foreground/60 hover:text-primary transition-colors">Earth Signs</Link>
+              <Link href="#birth-chart" className="text-sm text-foreground/60 hover:text-primary transition-colors">Air Signs</Link>
+              <Link href="#birth-chart" className="text-sm text-foreground/60 hover:text-primary transition-colors">Water Signs</Link>
             </div>
           </div>
 
@@ -40,10 +40,10 @@ export default function Footer() {
           <div className="flex flex-col gap-4">
             <h4 className="text-xs uppercase tracking-wider font-semibold text-primary">Legal</h4>
             <div className="flex flex-col gap-2">
-              <Link href="/privacy" className="text-sm text-white/60 hover:text-primary transition-colors">Privacy Policy</Link>
-              <Link href="/terms" className="text-sm text-white/60 hover:text-primary transition-colors">Terms &amp; Conditions</Link>
-              <Link href="/cancellation" className="text-sm text-white/60 hover:text-primary transition-colors">Cancellation &amp; Refund Policy</Link>
-              <a href="mailto:karankumar8239@gmail.com" className="text-sm text-white/60 hover:text-primary transition-colors">Contact Us</a>
+              <Link href="/privacy" className="text-sm text-foreground/60 hover:text-primary transition-colors">Privacy Policy</Link>
+              <Link href="/terms" className="text-sm text-foreground/60 hover:text-primary transition-colors">Terms &amp; Conditions</Link>
+              <Link href="/cancellation" className="text-sm text-foreground/60 hover:text-primary transition-colors">Cancellation &amp; Refund Policy</Link>
+              <a href="mailto:karankumar8239@gmail.com" className="text-sm text-foreground/60 hover:text-primary transition-colors">Contact Us</a>
             </div>
           </div>
 
@@ -58,7 +58,7 @@ export default function Footer() {
       </div>
 
       {/* Faint constellation background */}
-      <div className="absolute -bottom-20 -right-20 w-80 h-80 opacity-[0.03] select-none pointer-events-none">
+      <div className="absolute -bottom-20 -right-20 w-80 h-80 opacity-[0.04] select-none pointer-events-none">
         <img
           alt=""
           src="/logo.png"

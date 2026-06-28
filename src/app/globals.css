@@ -1,5 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap');
 
 @import "tailwindcss";
 
@@ -22,7 +22,6 @@
   --color-card-border-hover: #6D5DFB;
   --color-muted: #A1A1AA;
 
-  --font-sans: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
   --animate-spin-slow: spin-linear 180s linear infinite;
@@ -44,10 +43,6 @@
   body {
     color: var(--color-foreground);
     background-color: var(--color-background);
-    background-image: 
-      radial-gradient(circle at 15% 50%, rgba(90, 24, 154, 0.15), transparent 25%),
-      radial-gradient(circle at 85% 30%, rgba(157, 78, 221, 0.15), transparent 25%);
-    background-attachment: fixed;
     font-family: var(--font-sans);
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
@@ -66,6 +61,7 @@
 @theme inline {
   --font-heading: var(--font-sans);
   --font-sans: var(--font-sans);
+  --color-navbar: var(--navbar);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -107,73 +103,104 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
-
-.dark {
-  --background: #0c0d12;
-  --foreground: #f4f4f5;
-  --card: #18181b;
-  --card-foreground: #f4f4f5;
-  --popover: #18181b;
-  --popover-foreground: #f4f4f5;
+  --background: #f8f3ea;
+  --foreground: #1c1a14;
+  --card: #fdfaf3;
+  --card-foreground: #1c1a14;
+  --popover: #fdfaf3;
+  --popover-foreground: #1c1a14;
   --primary: #6D5DFB;
   --primary-foreground: #ffffff;
-  --secondary: #27272a;
-  --secondary-foreground: #f4f4f5;
-  --muted: #27272a;
-  --muted-foreground: #a1a1aa;
-  --accent: #6D5DFB;
-  --accent-foreground: #ffffff;
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: #27272a;
-  --input: #27272a;
+  --secondary: #eee4cf;
+  --secondary-foreground: #1c1a14;
+  --muted: #eee4cf;
+  --muted-foreground: #7a7263;
+  --accent: #eee4cf;
+  --accent-foreground: #1c1a14;
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: rgba(28,26,20,0.12);
+  --input: rgba(28,26,20,0.08);
   --ring: #6D5DFB;
+  --card-border: rgba(28,26,20,0.12);
   --chart-1: #6D5DFB;
   --chart-2: #a78bfa;
   --chart-3: #7c3aed;
   --chart-4: #4f46e5;
   --chart-5: #818cf8;
-  --sidebar: #18181b;
-  --sidebar-foreground: #f4f4f5;
+  --radius: 0.625rem;
+  /* custom tokens for home page & components */
+  --ink-ghost: rgba(28,26,20,0.07);
+  --ink-border: rgba(28,26,20,0.13);
+  --ink-faint: rgba(28,26,20,0.40);
+  --ink-half: rgba(28,26,20,0.58);
+  --accent-dim: rgba(109,93,251,0.08);
+  --accent-edge: rgba(109,93,251,0.20);
+  /* navbar + sidebar — neutral, less creamy than main canvas */
+  --navbar: #f2f1ee;
+  --sidebar: #f2f1ee;
+  --sidebar-foreground: #1c1a14;
   --sidebar-primary: #6D5DFB;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #27272a;
-  --sidebar-accent-foreground: #f4f4f5;
-  --sidebar-border: #27272a;
+  --sidebar-accent: #e6e4df;
+  --sidebar-accent-foreground: #1c1a14;
+  --sidebar-border: rgba(28,26,20,0.11);
   --sidebar-ring: #6D5DFB;
+}
+
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --card: #141414;
+  --card-foreground: #ededed;
+  --popover: #141414;
+  --popover-foreground: #ededed;
+  --primary: #7c6ffd;
+  --primary-foreground: #ffffff;
+  --secondary: #1c1c1c;
+  --secondary-foreground: #ededed;
+  --muted: #1c1c1c;
+  --muted-foreground: rgba(237,237,237,0.50);
+  --accent: #7c6ffd;
+  --accent-foreground: #ffffff;
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: rgba(237,237,237,0.09);
+  --input: rgba(237,237,237,0.06);
+  --ring: #7c6ffd;
+  --card-border: rgba(237,237,237,0.09);
+  --chart-1: #7c6ffd;
+  --chart-2: #a78bfa;
+  --chart-3: #7c3aed;
+  --chart-4: #4f46e5;
+  --chart-5: #818cf8;
+  /* custom tokens */
+  --ink-ghost: rgba(237,237,237,0.06);
+  --ink-border: rgba(237,237,237,0.09);
+  --ink-faint: rgba(237,237,237,0.28);
+  --ink-half: rgba(237,237,237,0.52);
+  --accent-dim: rgba(124,111,253,0.11);
+  --accent-edge: rgba(124,111,253,0.22);
+  /* navbar + sidebar */
+  --navbar: #0a0a0a;
+  --sidebar: #111111;
+  --sidebar-foreground: #ededed;
+  --sidebar-primary: #7c6ffd;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1c1c1c;
+  --sidebar-accent-foreground: #ededed;
+  --sidebar-border: rgba(237,237,237,0.08);
+  --sidebar-ring: #7c6ffd;
 }
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 55s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee { animation: none; }
+}

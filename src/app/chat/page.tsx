@@ -536,7 +536,7 @@ export default function ChatPage() {
   // 1. Render global loader while fetching user details
   if (checkingDetails) {
     return (
-      <div className="min-h-screen bg-[#0F1115] text-white flex items-center justify-center">
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
         <Loader2 size={40} className="animate-spin text-primary" />
       </div>
     );
@@ -557,31 +557,31 @@ export default function ChatPage() {
   // 3. Main Chat Interface
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0c0d12] text-gray-900 dark:text-white flex flex-col lg:flex-row selection:bg-primary/30 selection:text-white relative overflow-hidden">
+    <div className="min-h-screen bg-background text-foreground flex flex-col lg:flex-row selection:bg-primary/30 selection:text-white relative overflow-hidden">
 
       {/* Trial limit modal */}
       {showTrialModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="relative bg-[#13141a] border border-white/10 rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-8 flex flex-col items-center gap-5 text-center">
+          <div className="relative bg-card border border-border rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-8 flex flex-col items-center gap-5 text-center">
             {/* Glow ring */}
             <div className="w-16 h-16 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center mb-1">
               <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
                 <path d="M16 4L19.09 12.26L28 13.27L21.5 19.64L23.18 28L16 24L8.82 28L10.5 19.64L4 13.27L12.91 12.26L16 4Z" fill="currentColor" className="text-primary" />
               </svg>
             </div>
-            <h2 className="text-lg font-semibold text-white tracking-tight">You've used all 15 free messages</h2>
-            <p className="text-sm text-white/55 leading-relaxed">
+            <h2 className="text-lg font-semibold text-foreground tracking-tight">You've used all 15 free messages</h2>
+            <p className="text-sm text-foreground/55 leading-relaxed">
               Upgrade to continue your cosmic journey — unlimited messages, voice sessions, and deeper astrological insights.
             </p>
             <button
               onClick={() => router.push('/pricing')}
-              className="w-full py-3 rounded-xl bg-primary text-white font-medium text-sm hover:bg-primary/90 transition-colors"
+              className="w-full py-3 rounded-xl bg-primary text-foreground font-medium text-sm hover:bg-primary/90 transition-colors"
             >
               View upgrade plans
             </button>
             <button
               onClick={() => setShowTrialModal(false)}
-              className="text-xs text-white/35 hover:text-white/60 transition-colors"
+              className="text-xs text-foreground/35 hover:text-foreground/60 transition-colors"
             >
               Maybe later
             </button>
@@ -606,15 +606,15 @@ export default function ChatPage() {
                 <div className="w-12 h-12 bg-primary/10 border border-primary/20 text-primary rounded-full flex items-center justify-center mb-2">
                   <img src="logo.png" />
                 </div>
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white">Ask Astraeus anything.</h2>
-                <p className="text-sm text-gray-500 dark:text-white/50 max-w-sm">Start with your career, love life, timing, or a general reading.</p>
+                <h2 className="text-lg font-bold text-foreground">Ask Astraeus anything.</h2>
+                <p className="text-sm text-gray-500 dark:text-foreground/50 max-w-sm">Start with your career, love life, timing, or a general reading.</p>
 
                 <div className="flex flex-wrap gap-2.5 justify-center mt-4">
                   {SUGGESTIONS.map((s) => (
                     <button
                       type="button"
                       key={s.title}
-                      className="px-4 py-2 bg-gray-50 hover:bg-gray-100 dark:bg-[#18181b]/50 border border-gray-200 dark:border-card-border hover:border-primary/50 hover:dark:bg-primary/10 rounded-full text-xs text-gray-600 dark:text-white/70 hover:text-gray-900 hover:dark:text-white transition-all cursor-pointer"
+                      className="px-4 py-2 bg-gray-50 hover:bg-gray-100 dark:bg-card/50 border border-gray-200 dark:border-border hover:border-primary/50 hover:dark:bg-primary/10 rounded-full text-xs text-gray-600 dark:text-foreground/70 hover:text-gray-900 hover:dark:text-foreground transition-all cursor-pointer"
                       onClick={() => submitMessage(s.prompt)}
                     >
                       <span>{s.title}</span>
@@ -639,19 +639,19 @@ export default function ChatPage() {
                 >
                   {m.role === 'user' ? (
                     <div className="flex items-center gap-3">
-                      <div className="bg-gray-950 dark:bg-white text-white dark:text-black px-4.5 py-2.5 rounded-2xl text-sm font-medium shadow-sm leading-relaxed">
+                      <div className="bg-foreground text-background px-4.5 py-2.5 rounded-2xl text-sm font-medium shadow-sm leading-relaxed">
                         <MarkdownText text={m.content} isUser />
                       </div>
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 border border-gray-200 dark:border-white/10 overflow-hidden shadow-sm">
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 border border-gray-200 dark:border-border overflow-hidden shadow-sm">
                         {user?.imageUrl ? <img src={user.imageUrl} alt="You" className="w-full h-full object-cover" /> : <User size={16} className="text-gray-400" />}
                       </div>
                     </div>
                   ) : (
                     <>
-                      <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-[#18181b] border border-gray-200 dark:border-white/10 flex items-center justify-center shrink-0 shadow-sm">
+                      <div className="w-8 h-8 rounded-full bg-card border border-gray-200 dark:border-border flex items-center justify-center shrink-0 shadow-sm">
                         <img src="/logo.png" alt="Astro" className="object-contain" />
                       </div>
-                      <div className="bg-[#f4f4f5] dark:bg-[#18181b]/60 border border-gray-200 dark:border-white/5 text-gray-900 dark:text-white/95 px-5 py-3.5 rounded-2xl text-sm leading-relaxed max-w-xl shadow-sm">
+                      <div className="bg-[#f4f4f5] dark:bg-card/60 border border-gray-200 dark:border-border text-foreground/95 px-5 py-3.5 rounded-2xl text-sm leading-relaxed max-w-xl shadow-sm">
                         {textParts.map((part, pi) => (
                           <MarkdownText key={pi} text={part.content} />
                         ))}
@@ -671,16 +671,16 @@ export default function ChatPage() {
                 animate={{ opacity: 1, y: 0 }}
                 className="flex items-start gap-3.5 max-w-[85%] self-start"
               >
-                <div className="w-8 h-8 rounded bg-gray-50 dark:bg-[#18181b] border border-gray-200 dark:border-white/10 flex items-center justify-center shrink-0 shadow-sm">
+                <div className="w-8 h-8 rounded bg-card border border-gray-200 dark:border-border flex items-center justify-center shrink-0 shadow-sm">
                   <img src="/logo.png" alt="Astro" className="w-5 h-5 object-contain" />
                 </div>
-                <div className="p-4 bg-[#f4f4f5] dark:bg-[#18181b]/60 border border-gray-200 dark:border-white/5 text-gray-900 dark:text-white/90 rounded-2xl flex items-center gap-3 shadow-sm">
+                <div className="p-4 bg-[#f4f4f5] dark:bg-card/60 border border-gray-200 dark:border-border text-foreground/90 rounded-2xl flex items-center gap-3 shadow-sm">
                   <div className="flex items-center gap-1">
                     <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]"></span>
                     <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]"></span>
                     <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce"></span>
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-white/50 font-medium">Consulting the stars...</div>
+                  <div className="text-xs text-gray-500 dark:text-foreground/50 font-medium">Consulting the stars...</div>
                 </div>
               </motion.div>
             )}
@@ -719,7 +719,7 @@ export default function ChatPage() {
             ) : (
               <motion.div
                 key="input-mode"
-                className="w-full max-w-2xl bg-white dark:bg-[#18181b] border border-gray-200 dark:border-white/10 rounded-full px-5 py-2 flex items-end gap-3 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] focus-within:border-gray-300 dark:focus-within:border-white/20 transition-all"
+                className="w-full max-w-2xl bg-white dark:bg-card border border-gray-200 dark:border-border rounded-full px-5 py-2 flex items-end gap-3 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] focus-within:border-gray-300 dark:focus-within:border-border transition-all"
                 initial={{ opacity: 0, y: 16, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 16, scale: 0.98 }}
@@ -743,7 +743,7 @@ export default function ChatPage() {
                       }
                     }
                   }}
-                  className="flex-grow bg-transparent text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none border-none resize-none py-1.5 min-h-[24px] max-h-[140px] leading-relaxed align-bottom"
+                  className="flex-grow bg-transparent text-sm text-foreground placeholder-gray-400 outline-none border-none resize-none py-1.5 min-h-[24px] max-h-[140px] leading-relaxed align-bottom"
                 />
                 <button
                   onClick={() => {
@@ -756,8 +756,8 @@ export default function ChatPage() {
                   disabled={isLoading || !localInput.trim()}
                   className={`px-4.5 py-2 rounded-full text-xs font-bold transition-all shrink-0 mb-0.5 ${
                     localInput.trim() && !isLoading
-                      ? 'bg-gray-950 dark:bg-white text-white dark:text-black hover:opacity-90 cursor-pointer shadow-sm'
-                      : 'bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-white/20 cursor-not-allowed'
+                      ? 'bg-foreground text-background hover:opacity-90 cursor-pointer shadow-sm'
+                      : 'bg-gray-100 dark:bg-foreground/5 text-gray-400 dark:text-foreground/20 cursor-not-allowed'
                   }`}
                 >
                   Send

@@ -57,7 +57,7 @@ function SpinningZodiacWheel({ status }: { status: string }) {
         </svg>
       </motion.div>
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-        <div className="w-[140px] h-[140px] rounded-full bg-[#0c0d12] flex flex-col items-center justify-center gap-2">
+        <div className="w-[140px] h-[140px] rounded-full bg-background flex flex-col items-center justify-center gap-2">
           <motion.div
             animate={{ opacity: [0.3, 1, 0.3], scale: [0.95, 1.05, 0.95] }}
             transition={{ duration: 2.2, repeat: Infinity }}
@@ -71,7 +71,7 @@ function SpinningZodiacWheel({ status }: { status: string }) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.3 }}
-              className="text-[9px] text-white/35 text-center px-4 leading-tight"
+              className="text-[9px] text-foreground/35 text-center px-4 leading-tight"
             >
               {status}
             </motion.p>
@@ -84,8 +84,8 @@ function SpinningZodiacWheel({ status }: { status: string }) {
 
 // ── Shared styles + transitions ───────────────────────────────────────────────
 
-const FIELD = 'w-full px-4 py-3.5 bg-white/[0.04] border border-white/[0.07] rounded-xl text-sm text-white placeholder-white/20 outline-none focus:border-primary/40 transition-colors';
-const LABEL = 'block text-[10px] uppercase tracking-widest text-white/30 mb-2 font-medium';
+const FIELD = 'w-full px-4 py-3.5 bg-foreground/[0.04] border border-border rounded-xl text-sm text-foreground placeholder-white/20 outline-none focus:border-primary/40 transition-colors';
+const LABEL = 'block text-[10px] uppercase tracking-widest text-foreground/30 mb-2 font-medium';
 
 const stepVariants = {
   enter: (d: number) => ({ x: d > 0 ? 56 : -56, opacity: 0 }),
@@ -260,7 +260,7 @@ export default function BirthChartPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0c0d12] text-white flex flex-col lg:flex-row selection:bg-primary/30 selection:text-white">
+    <div className="min-h-screen bg-background text-foreground flex flex-col lg:flex-row selection:bg-primary/30 selection:text-white">
       <Sidebar />
 
       <main className={`flex-1 flex items-center justify-center min-h-screen px-5 py-16 relative z-10 transition-all duration-300 ${sidebarCollapsed ? 'lg:pl-[72px]' : 'lg:pl-[260px]'}`}>
@@ -275,11 +275,9 @@ export default function BirthChartPage() {
           {(step === 1 || step === 2) && (
             <div className="flex items-center justify-center gap-2 mb-12">
               {[1, 2].map(s => (
-                <motion.div key={s} className="rounded-full"
-                  animate={{
-                    width: step === s ? 28 : 7,
-                    backgroundColor: step === s ? '#6D5DFB' : 'rgba(255,255,255,0.12)',
-                  }}
+                <motion.div key={s}
+                  className={`rounded-full ${step === s ? 'bg-primary' : 'bg-foreground/10'}`}
+                  animate={{ width: step === s ? 28 : 7 }}
                   style={{ height: 7 }}
                   transition={{ duration: 0.3 }}
                 />
@@ -296,9 +294,9 @@ export default function BirthChartPage() {
                 transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}>
 
                 <div className="text-center mb-10">
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-primary/60 mb-3">Step 1 of 2</p>
-                  <h1 className="text-[28px] font-bold text-white mb-2 leading-tight">When were you born?</h1>
-                  <p className="text-[13px] text-white/30 leading-relaxed">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-foreground/40 mb-3">Step 1 of 2</p>
+                  <h1 className="text-[28px] font-bold text-foreground mb-2 leading-tight">When were you born?</h1>
+                  <p className="text-[13px] text-foreground/30 leading-relaxed">
                     Your exact birth time shapes every planetary placement in your chart.
                   </p>
                 </div>
@@ -319,10 +317,10 @@ export default function BirthChartPage() {
                       onChange={setTime}
                       placeholder="Select your birth time"
                     />
-                    <p className="text-[10px] text-white/20 mt-1.5 pl-0.5">Timezone is set in the next step</p>
+                    <p className="text-[10px] text-foreground/20 mt-1.5 pl-0.5">Timezone is set in the next step</p>
                   </div>
                   <button onClick={handleStep1}
-                    className="w-full mt-3 py-3.5 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-semibold uppercase tracking-widest flex items-center justify-center gap-2 transition-colors">
+                    className="w-full mt-3 py-3.5 rounded-xl bg-primary hover:bg-primary/90 text-foreground text-xs font-semibold uppercase tracking-widest flex items-center justify-center gap-2 transition-colors">
                     Continue <ArrowRight size={13} />
                   </button>
                 </div>
@@ -336,9 +334,9 @@ export default function BirthChartPage() {
                 transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}>
 
                 <div className="text-center mb-10">
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-primary/60 mb-3">Step 2 of 2</p>
-                  <h1 className="text-[28px] font-bold text-white mb-2 leading-tight">Where were you born?</h1>
-                  <p className="text-[13px] text-white/30 leading-relaxed">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-foreground/40 mb-3">Step 2 of 2</p>
+                  <h1 className="text-[28px] font-bold text-foreground mb-2 leading-tight">Where were you born?</h1>
+                  <p className="text-[13px] text-foreground/30 leading-relaxed">
                     Your birth location determines your ascendant and house positions.
                   </p>
                 </div>
@@ -351,14 +349,14 @@ export default function BirthChartPage() {
                       <input type="text" placeholder="Search city…" value={locationQuery}
                         onChange={e => { setLocationQuery(e.target.value); setSelectedLocation(''); }}
                         className={`${FIELD} pr-11`} />
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-white/25">
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/25">
                         {searching ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
                       </div>
                     </div>
                     <AnimatePresence>
                       {suggestions.length > 0 && (
                         <motion.div
-                          className="absolute top-[calc(100%+6px)] left-0 right-0 bg-[#16171e] border border-white/[0.08] rounded-xl z-50 max-h-48 overflow-y-auto shadow-2xl"
+                          className="absolute top-[calc(100%+6px)] left-0 right-0 bg-card border border-border rounded-xl z-50 max-h-48 overflow-y-auto shadow-2xl"
                           initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
                           transition={{ duration: 0.15 }}>
                           {suggestions.map((loc, idx) => (
@@ -370,7 +368,7 @@ export default function BirthChartPage() {
                                 setLongitude(loc.longitude);
                                 setSuggestions([]);
                               }}
-                              className="w-full text-left px-4 py-3 hover:bg-white/5 border-b border-white/[0.04] last:border-0 text-white/65 text-xs flex items-center gap-2.5 transition-colors">
+                              className="w-full text-left px-4 py-3 hover:bg-foreground/5 border-b border-border last:border-0 text-foreground/65 text-xs flex items-center gap-2.5 transition-colors">
                               <MapPin size={11} className="text-primary/60 shrink-0" />
                               <span className="truncate">{loc.name}</span>
                             </button>
@@ -404,7 +402,7 @@ export default function BirthChartPage() {
                   {latitude !== null && longitude !== null && (
                     <motion.p
                       initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }}
-                      className="text-[10px] text-white/25 pl-0.5 flex items-center gap-1.5">
+                      className="text-[10px] text-foreground/25 pl-0.5 flex items-center gap-1.5">
                       <MapPin size={9} className="text-primary/40" />
                       {latitude.toFixed(3)}°, {longitude.toFixed(3)}°
                     </motion.p>
@@ -412,11 +410,11 @@ export default function BirthChartPage() {
 
                   <div className="flex gap-3 pt-1">
                     <button onClick={() => go(1, -1)}
-                      className="px-5 py-3.5 rounded-xl border border-white/[0.08] text-white/35 text-xs font-medium hover:text-white/55 transition-colors">
+                      className="px-5 py-3.5 rounded-xl border border-border text-foreground/35 text-xs font-medium hover:text-foreground/55 transition-colors">
                       Back
                     </button>
                     <button onClick={handleStep2}
-                      className="flex-1 py-3.5 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-semibold uppercase tracking-widest flex items-center justify-center gap-2 transition-colors">
+                      className="flex-1 py-3.5 rounded-xl bg-primary hover:bg-primary/90 text-foreground text-xs font-semibold uppercase tracking-widest flex items-center justify-center gap-2 transition-colors">
                       Generate chart <Sparkles size={13} />
                     </button>
                   </div>
@@ -431,7 +429,7 @@ export default function BirthChartPage() {
                 transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}>
                 <div className="flex flex-col items-center gap-10">
                   <SpinningZodiacWheel status={calcStatus} />
-                  <p className="text-[11px] text-white/20 uppercase tracking-widest">This may take a moment</p>
+                  <p className="text-[11px] text-foreground/20 uppercase tracking-widest">This may take a moment</p>
                 </div>
               </motion.div>
             )}
@@ -443,33 +441,33 @@ export default function BirthChartPage() {
                 transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}>
 
                 <div className="text-center mb-8">
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-primary/60 mb-3">Rasi D-1 Chart</p>
-                  <h1 className="text-[24px] font-bold text-white mb-2 leading-tight">Your Natal Blueprint</h1>
-                  <p className="text-[12px] text-white/30">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-foreground/40 mb-3">Rasi D-1 Chart</p>
+                  <h1 className="text-[24px] font-bold text-foreground mb-2 leading-tight">Your Natal Blueprint</h1>
+                  <p className="text-[12px] text-foreground/30">
                     {date} · {time} · {selectedLocation.split(',')[0]}
                   </p>
                 </div>
 
                 {/* SVG chart */}
                 <div
-                  className="w-full bg-white/[0.025] border border-white/[0.07] rounded-2xl p-5 mb-6 [&>svg]:w-full [&>svg]:h-auto"
+                  className="w-full bg-foreground/[0.03] border border-border rounded-2xl p-5 mb-6 [&>svg]:w-full [&>svg]:h-auto"
                   dangerouslySetInnerHTML={{ __html: svgData }}
                 />
 
                 {/* Actions */}
                 <div className="flex gap-3">
                   <button onClick={handleDownloadSVG}
-                    className="flex-1 py-3 rounded-xl border border-white/[0.08] text-white/50 text-xs font-semibold flex items-center justify-center gap-2 hover:text-white/75 hover:border-white/15 transition-colors">
+                    className="flex-1 py-3 rounded-xl border border-border text-foreground/50 text-xs font-semibold flex items-center justify-center gap-2 hover:text-foreground/75 hover:border-border transition-colors">
                     <Download size={13} /> Download SVG
                   </button>
                   <button onClick={handlePrint}
-                    className="flex-1 py-3 rounded-xl border border-white/[0.08] text-white/50 text-xs font-semibold flex items-center justify-center gap-2 hover:text-white/75 hover:border-white/15 transition-colors">
+                    className="flex-1 py-3 rounded-xl border border-border text-foreground/50 text-xs font-semibold flex items-center justify-center gap-2 hover:text-foreground/75 hover:border-border transition-colors">
                     <Printer size={13} /> Print
                   </button>
                 </div>
 
                 <button onClick={() => { setSvgData(null); go(1); }}
-                  className="w-full mt-4 flex items-center justify-center gap-1.5 text-[11px] text-white/25 hover:text-white/45 transition-colors">
+                  className="w-full mt-4 flex items-center justify-center gap-1.5 text-[11px] text-foreground/25 hover:text-foreground/45 transition-colors">
                   <RotateCcw size={11} /> Calculate another chart
                 </button>
               </motion.div>

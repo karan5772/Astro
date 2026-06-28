@@ -178,7 +178,7 @@ export default function PricingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0c0d12] text-white flex flex-col justify-between selection:bg-primary/30 selection:text-white">
+    <div className="min-h-screen bg-background text-foreground flex flex-col justify-between selection:bg-primary/30 selection:text-white">
       <Navbar variant="pricing" />
 
       <main className="relative z-10 pt-32 pb-16 max-w-[1280px] mx-auto px-6 flex-grow w-full">
@@ -187,15 +187,15 @@ export default function PricingPage() {
         <div className="absolute w-[400px] h-[400px] rounded-full bg-[#9d4edd]/5 blur-3xl pointer-events-none" style={{ bottom: '15%', right: '10%' }}></div>
 
         <header className="flex flex-col gap-3 mb-12 text-center max-w-[720px] mx-auto">
-          <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-white leading-tight">Invest in focused guidance, not a bloated subscription.</h1>
-          <p className="text-sm text-white/50 leading-relaxed max-w-[580px] mx-auto mt-2">
+          <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-foreground leading-tight">Invest in focused guidance, not a bloated subscription.</h1>
+          <p className="text-sm text-foreground/50 leading-relaxed max-w-[580px] mx-auto mt-2">
             Your first 15 text messages are free. When you want deeper voice sessions, pick the pass that fits the depth of the conversation.
           </p>
 
           {voiceBalanceInSeconds > 0 && (
-            <div className="inline-block mt-6 p-4 bg-secondary/80 border border-card-border rounded-lg max-w-[500px] mx-auto text-left">
+            <div className="inline-block mt-6 p-4 bg-secondary/80 border border-border rounded-lg max-w-[500px] mx-auto text-left">
               <p className="text-primary font-semibold text-sm">You currently have an active Cosmic Session.</p>
-              <p className="text-white/50 text-xs mt-1">
+              <p className="text-foreground/50 text-xs mt-1">
                 You have {Math.ceil(voiceBalanceInSeconds / 60)} minutes of active voice time remaining.
               </p>
             </div>
@@ -212,29 +212,29 @@ export default function PricingPage() {
                 initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4 }}
-                className={`p-8 bg-[#18181b]/40 backdrop-blur-lg border rounded-lg shadow-xl relative flex flex-col justify-between h-full transition-all duration-300 hover:border-primary/50 hover:shadow-[0_8px_32px_rgba(109,93,251,0.05)] hover:-translate-y-1 ${isFeatured ? "border-primary bg-secondary/60 hover:border-primary/80 shadow-[0_0_30px_rgba(109,93,251,0.15)]" : "border-card-border"}`}
+                className={`p-8 bg-card/40 backdrop-blur-lg border rounded-lg shadow-xl relative flex flex-col justify-between h-full transition-all duration-300 hover:border-primary/50 hover:shadow-[0_8px_32px_rgba(109,93,251,0.05)] hover:-translate-y-1 ${isFeatured ? "border-primary bg-secondary/60 hover:border-primary/80 shadow-[0_0_30px_rgba(109,93,251,0.15)]" : "border-border"}`}
               >
                 {isFeatured && plan.badgeText && (
-                  <div className="absolute top-4 right-4 bg-primary text-white text-[9px] uppercase tracking-widest font-extrabold px-2.5 py-1 rounded-full">{plan.badgeText}</div>
+                  <div className="absolute top-4 right-4 bg-primary text-foreground text-[9px] uppercase tracking-widest font-extrabold px-2.5 py-1 rounded-full">{plan.badgeText}</div>
                 )}
 
                 <div>
                   <div className="flex items-start gap-4 mb-6">
                     <div className="w-12 h-12 rounded-lg bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shrink-0">{getPlanIcon(plan.icon, plan.iconColor)}</div>
                     <div>
-                      <h2 className="text-lg font-bold text-white">{plan.displayName}</h2>
-                      <p className="text-xs text-white/50 leading-relaxed mt-1">{plan.description}</p>
+                      <h2 className="text-lg font-bold text-foreground">{plan.displayName}</h2>
+                      <p className="text-xs text-foreground/50 leading-relaxed mt-1">{plan.description}</p>
                     </div>
                   </div>
 
-                  <div className="text-3xl font-black text-white my-6 flex items-baseline gap-1">
+                  <div className="text-3xl font-black text-foreground my-6 flex items-baseline gap-1">
                     ${plan.price}
-                    <span className="text-xs font-medium text-white/40">/ {plan.durationInMinutes} mins</span>
+                    <span className="text-xs font-medium text-foreground/40">/ {plan.durationInMinutes} mins</span>
                   </div>
 
                   <ul className="flex flex-col gap-3 mb-8 list-none p-0">
                     {plan.features.map((feature) => (
-                      <li key={feature} className="flex items-center gap-2.5 text-xs text-white/70">
+                      <li key={feature} className="flex items-center gap-2.5 text-xs text-foreground/70">
                         <CheckCircle2 size={18} className="text-primary shrink-0" />
                         <span>{feature}</span>
                       </li>
@@ -245,7 +245,7 @@ export default function PricingPage() {
                 <button
                   type="button"
                   onClick={() => handleSubscribe(plan.name, plan.price, plan.durationInMinutes)}
-                  className={`w-full text-center py-3 rounded-lg font-bold text-xs uppercase tracking-wider cursor-pointer transition-all duration-300 ${isFeatured ? "bg-gradient-to-r from-primary to-[#4f46e5] text-white shadow-[0_0_20px_rgba(109,93,251,0.3)] hover:shadow-[0_0_30px_rgba(109,93,251,0.5)]" : "bg-secondary/80 border border-card-border hover:border-white/20 text-white"}`}
+                  className={`w-full text-center py-3 rounded-lg font-bold text-xs uppercase tracking-wider cursor-pointer transition-all duration-300 ${isFeatured ? "bg-gradient-to-r from-primary to-[#4f46e5] text-foreground shadow-[0_0_20px_rgba(109,93,251,0.3)] hover:shadow-[0_0_30px_rgba(109,93,251,0.5)]" : "bg-secondary/80 border border-border hover:border-border text-foreground"}`}
                   disabled={loading}
                 >
                   {loading ? "Processing..." : isFeatured ? "Start Deep Healing" : plan.id === "quick-clarity" ? "Begin Quick Session" : "Embrace Awakening"}

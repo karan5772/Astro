@@ -15,7 +15,7 @@ interface DatePickerProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
-  disabled?: Date;  // disables dates after this
+  disabled?: Date;
 }
 
 export function DatePicker({
@@ -31,22 +31,22 @@ export function DatePicker({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         className={cn(
-          'w-full px-4 py-3.5 bg-white/[0.04] border border-white/[0.07] rounded-xl text-sm text-left outline-none',
-          'focus:border-primary/40 hover:border-white/[0.12] transition-colors',
+          'w-full px-4 py-3.5 bg-foreground/[0.04] border border-border rounded-xl text-sm text-left outline-none',
+          'focus:border-primary/40 hover:border-primary/30 transition-colors',
           'flex items-center justify-between gap-2',
           open && 'border-primary/40',
           className,
         )}
       >
-        <span className={date ? 'text-white' : 'text-white/20'}>
+        <span className={date ? 'text-foreground' : 'text-foreground/30'}>
           {date ? format(date, 'd MMMM yyyy') : placeholder}
         </span>
-        <CalendarIcon size={14} className="text-white/25 shrink-0" />
+        <CalendarIcon size={14} className="text-foreground/30 shrink-0" />
       </PopoverTrigger>
       <PopoverContent
         side="bottom"
         align="start"
-        className="w-auto p-0 bg-[#16171e] border-white/[0.08] shadow-2xl"
+        className="w-auto p-0 bg-popover border-border shadow-2xl"
       >
         <Calendar
           mode="single"
@@ -107,22 +107,22 @@ export function TimePicker({ value, onChange, placeholder = 'Pick a time', class
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         className={cn(
-          'w-full px-4 py-3.5 bg-white/[0.04] border border-white/[0.07] rounded-xl text-sm text-left outline-none',
-          'focus:border-primary/40 hover:border-white/[0.12] transition-colors',
+          'w-full px-4 py-3.5 bg-foreground/[0.04] border border-border rounded-xl text-sm text-left outline-none',
+          'focus:border-primary/40 hover:border-primary/30 transition-colors',
           'flex items-center justify-between gap-2',
           open && 'border-primary/40',
           className,
         )}
       >
-        <span className={value ? 'text-white' : 'text-white/20'}>{displayValue}</span>
-        <ClockIcon size={14} className="text-white/25 shrink-0" />
+        <span className={value ? 'text-foreground' : 'text-foreground/30'}>{displayValue}</span>
+        <ClockIcon size={14} className="text-foreground/30 shrink-0" />
       </PopoverTrigger>
       <PopoverContent
         side="bottom"
         align="start"
-        className="w-auto p-3 bg-[#16171e] border-white/[0.08] shadow-2xl"
+        className="w-auto p-3 bg-popover border-border shadow-2xl"
       >
-        <p className="text-[9px] uppercase tracking-widest text-white/25 mb-3 px-1 font-medium">Select time</p>
+        <p className="text-[9px] uppercase tracking-widest text-foreground/30 mb-3 px-1 font-medium">Select time</p>
 
         <div className="flex items-stretch gap-2">
           {/* Hours column */}
@@ -133,7 +133,7 @@ export function TimePicker({ value, onChange, placeholder = 'Pick a time', class
             format={(h) => pad(h)}
             label="HH"
           />
-          <div className="flex items-center pb-1 text-white/25 font-bold text-lg select-none">:</div>
+          <div className="flex items-center pb-1 text-foreground/30 font-bold text-lg select-none">:</div>
           {/* Minutes column */}
           <ScrollColumn
             items={Array.from({ length: 60 }, (_, i) => i)}
@@ -173,7 +173,6 @@ function ScrollColumn({
   const containerRef = React.useRef<HTMLDivElement>(null);
   const ITEM_H = 36;
 
-  // Scroll selected item into center on mount / when selected changes
   React.useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -182,7 +181,7 @@ function ScrollColumn({
 
   return (
     <div className="flex flex-col items-center gap-1">
-      <span className="text-[9px] uppercase tracking-widest text-white/20 font-medium mb-0.5">{label}</span>
+      <span className="text-[9px] uppercase tracking-widest text-foreground/25 font-medium mb-0.5">{label}</span>
       <div
         ref={containerRef}
         className="h-[180px] overflow-y-auto scroll-smooth no-scrollbar relative"
@@ -198,7 +197,7 @@ function ScrollColumn({
               'w-full flex items-center justify-center rounded-lg text-sm font-mono transition-colors',
               selected === v
                 ? 'bg-primary/20 text-primary font-semibold'
-                : 'text-white/35 hover:text-white/70 hover:bg-white/[0.04]',
+                : 'text-foreground/40 hover:text-foreground/75 hover:bg-foreground/[0.04]',
             )}
             style={{ height: ITEM_H }}
           >

@@ -47,7 +47,6 @@ const VEDIC_RASHIS: RashiData[] = [
   { name: 'Meena', english: 'Pisces', glyph: '♓', element: 'Water', quality: 'Dual', ruler: 'Jupiter', elementEmoji: '💧', elementColor: '#cc5de8', glowColor: 'rgba(204,93,232,0.15)' },
 ];
 
-// Vedic sidereal date ranges (Lahiri ayanamsa ≈ 23.85°)
 const RASHI_RANGES: [number, number, number, number, number][] = [
   [1, 1, 1, 14, 8], [1, 15, 2, 12, 9], [2, 13, 3, 14, 10],
   [3, 15, 4, 13, 11], [4, 14, 5, 14, 0], [5, 15, 6, 14, 1],
@@ -107,7 +106,7 @@ function ZodiacWheel({ userRashi }: { userRashi: RashiData | null }) {
 
         {/* Outer dashed decoration ring */}
         <circle cx={CX} cy={CY} r={OUTER_R + 9} fill="none"
-          stroke="rgba(255,255,255,0.04)" strokeWidth="1" strokeDasharray="2 10" />
+          stroke="var(--foreground)" strokeOpacity="0.08" strokeWidth="1" strokeDasharray="2 10" />
 
         {VEDIC_RASHIS.map((rashi, i) => {
           const active = userRashi?.name === rashi.name;
@@ -116,14 +115,16 @@ function ZodiacWheel({ userRashi }: { userRashi: RashiData | null }) {
             <g key={rashi.name}>
               <path
                 d={arc(i)}
-                fill={active ? rashi.elementColor : 'rgba(255,255,255,0.035)'}
+                fill={active ? rashi.elementColor : 'var(--foreground)'}
+                fillOpacity={active ? 1 : 0.07}
                 filter={active ? 'url(#rg)' : 'none'}
               />
               <text
                 x={gx} y={gy}
                 textAnchor="middle" dominantBaseline="middle"
                 fontSize={active ? 15 : 11}
-                fill={active ? '#fff' : 'rgba(255,255,255,0.18)'}
+                fill={active ? '#fff' : 'var(--foreground)'}
+                opacity={active ? 1 : 0.35}
                 fontWeight={active ? '700' : '400'}
               >
                 {rashi.glyph}
@@ -132,26 +133,26 @@ function ZodiacWheel({ userRashi }: { userRashi: RashiData | null }) {
           );
         })}
 
-        {/* Center fill */}
-        <circle cx={CX} cy={CY} r={INNER_R - 1} fill="#0c0d12" />
+        {/* Center fill — uses foreground so it's dark on cream, light on dark */}
+        <circle cx={CX} cy={CY} r={INNER_R - 1} fill="var(--foreground)" />
 
         {/* Center content */}
         {userRashi ? (
           <>
             <text x={CX} y={CY - 13} textAnchor="middle" dominantBaseline="middle"
-              fontSize="30" fill="white">{userRashi.glyph}</text>
+              fontSize="30" fill="var(--background)">{userRashi.glyph}</text>
             <text x={CX} y={CY + 11} textAnchor="middle"
-              fill="white" fontSize="12" fontWeight="600" fontFamily="Inter,sans-serif">
+              fill="var(--background)" fontSize="12" fontWeight="600" fontFamily="Inter,sans-serif">
               {userRashi.name}
             </text>
             <text x={CX} y={CY + 26} textAnchor="middle"
-              fill="rgba(255,255,255,0.32)" fontSize="9" fontFamily="Inter,sans-serif">
+              fill="var(--background)" opacity="0.6" fontSize="9" fontFamily="Inter,sans-serif">
               {userRashi.english}
             </text>
           </>
         ) : (
           <text x={CX} y={CY} textAnchor="middle" dominantBaseline="middle"
-            fill="rgba(255,255,255,0.18)" fontSize="9.5" fontFamily="Inter,sans-serif">
+            fill="var(--foreground)" opacity="0.35" fontSize="9.5" fontFamily="Inter,sans-serif">
             add birth date
           </text>
         )}
@@ -172,20 +173,20 @@ function MessageGauge({ used, total, isPro }: { used: number; total: number; isP
     <div className="flex flex-col items-center gap-2">
       <div className="relative">
         <svg width="132" height="132" viewBox="0 0 128 128">
-          <circle cx="64" cy="64" r={R} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="9" />
+          <circle cx="64" cy="64" r={R} fill="none" stroke="var(--border)" strokeWidth="9" />
           <circle cx="64" cy="64" r={R} fill="none" stroke={stroke} strokeWidth="9"
             strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={isPro ? 0 : offset}
             transform="rotate(-90 64 64)"
             style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1), stroke 0.3s' }} />
-          <text x="64" y="57" textAnchor="middle" fill="white" fontSize="22"
+          <text x="64" y="57" textAnchor="middle" fill="var(--foreground)" fontSize="22"
             fontWeight="700" fontFamily="Inter,sans-serif">{isPro ? '∞' : String(left)}</text>
-          <text x="64" y="72" textAnchor="middle" fill="rgba(255,255,255,0.35)"
+          <text x="64" y="72" textAnchor="middle" fill="var(--foreground)" opacity="0.45"
             fontSize="9" fontFamily="Inter,sans-serif">{isPro ? 'unlimited' : 'left'}</text>
         </svg>
         <div className="absolute inset-0 rounded-full blur-2xl opacity-15 pointer-events-none"
           style={{ backgroundColor: stroke }} />
       </div>
-      <p className="text-[11px] text-white/25">{isPro ? 'Unlimited messages' : `${left} of ${total} remaining`}</p>
+      <p className="text-[11px] text-foreground/40">{isPro ? 'Unlimited messages' : `${left} of ${total} remaining`}</p>
     </div>
   );
 }
@@ -201,20 +202,20 @@ function VoiceGauge({ remainingMin, totalMin }: { remainingMin: number; totalMin
     <div className="flex flex-col items-center gap-2">
       <div className="relative">
         <svg width="132" height="132" viewBox="0 0 128 128">
-          <circle cx="64" cy="64" r={R} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="9" />
+          <circle cx="64" cy="64" r={R} fill="none" stroke="var(--border)" strokeWidth="9" />
           <circle cx="64" cy="64" r={R} fill="none" stroke={stroke} strokeWidth="9"
             strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={offset}
             transform="rotate(-90 64 64)"
             style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1), stroke 0.3s' }} />
-          <text x="64" y="57" textAnchor="middle" fill="white" fontSize="22"
+          <text x="64" y="57" textAnchor="middle" fill="var(--foreground)" fontSize="22"
             fontWeight="700" fontFamily="Inter,sans-serif">{remainingMin}</text>
-          <text x="64" y="72" textAnchor="middle" fill="rgba(255,255,255,0.35)"
+          <text x="64" y="72" textAnchor="middle" fill="var(--foreground)" opacity="0.45"
             fontSize="9" fontFamily="Inter,sans-serif">min left</text>
         </svg>
         <div className="absolute inset-0 rounded-full blur-2xl opacity-15 pointer-events-none"
           style={{ backgroundColor: stroke }} />
       </div>
-      <p className="text-[11px] text-white/25">{remainingMin} of {totalMin} min remaining</p>
+      <p className="text-[11px] text-foreground/40">{remainingMin} of {totalMin} min remaining</p>
     </div>
   );
 }
@@ -235,7 +236,6 @@ export default function ProfilePage() {
   const getVoiceTimeUsed = () =>
     Math.max(0, getTotalVoiceMinutes() - getVoiceTimeRemaining());
 
-  // Form state
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [timezoneOffset, setTimezoneOffset] = useState('+05:30');
@@ -334,8 +334,8 @@ export default function ProfilePage() {
 
   if (!clerkLoaded || loading) {
     return (
-      <div className="min-h-screen bg-[#0c0d12] flex items-center justify-center">
-        <Loader2 size={32} className="animate-spin text-white/20" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 size={32} className="animate-spin text-foreground/20" />
       </div>
     );
   }
@@ -345,35 +345,37 @@ export default function ProfilePage() {
   const msgPct = msgCount / 15;
   const msgLeft = Math.max(0, 15 - msgCount);
 
-  const FIELD = 'w-full px-3 py-2.5 bg-white/[0.04] border border-white/[0.07] rounded-lg text-sm text-white placeholder-white/20 outline-none focus:border-white/20 transition-colors';
-  const LABEL = 'block text-[10px] uppercase tracking-widest text-white/30 mb-1.5 font-medium';
-  const SECTION = 'text-[10px] uppercase tracking-[0.14em] text-white/25 font-semibold mb-5';
+  const FIELD = 'w-full px-3 py-2.5 bg-foreground/[0.04] border border-border rounded-lg text-sm text-foreground placeholder-foreground/25 outline-none focus:border-primary/40 transition-colors';
+  const LABEL = 'block text-[10px] uppercase tracking-widest text-foreground/40 mb-1.5 font-medium';
+  const SECTION = 'text-[10px] uppercase tracking-[0.14em] text-foreground/45 font-semibold mb-5';
 
   return (
-    <div className="min-h-screen bg-[#0c0d12] text-white selection:bg-primary/20">
+    <div className="min-h-screen bg-background text-foreground selection:bg-primary/20">
       <Navbar variant="dashboard" />
 
       <main className="max-w-3xl mx-auto px-5 pt-28 pb-20 space-y-16">
 
         {/* ══ 1. BIRTH DETAILS ══════════════════════════════════════════════════ */}
         <section>
-          {/* Zodiac wheel hero */}
-          <div className="flex items-center justify-between mb-8 p-4 bg-white/[0.025] border border-white/[0.06] rounded-xl">
+          {/* User identity card */}
+          <div className="flex items-center justify-between mb-8 p-4 bg-gradient-to-r from-card to-secondary/40 border border-border/80 rounded-xl shadow-sm">
             <div className="flex items-center gap-3.5">
               <div className="scale-110 flex items-center">
-                <UserButton appearance={{ elements: { avatarBox: { width: '38px', height: '38px', border: '1.5px solid rgba(255,255,255,0.1)' } } }} />
+                <UserButton appearance={{ elements: { avatarBox: { width: '38px', height: '38px', border: '1.5px solid var(--border)' } } }} />
               </div>
               <div>
-                <p className="text-[15px] font-semibold text-white leading-tight">
+                <p className="text-[15px] font-semibold text-foreground leading-tight">
                   {user?.fullName || userData?.email?.split('@')[0] || 'Astro Traveler'}
                 </p>
-                <p className="text-[12px] text-white/35 mt-0.5">{userData?.email}</p>
+                <p className="text-[12px] text-foreground/40 mt-0.5">{userData?.email}</p>
               </div>
             </div>
-            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] border ${userData?.isPro ? 'border-primary/30 text-primary bg-primary/5' : 'border-white/[0.08] text-white/35'}`}>
+            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium border ${userData?.isPro ? 'border-primary/30 text-primary bg-primary/8' : 'border-border text-foreground/40 bg-foreground/[0.03]'}`}>
               {userData?.isPro ? <><ShieldCheck size={11} /> Pro</> : <><ShieldAlert size={11} /> Free</>}
             </div>
           </div>
+
+          {/* Zodiac wheel */}
           <motion.div
             className="flex flex-col items-center gap-5 mb-10"
             initial={{ opacity: 0, y: 12 }}
@@ -383,12 +385,24 @@ export default function ProfilePage() {
             <ZodiacWheel userRashi={rashi} />
             {rashi ? (
               <div className="flex items-center gap-2 flex-wrap justify-center">
-                {[`${rashi.elementEmoji} ${rashi.element}`, rashi.quality, `♦ ${rashi.ruler}`].map(tag => (
-                  <span key={tag} className="text-[11px] text-white/45 bg-white/[0.04] border border-white/[0.07] px-3 py-1 rounded-full">{tag}</span>
+                {/* Element tag — coloured with rashi's element colour */}
+                <span
+                  className="text-[11px] px-3 py-1 rounded-full border font-medium"
+                  style={{
+                    color: rashi.elementColor,
+                    backgroundColor: rashi.elementColor + '15',
+                    borderColor: rashi.elementColor + '40',
+                  }}
+                >
+                  {rashi.elementEmoji} {rashi.element}
+                </span>
+                {/* Quality + Ruler — neutral */}
+                {[rashi.quality, `♦ ${rashi.ruler}`].map(tag => (
+                  <span key={tag} className="text-[11px] text-foreground/50 bg-foreground/[0.05] border border-border px-3 py-1 rounded-full">{tag}</span>
                 ))}
               </div>
             ) : (
-              <p className="text-[12px] text-white/25">Add your birth date to reveal your Vedic Rashi</p>
+              <p className="text-[12px] text-foreground/30">Add your birth date to reveal your Vedic Rashi</p>
             )}
           </motion.div>
 
@@ -403,7 +417,7 @@ export default function ProfilePage() {
                 </button>
               ) : (
                 <button onClick={() => setIsEditingBirth(false)}
-                  className="flex items-center gap-1.5 text-[11px] text-white/40 border border-white/[0.08] px-2.5 py-1.5 rounded-lg hover:text-white/60 transition-colors">
+                  className="flex items-center gap-1.5 text-[11px] text-foreground/40 border border-border px-2.5 py-1.5 rounded-lg hover:text-foreground/60 transition-colors">
                   <X size={11} /> Cancel
                 </button>
               )}
@@ -421,17 +435,17 @@ export default function ProfilePage() {
                         { icon: <Globe size={11} />, label: 'Timezone', value: timezoneOffset ? `UTC${timezoneOffset}` : '—', wide: false },
                         { icon: <Compass size={11} />, label: 'Coordinates', value: latitude !== null && longitude !== null ? `${latitude.toFixed(2)}° · ${longitude.toFixed(2)}°` : '—', wide: false },
                       ].map(({ icon, label, value, wide }) => (
-                        <div key={label} className={`bg-white/[0.025] border border-white/[0.06] rounded-xl px-4 py-3 ${wide ? 'col-span-2' : ''}`}>
-                          <div className="flex items-center gap-1.5 text-white/30 mb-1.5">{icon}
+                        <div key={label} className={`bg-card border border-border rounded-xl px-4 py-3 shadow-sm ${wide ? 'col-span-2' : ''}`}>
+                          <div className="flex items-center gap-1.5 text-primary/60 mb-1.5">{icon}
                             <span className="text-[9px] uppercase tracking-widest font-medium">{label}</span>
                           </div>
-                          <p className="text-[13px] text-white/75 font-medium leading-snug">{value}</p>
+                          <p className="text-[13px] text-foreground/90 font-medium leading-snug">{value}</p>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="border border-dashed border-white/[0.08] rounded-xl p-8 text-center">
-                      <p className="text-[12px] text-white/25 mb-4">No birth details added yet</p>
+                    <div className="border border-dashed border-border rounded-xl p-8 text-center">
+                      <p className="text-[12px] text-foreground/30 mb-4">No birth details added yet</p>
                       <button onClick={() => setIsEditingBirth(true)}
                         className="text-[11px] font-semibold text-primary hover:opacity-75 transition-opacity">
                         Add birth details →
@@ -457,18 +471,18 @@ export default function ProfilePage() {
                     <div className="relative">
                       <input type="text" placeholder="Search city…" value={locationQuery}
                         onChange={e => setLocationQuery(e.target.value)} className={`${FIELD} pr-9`} />
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 text-white/25">
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/25">
                         {isSearchingLocation ? <Loader2 size={13} className="animate-spin" /> : <Search size={13} />}
                       </div>
                     </div>
                     <AnimatePresence>
                       {suggestions.length > 0 && (
                         <motion.div
-                          className="absolute top-[calc(100%+6px)] left-0 right-0 bg-[#16171e] border border-white/[0.08] rounded-lg z-50 max-h-48 overflow-y-auto shadow-2xl"
+                          className="absolute top-[calc(100%+6px)] left-0 right-0 bg-card border border-border rounded-lg z-50 max-h-48 overflow-y-auto shadow-2xl"
                           initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}>
                           {suggestions.map((loc, idx) => (
                             <button key={idx} type="button" onClick={() => handleSelectLocation(loc)}
-                              className="w-full text-left px-3 py-2.5 hover:bg-white/5 border-b border-white/[0.04] last:border-0 text-white/70 text-xs flex items-center gap-2 transition-colors">
+                              className="w-full text-left px-3 py-2.5 hover:bg-foreground/5 border-b border-border last:border-0 text-foreground/70 text-xs flex items-center gap-2 transition-colors">
                               <MapPin size={12} className="text-primary/60 shrink-0" />
                               <span className="truncate">{loc.name}</span>
                             </button>
@@ -498,7 +512,7 @@ export default function ProfilePage() {
                     </div>
                     <div>
                       <label className={LABEL}><Compass size={9} className="inline mr-1" />Coordinates</label>
-                      <div className={`${FIELD} cursor-default text-white/40 text-xs flex items-center`}>
+                      <div className={`${FIELD} cursor-default text-foreground/40 text-xs flex items-center`}>
                         {latitude !== null && longitude !== null ? `${latitude.toFixed(2)}° · ${longitude.toFixed(2)}°` : 'Auto-filled on select'}
                       </div>
                     </div>
@@ -517,18 +531,15 @@ export default function ProfilePage() {
         <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
           <p className={SECTION}>Account & Usage</p>
 
-          {/* User row */}
-
-
           {/* Gauges row */}
           <div className={`flex ${userData?.isPro ? 'justify-around' : 'justify-center'} gap-8 mb-8`}>
             <div className="flex flex-col items-center gap-1">
-              <p className="text-[9px] uppercase tracking-widest text-white/25 mb-3">Messages</p>
+              <p className="text-[9px] uppercase tracking-widest text-foreground/35 mb-3">Messages</p>
               <MessageGauge used={msgCount} total={15} isPro={userData?.isPro || false} />
             </div>
             {userData?.isPro && (
               <div className="flex flex-col items-center gap-1">
-                <p className="text-[9px] uppercase tracking-widest text-white/25 mb-3">Voice Time</p>
+                <p className="text-[9px] uppercase tracking-widest text-foreground/35 mb-3">Voice Time</p>
                 <VoiceGauge remainingMin={getVoiceTimeRemaining()} totalMin={getTotalVoiceMinutes()} />
               </div>
             )}
@@ -537,7 +548,7 @@ export default function ProfilePage() {
           {/* Free: progress bar + dots */}
           {!userData?.isPro && (
             <div className="space-y-3 mb-8">
-              <div className="h-1.5 rounded-full bg-white/[0.05] overflow-hidden">
+              <div className="h-1.5 rounded-full bg-foreground/[0.07] overflow-hidden">
                 <motion.div className="h-full rounded-full"
                   style={{ background: msgPct > 0.8 ? 'linear-gradient(90deg,#ff8c00,#ff3838)' : msgPct > 0.5 ? 'linear-gradient(90deg,#6D5DFB,#ffd43b)' : 'linear-gradient(90deg,#6D5DFB,#a78bfa)' }}
                   initial={{ width: '0%' }}
@@ -547,15 +558,15 @@ export default function ProfilePage() {
               <div className="flex gap-1">
                 {Array.from({ length: 15 }).map((_, i) => (
                   <motion.div key={i} className="flex-1 h-1 rounded-full"
-                    style={{ backgroundColor: i < msgCount ? (i >= 12 ? '#ff6b6b' : i >= 8 ? '#ffd43b' : '#6D5DFB') : 'rgba(255,255,255,0.05)' }}
+                    style={{ backgroundColor: i < msgCount ? (i >= 12 ? '#ff6b6b' : i >= 8 ? '#ffd43b' : '#6D5DFB') : 'var(--border)' }}
                     initial={{ scaleY: 0 }} animate={{ scaleY: 1 }}
                     transition={{ duration: 0.12, delay: 0.4 + i * 0.035 }} />
                 ))}
               </div>
               {msgCount >= 8 && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}>
-                  <div className="border border-white/[0.07] rounded-xl p-4 bg-white/[0.02]">
-                    <p className="text-[11px] text-white/40 mb-2.5">
+                  <div className="border border-border rounded-xl p-4 bg-secondary/50">
+                    <p className="text-[11px] text-foreground/50 mb-2.5">
                       {msgCount >= 15 ? 'All free messages used.' : `${msgLeft} ${msgLeft === 1 ? 'message' : 'messages'} remaining on free plan.`}
                     </p>
                     <a href="/pricing" className="text-[11px] font-semibold text-primary hover:opacity-75 transition-opacity">
@@ -569,8 +580,8 @@ export default function ProfilePage() {
 
           {/* Pro: low voice nudge */}
           {userData?.isPro && getVoiceTimeRemaining() < 5 && (
-            <div className="border border-white/[0.07] rounded-xl p-4 text-center bg-white/[0.02] mb-8">
-              <p className="text-[11px] text-white/40 mb-2">Voice time running low</p>
+            <div className="border border-border rounded-xl p-4 text-center bg-secondary/50 mb-8">
+              <p className="text-[11px] text-foreground/50 mb-2">Voice time running low</p>
               <a href="/pricing" className="text-[11px] font-semibold text-primary hover:opacity-75 transition-opacity">Top up →</a>
             </div>
           )}
@@ -585,10 +596,10 @@ export default function ProfilePage() {
                 { label: 'Voice Used', value: `${getVoiceTimeUsed()}m`, sub: 'consumed' },
               ] : []),
             ].map(({ label, value, sub }) => (
-              <div key={label} className="bg-white/[0.025] border border-white/[0.06] rounded-xl p-4">
-                <p className="text-[9px] uppercase tracking-widest text-white/30 mb-1">{label}</p>
-                <p className="text-xl font-bold text-white">{value}</p>
-                <p className="text-[10px] text-white/25 mt-0.5">{sub}</p>
+              <div key={label} className="bg-card border border-border rounded-xl p-4 shadow-sm">
+                <p className="text-[9px] uppercase tracking-widest text-foreground/40 mb-1">{label}</p>
+                <p className="text-xl font-bold text-foreground">{value}</p>
+                <p className="text-[10px] text-foreground/35 mt-0.5">{sub}</p>
               </div>
             ))}
           </div>
@@ -598,18 +609,18 @@ export default function ProfilePage() {
         {(userData?.payments?.length ?? 0) > 0 && (
           <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
             <p className={SECTION}>Billing</p>
-            <div className="border border-white/[0.07] rounded-xl overflow-hidden">
+            <div className="border border-border rounded-xl overflow-hidden bg-card shadow-sm">
               {userData!.payments.map((p: any, i: number) => (
-                <div key={i} className="flex justify-between items-center px-5 py-3.5 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.015] transition-colors">
+                <div key={i} className="flex justify-between items-center px-5 py-3.5 border-b border-border last:border-0 hover:bg-foreground/[0.02] transition-colors">
                   <div>
-                    <p className="text-sm text-white">{p.durationInMinutes} Min Pass
-                      {p.plan ? <span className="text-white/30 ml-1.5 text-xs">· {p.plan}</span> : null}
+                    <p className="text-sm text-foreground">{p.durationInMinutes} Min Pass
+                      {p.plan ? <span className="text-foreground/35 ml-1.5 text-xs">· {p.plan}</span> : null}
                     </p>
-                    <p className="text-[11px] text-white/25 mt-0.5">
+                    <p className="text-[11px] text-foreground/35 mt-0.5">
                       {p.date || p.createdAt ? new Date(p.date || p.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
                     </p>
                   </div>
-                  <p className="text-sm font-semibold text-white">${p.amount}</p>
+                  <p className="text-sm font-semibold text-foreground">${p.amount}</p>
                 </div>
               ))}
             </div>

@@ -134,12 +134,12 @@ function SessionGauge({
         ) : isActive ? (
           <>
             <AnimatedWaveform color={activeColor} />
-            <span className="text-white/50 font-mono text-[11px] tabular-nums">{mins}:{secs}</span>
+            <span className="text-foreground/50 font-mono text-[11px] tabular-nums">{mins}:{secs}</span>
           </>
         ) : (
           <>
-            <Mic size={38} className="text-white/25" />
-            <span className="text-white/25 font-mono text-[11px] tabular-nums">{mins}:{secs}</span>
+            <Mic size={38} className="text-foreground/25" />
+            <span className="text-foreground/25 font-mono text-[11px] tabular-nums">{mins}:{secs}</span>
           </>
         )}
       </div>
@@ -359,30 +359,30 @@ export default function VoicePage() {
     : {};
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0c0d12] text-white flex flex-col lg:flex-row selection:bg-primary/30 selection:text-white">
+    <div className="min-h-screen bg-background text-foreground flex flex-col lg:flex-row selection:bg-primary/30 selection:text-white">
 
       {/* Upgrade modal */}
       {showUpgradeModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="relative bg-[#13141a] border border-white/10 rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-8 flex flex-col items-center gap-5 text-center">
+          <div className="relative bg-card border border-border rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-8 flex flex-col items-center gap-5 text-center">
             <div className="w-16 h-16 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center mb-1">
               <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
                 <path d="M16 4L19.09 12.26L28 13.27L21.5 19.64L23.18 28L16 24L8.82 28L10.5 19.64L4 13.27L12.91 12.26L16 4Z" fill="currentColor" className="text-primary" />
               </svg>
             </div>
-            <h2 className="text-lg font-semibold text-white tracking-tight">Your voice balance has run out</h2>
-            <p className="text-sm text-white/55 leading-relaxed">
+            <h2 className="text-lg font-semibold text-foreground tracking-tight">Your voice balance has run out</h2>
+            <p className="text-sm text-foreground/55 leading-relaxed">
               Recharge to keep talking to the stars — pick a plan that gives you more voice minutes and unlimited cosmic guidance.
             </p>
             <button
               onClick={() => router.push('/pricing')}
-              className="w-full py-3 rounded-xl bg-primary text-white font-medium text-sm hover:bg-primary/90 transition-colors"
+              className="w-full py-3 rounded-xl bg-primary text-foreground font-medium text-sm hover:bg-primary/90 transition-colors"
             >
               View upgrade plans
             </button>
             <button
               onClick={() => router.push('/chat')}
-              className="text-xs text-white/35 hover:text-white/60 transition-colors"
+              className="text-xs text-foreground/35 hover:text-foreground/60 transition-colors"
             >
               Maybe later
             </button>
@@ -407,34 +407,34 @@ export default function VoicePage() {
         <div className="w-full max-w-[1280px] my-auto">
           <div className="flex justify-center w-full pb-12">
             <motion.section
-              className="w-full max-w-[700px] bg-secondary/40 backdrop-blur-lg border border-card-border rounded-2xl p-8 relative flex flex-col items-center gap-8 transition-shadow duration-700"
+              className="w-full max-w-[700px] bg-secondary/40 backdrop-blur-lg border border-border rounded-2xl p-8 relative flex flex-col items-center gap-8 transition-shadow duration-700"
               style={glowStyle}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.05 }}
             >
               {/* Header */}
-              <div className="w-full border-b border-card-border pb-6 flex flex-col gap-4 text-center md:text-left">
+              <div className="w-full border-b border-border pb-6 flex flex-col gap-4 text-center md:text-left">
                 <div>
-                  <p className="text-xs uppercase tracking-widest font-bold text-primary mb-2">Voice room</p>
-                  <h2 className="text-lg font-bold text-white mb-2">
+                  <p className="text-xs uppercase tracking-widest font-bold text-foreground/40 mb-2">Voice room</p>
+                  <h2 className="text-lg font-bold text-foreground mb-2">
                     One button, one job: start the live reading.
                   </h2>
-                  <p className="text-xs text-white/50 leading-relaxed">
+                  <p className="text-xs text-foreground/50 leading-relaxed">
                     Keep the screen quiet, keep the controls obvious, and let the session do the talking.
                   </p>
                 </div>
 
                 <div className="flex flex-wrap gap-2.5 justify-center md:justify-start mt-3">
-                  <span className="flex items-center gap-1.5 px-3 py-1 bg-secondary/80 border border-white/5 rounded-full text-[10px] uppercase tracking-wider font-semibold text-white/70">
+                  <span className="flex items-center gap-1.5 px-3 py-1 bg-secondary/80 border border-border rounded-full text-[10px] uppercase tracking-wider font-semibold text-foreground/70">
                     <Activity size={12} className="text-primary" />
                     {isSessionActive ? 'Live' : isLoading ? 'Connecting' : 'Idle'}
                   </span>
-                  <span className="flex items-center gap-1.5 px-3 py-1 bg-secondary/80 border border-white/5 rounded-full text-[10px] uppercase tracking-wider font-semibold text-white/70">
+                  <span className="flex items-center gap-1.5 px-3 py-1 bg-secondary/80 border border-border rounded-full text-[10px] uppercase tracking-wider font-semibold text-foreground/70">
                     <Shield size={12} className="text-primary" />
                     {isSessionActive ? 'Secure stream' : 'Microphone ready'}
                   </span>
-                  <span className="flex items-center gap-1.5 px-3 py-1 bg-secondary/80 border border-white/5 rounded-full text-[10px] uppercase tracking-wider font-semibold text-white/70">
+                  <span className="flex items-center gap-1.5 px-3 py-1 bg-secondary/80 border border-border rounded-full text-[10px] uppercase tracking-wider font-semibold text-foreground/70">
                     <Wifi size={12} className="text-primary" />
                     {formatTime(elapsedTime)}
                   </span>
@@ -451,9 +451,9 @@ export default function VoicePage() {
               />
 
               {/* Status */}
-              <div className="text-center w-full p-4 bg-[#0c0d12]/40 border border-card-border rounded-xl">
-                <span className="text-[9px] uppercase tracking-widest font-extrabold text-white/40 block mb-1">Status</span>
-                <p className="text-sm text-white/80 leading-relaxed">{status}</p>
+              <div className="text-center w-full p-4 bg-background/40 border border-border rounded-xl">
+                <span className="text-[9px] uppercase tracking-widest font-extrabold text-foreground/40 block mb-1">Status</span>
+                <p className="text-sm text-foreground/80 leading-relaxed">{status}</p>
               </div>
 
               {/* Control button */}
@@ -461,7 +461,7 @@ export default function VoicePage() {
                 {!isSessionActive ? (
                   <button
                     onClick={startSession}
-                    className="w-full text-center py-4 rounded-lg font-bold text-xs uppercase tracking-wider cursor-pointer transition-all duration-300 bg-gradient-to-r from-primary to-[#4f46e5] text-white shadow-[0_0_20px_rgba(109,93,251,0.3)] hover:shadow-[0_0_30px_rgba(109,93,251,0.5)] disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full text-center py-4 rounded-lg font-bold text-xs uppercase tracking-wider cursor-pointer transition-all duration-300 bg-gradient-to-r from-primary to-[#4f46e5] text-foreground shadow-[0_0_20px_rgba(109,93,251,0.3)] hover:shadow-[0_0_30px_rgba(109,93,251,0.5)] disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={isLoading || checkingAccess}
                   >
                     {checkingAccess ? 'Checking access...' : isLoading ? 'Connecting...' : 'Start Voice Session'}
@@ -469,7 +469,7 @@ export default function VoicePage() {
                 ) : (
                   <button
                     onClick={stopSession}
-                    className="w-full text-center py-4 rounded-lg font-bold text-xs uppercase tracking-wider cursor-pointer transition-all duration-300 bg-secondary/80 border border-card-border hover:border-white/20 text-white flex items-center justify-center gap-2"
+                    className="w-full text-center py-4 rounded-lg font-bold text-xs uppercase tracking-wider cursor-pointer transition-all duration-300 bg-secondary/80 border border-border hover:border-border text-foreground flex items-center justify-center gap-2"
                   >
                     <Square size={14} className="shrink-0" />
                     End Session

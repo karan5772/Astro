@@ -14,7 +14,7 @@ export default function PrivacyPage() {
       <Navbar variant="legal" />
       <main className="relative z-10 pt-32 pb-16 max-w-[1280px] mx-auto px-6 flex-1 w-full">
         <div className="flex flex-col gap-3 mb-10">
-          <p className="text-xs uppercase tracking-widest font-bold text-primary">Legal</p>
+          <p className="text-xs uppercase tracking-widest font-bold text-foreground/40">Legal</p>
           <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white">Privacy Policy</h1>
           <p className="text-sm text-white/50 leading-relaxed">
             Your privacy is important to us. This policy explains what we collect, how we use it, and how we protect it when you use Astraeus.

@@ -14,7 +14,7 @@ export default function TermsPage() {
       <Navbar variant="legal" />
       <main className="relative z-10 pt-32 pb-16 max-w-[1280px] mx-auto px-6 flex-1 w-full">
         <div className="flex flex-col gap-3 mb-10">
-          <p className="text-xs uppercase tracking-widest font-bold text-primary">Legal</p>
+          <p className="text-xs uppercase tracking-widest font-bold text-foreground/40">Legal</p>
           <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white">Terms &amp; Conditions</h1>
           <p className="text-sm text-white/50 leading-relaxed">
             By using Astraeus, you agree to the terms below. Please read them carefully before purchasing or using the service.

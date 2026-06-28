@@ -20,6 +20,8 @@ import {
   Trash2,
 } from 'lucide-react';
 import { chatStorage, type ConversationMeta } from '@/lib/chat-storage';
+import { useTheme } from './ThemeProvider';
+import { Sun, Moon } from 'lucide-react';
 
 const MAIN_NAV = [
   { href: '/', label: 'Home', icon: Home },
@@ -45,6 +47,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { userId } = useAuth();
+  const { theme, toggle } = useTheme();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dbUser, setDbUser] = useState<any>(null);
@@ -148,18 +151,27 @@ export default function Sidebar() {
   return (
     <>
       {/* Mobile Top Bar */}
-      <div className="flex lg:hidden items-center justify-between px-6 py-4 bg-white dark:bg-[#0c0d12] border-b border-gray-200 dark:border-white/5 fixed top-0 left-0 right-0 z-40 h-[64px]">
-        <Link href="/" className="flex items-center gap-2 text-xl font-bold text-black dark:text-white">
+      <div className="flex lg:hidden items-center justify-between px-6 py-4 bg-sidebar border-b border-sidebar-border fixed top-0 left-0 right-0 z-40 h-[64px]">
+        <Link href="/" className="flex items-center gap-2 text-xl font-bold text-foreground">
           <img src="/logo.png" alt="Logo" className="w-6 h-6 object-contain" />
           <span className="font-bold">Astro.AI</span>
         </Link>
-        <button
-          className="text-black/80 dark:text-white/80 hover:text-black dark:hover:text-white focus:outline-none"
-          onClick={() => setMobileOpen(!mobileOpen)}
-          aria-label="Toggle sidebar"
-        >
-          {mobileOpen ? <X size={22} /> : <Menu size={22} />}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={toggle}
+            className="flex items-center justify-center w-8 h-8 rounded-full border border-border text-foreground/55 hover:text-foreground hover:bg-foreground/8 transition-all cursor-pointer"
+            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+          >
+            {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+          </button>
+          <button
+            className="text-foreground/80 hover:text-foreground focus:outline-none"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label="Toggle sidebar"
+          >
+            {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Overlay */}
@@ -169,23 +181,23 @@ export default function Sidebar() {
 
       {/* Sidebar Container */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 flex flex-col bg-white dark:bg-[#0c0d12] border-r border-gray-200 dark:border-white/5 transition-all duration-300 ${
+        className={`fixed top-0 bottom-0 left-0 z-50 flex flex-col bg-sidebar border-r border-sidebar-border transition-all duration-300 ${
           collapsed ? 'w-[72px]' : 'w-[260px]'
         } ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} h-full pt-16 lg:pt-0`}
       >
         {/* Brand Header */}
-        <div className={`flex items-center border-b border-gray-100 dark:border-white/5 px-5 py-4 ${collapsed ? 'justify-center' : 'justify-between'}`}>
+        <div className={`flex items-center border-b border-sidebar-border px-5 py-4 ${collapsed ? 'justify-center' : 'justify-between'}`}>
           {!collapsed && (
             <Link href="/" className="flex items-center gap-2">
               <div className="rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
                 <img src="/logo.png" alt="Astraeus Logo" className="w-7 h-7 object-contain" />
               </div>
-              <span className="text-sm font-bold text-gray-900 dark:text-white tracking-tight">Astro AI</span>
+              <span className="text-sm font-bold text-sidebar-foreground tracking-tight">Astro AI</span>
             </Link>
           )}
           <button
             onClick={toggleCollapsed}
-            className="hidden lg:flex items-center justify-center w-6 h-6 rounded-md bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-400 dark:text-white/40 hover:text-gray-700 dark:hover:text-white transition-colors cursor-pointer"
+            className="hidden lg:flex items-center justify-center w-6 h-6 rounded-md bg-sidebar-accent/60 border border-sidebar-border text-sidebar-foreground/40 hover:text-sidebar-foreground transition-colors cursor-pointer"
             aria-label="Toggle collapse"
           >
             {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
@@ -204,12 +216,12 @@ export default function Sidebar() {
                     href={item.href}
                     className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
                       active
-                        ? 'bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-white font-medium'
-                        : 'text-gray-600 dark:text-white/60 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'
+                        ? 'bg-sidebar-accent text-sidebar-foreground font-medium'
+                        : 'text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
                     }`}
                     title={collapsed ? item.label : undefined}
                   >
-                    <Icon size={18} className={active ? 'text-primary' : 'text-gray-400 dark:text-white/40'} />
+                    <Icon size={18} className={active ? 'text-primary' : 'text-sidebar-foreground/40'} />
                     {!collapsed && <span className="text-xs">{item.label}</span>}
                   </Link>
                 </li>
@@ -219,18 +231,18 @@ export default function Sidebar() {
         </nav>
 
         {/* ── Readings section ─────────────────────────────────────────── */}
-        <div className="flex-1 flex flex-col min-h-0 border-t border-gray-100 dark:border-white/5">
+        <div className="flex-1 flex flex-col min-h-0 border-t border-sidebar-border">
             {/* Section header + New button */}
             <div className={`flex items-center px-3 pt-3 pb-2 shrink-0 ${collapsed ? 'justify-center' : 'justify-between'}`}>
               {!collapsed && (
-                <span className="text-[10px] uppercase tracking-widest font-bold text-gray-400 dark:text-white/25">
+                <span className="text-[10px] uppercase tracking-widest font-bold text-sidebar-foreground/25">
                   Readings
                 </span>
               )}
               <button
                 onClick={handleNewConversation}
                 title="New Reading"
-                className="flex items-center justify-center w-6 h-6 rounded-md bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/40 hover:text-gray-800 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-white/10 transition-all cursor-pointer"
+                className="flex items-center justify-center w-6 h-6 rounded-md bg-sidebar-accent border border-sidebar-border text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-all cursor-pointer"
               >
                 <Plus size={13} />
               </button>
@@ -240,7 +252,7 @@ export default function Sidebar() {
             <div className="flex-1 overflow-y-auto px-2 pb-2">
               {conversations.length === 0 ? (
                 !collapsed && (
-                  <p className="text-[11px] text-gray-400 dark:text-white/25 text-center mt-4 px-2">
+                  <p className="text-[11px] text-sidebar-foreground/25 text-center mt-4 px-2">
                     No readings yet
                   </p>
                 )
@@ -258,7 +270,7 @@ export default function Sidebar() {
                       className={`group w-full text-left flex items-center gap-2.5 px-2.5 py-2 rounded-lg mb-0.5 transition-all relative cursor-pointer ${
                         active
                           ? 'bg-primary/10 dark:bg-primary/12'
-                          : 'hover:bg-gray-100 dark:hover:bg-white/[0.04]'
+                          : 'hover:bg-sidebar-accent/60'
                       }`}
                     >
                       {active && (
@@ -267,22 +279,22 @@ export default function Sidebar() {
 
                       <MessageSquare
                         size={13}
-                        className={`shrink-0 ${active ? 'text-primary' : 'text-gray-400 dark:text-white/25'}`}
+                        className={`shrink-0 ${active ? 'text-primary' : 'text-sidebar-foreground/25'}`}
                       />
 
                       {!collapsed && (
                         <>
                           <div className="flex-1 min-w-0">
-                            <p className={`text-[12px] font-medium truncate ${active ? 'text-primary' : 'text-gray-700 dark:text-white/65'}`}>
+                            <p className={`text-[12px] font-medium truncate ${active ? 'text-primary' : 'text-sidebar-foreground/80'}`}>
                               {conv.title}
                             </p>
-                            <p className="text-[10px] text-gray-400 dark:text-white/25 mt-0.5 leading-none">
+                            <p className="text-[10px] text-sidebar-foreground/25 mt-0.5 leading-none">
                               {relativeTime(conv.updatedAt)}
                             </p>
                           </div>
                           <button
                             onClick={(e) => handleDeleteConversation(conv.id, e)}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:text-red-400 text-gray-400 dark:text-white/30 cursor-pointer shrink-0"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:text-red-400 text-sidebar-foreground/30 cursor-pointer shrink-0"
                           >
                             <Trash2 size={11} />
                           </button>
@@ -296,12 +308,29 @@ export default function Sidebar() {
           </div>
         {/* ──────────────────────────────────────────────────────────────── */}
 
+        {/* Theme toggle row */}
+        <div className={`px-4 py-2.5 border-t border-border shrink-0 ${collapsed ? 'flex justify-center' : ''}`}>
+          <button
+            onClick={toggle}
+            className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-foreground/50 hover:text-foreground hover:bg-foreground/[0.05] transition-all cursor-pointer w-full ${collapsed ? 'justify-center w-auto' : ''}`}
+            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            title={collapsed ? (theme === 'dark' ? 'Light mode' : 'Dark mode') : undefined}
+          >
+            {theme === 'dark' ? <Sun size={15} className="shrink-0" /> : <Moon size={15} className="shrink-0" />}
+            {!collapsed && (
+              <span className="text-xs font-medium">
+                {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+              </span>
+            )}
+          </button>
+        </div>
+
         {/* Bottom Profile */}
         {userId && (
-          <div className="p-4 border-t border-gray-100 dark:border-white/5 shrink-0">
+          <div className="p-4 border-t border-border shrink-0">
             <Link
               href="/profile"
-              className={`flex items-center gap-3 p-2.5 rounded-xl bg-gray-50 dark:bg-[#18181b]/50 border border-gray-150 dark:border-white/5 hover:border-primary/30 transition-all text-gray-800 dark:text-white/90 hover:text-gray-900 dark:hover:text-white ${
+              className={`flex items-center gap-3 p-2.5 rounded-xl bg-sidebar-accent/50 border border-sidebar-border hover:border-primary/30 transition-all text-sidebar-foreground/90 hover:text-sidebar-foreground ${
                 collapsed ? 'justify-center' : ''
               }`}
               style={{ textDecoration: 'none' }}
@@ -311,7 +340,7 @@ export default function Sidebar() {
                 {!collapsed && (
                   <div className="flex flex-col text-left">
                     <span className="text-xs font-semibold">Profile</span>
-                    <span className="text-[9px] text-gray-400 dark:text-white/45 font-medium mt-0.5 leading-none">
+                    <span className="text-[9px] text-sidebar-foreground/40 font-medium mt-0.5 leading-none">
                       {getPlanLabel()}
                     </span>
                   </div>
