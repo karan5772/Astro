@@ -193,7 +193,7 @@ export default function VoicePage() {
 
   const dcRef = useRef<RTCDataChannel | null>(null);
   const audioElRef = useRef<HTMLAudioElement | null>(null);
-  const { user, isLoaded } = useUser();
+  const { isLoaded, isSignedIn } = useUser();
   const router = useRouter();
 
   useEffect(() => {
@@ -203,7 +203,7 @@ export default function VoicePage() {
 
   // Access check — blocks the start button until resolved
   useEffect(() => {
-    if (isLoaded && user) {
+    if (isLoaded && isSignedIn) {
       const checkProStatus = () => {
         fetch("/api/user")
           .then((res) => res.json())
@@ -238,7 +238,7 @@ export default function VoicePage() {
       const interval = setInterval(checkProStatus, 60000);
       return () => clearInterval(interval);
     }
-  }, [isLoaded, user]);
+  }, [isLoaded, isSignedIn]);
 
   // Local countdown while session is live
   useEffect(() => {
@@ -302,12 +302,7 @@ export default function VoicePage() {
 
       const dc = pc.createDataChannel("oai-events");
       dcRef.current = dc;
-      dc.onmessage = (e) => {
-        const msg = JSON.parse(e.data);
-        if (msg.type === "response.audio_transcript.done") {
-          console.log("AI:", msg.transcript);
-        }
-      };
+      dc.onmessage = () => {};
 
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);

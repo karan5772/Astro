@@ -96,12 +96,67 @@ function selectPredictions(
   return predictions.slice(0, limit);
 }
 
+// ── Jailbreak detection ───────────────────────────────────────────────────────
+
+const JAILBREAK_PATTERNS = [
+  /ignore\s+(all\s+)?(previous|prior|above|your)\s+(instructions?|prompt|guidelines?|rules?)/i,
+  /forget\s+(your\s+)?(instructions?|prompt|guidelines?|rules?|training|persona)/i,
+  /you\s+are\s+now\s+(DAN|GPT-?[0-9]|an?\s+AI\s+without|a\s+different\s+AI)/i,
+  /\bDAN\s*(?:mode|6\.0|7\.0|8\.0)?\b/i,
+  /developer\s+mode\s*(enabled|activated|on)/i,
+  /\bjailbreak\b/i,
+  /bypass\s+(your\s+)?(safety|filters?|restrictions?|guidelines?|rules?)/i,
+  /disregard\s+(all\s+)?(your\s+)?(instructions?|guidelines?|previous|system)/i,
+  /override\s+(your\s+)?(instructions?|safety|guidelines?|training)/i,
+  /pretend\s+you\s+(are|have)\s+no\s+(restrictions?|rules?|guidelines?)/i,
+  /act\s+as\s+(if\s+you\s+(are|have)\s+no\s+(restrictions?|rules?)|an?\s+unrestricted)/i,
+  /you\s+have\s+no\s+(restrictions?|limitations?|rules?|guidelines?|filters?)/i,
+  /reveal\s+(your\s+)?(system\s+)?(prompt|instructions?|training\s+data)/i,
+  /what\s+(are|were)\s+your\s+(original\s+)?(instructions?|system\s+prompt)/i,
+];
+
+function isJailbreak(text: string): boolean {
+  return JAILBREAK_PATTERNS.some(re => re.test(text));
+}
+
+function jailbreakStream(): Response {
+  const msg = "The stars do not bend to such requests, dear seeker. I am Astraeus — bound to the cosmic truth. Ask me what truly weighs on your heart and I shall read the heavens for you.";
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    start(controller) {
+      controller.enqueue(encoder.encode(msg));
+      controller.close();
+    },
+  });
+  return new Response(stream, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { userId } = await auth();
 
     if (!userId) {
       return new Response('Unauthorized', { status: 401 });
+    }
+
+    // Parse body first so we can jailbreak-check before touching the DB
+    const { messages: rawMessages } = await req.json();
+
+    // Validate and sanitize messages — cap length and strip disallowed roles
+    const MAX_MESSAGES = 60;
+    const MAX_CONTENT_LENGTH = 4000;
+    const messages = (Array.isArray(rawMessages) ? rawMessages : [])
+      .filter((m: any) => m && (m.role === 'user' || m.role === 'assistant'))
+      .slice(-MAX_MESSAGES)
+      .map((m: any) => ({
+        role: m.role as 'user' | 'assistant',
+        content: typeof m.content === 'string' ? m.content.slice(0, MAX_CONTENT_LENGTH) : '',
+      }));
+
+    // Check last user message for jailbreak attempts — no credit consumed on detection
+    const lastUserMsg = [...messages].reverse().find(m => m.role === 'user');
+    if (lastUserMsg && isJailbreak(lastUserMsg.content)) {
+      return jailbreakStream();
     }
 
     await connectToDatabase();
@@ -144,18 +199,6 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const { messages: rawMessages } = await req.json();
-
-    // Validate and sanitize messages — cap length and strip disallowed roles
-    const MAX_MESSAGES = 60;
-    const MAX_CONTENT_LENGTH = 4000;
-    const messages = (Array.isArray(rawMessages) ? rawMessages : [])
-      .filter((m: any) => m && (m.role === 'user' || m.role === 'assistant'))
-      .slice(-MAX_MESSAGES)
-      .map((m: any) => ({
-        role: m.role as 'user' | 'assistant',
-        content: typeof m.content === 'string' ? m.content.slice(0, MAX_CONTENT_LENGTH) : '',
-      }));
     const lastMessage = messages[messages.length - 1];
 
     // Prepare system prompt with memory context

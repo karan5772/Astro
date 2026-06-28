@@ -18,10 +18,11 @@ import {
   Plus,
   MessageSquare,
   Trash2,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { getChatStorage, type ConversationMeta } from '@/lib/chat-storage';
 import { useTheme } from './ThemeProvider';
-import { Sun, Moon } from 'lucide-react';
 
 const MAIN_NAV = [
   { href: '/', label: 'Home', icon: Home },

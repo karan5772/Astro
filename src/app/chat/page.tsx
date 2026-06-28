@@ -1,22 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
-import {
-  Send,
-  Sparkles,
-  User,
-  Copy,
-  Check,
-  Briefcase,
-  Heart,
-  Compass,
-  Moon,
-  Info,
-  X,
-  Loader2,
-  Paperclip,
-  Sun,
-} from 'lucide-react';
+import { User, Copy, Check, Loader2 } from 'lucide-react';
 import OnboardingFlow from '@/components/OnboardingFlow';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -32,41 +17,11 @@ type Message = { id: string; role: 'user' | 'assistant'; content: string };
 
 
 const SUGGESTIONS = [
-  {
-    title: "Career & Success",
-    prompt: "What does my birth chart say about my career?",
-    description: "Explore your professional path and wealth potential.",
-    icon: "Briefcase"
-  },
-  {
-    title: "Love & Alignment",
-    prompt: "How will planetary alignments affect my love life?",
-    description: "Understand your relationship patterns and compatibility.",
-    icon: "Heart"
-  },
-  {
-    title: "Daily Oracle",
-    prompt: "Can you give me a general reading for today?",
-    description: "Receive your daily astrological transit update.",
-    icon: "Compass"
-  },
-  {
-    title: "Inner Harmony",
-    prompt: "What is the cosmic advice for finding peace?",
-    description: "Seek astrological wisdom for mindfulness and balance.",
-    icon: "Moon"
-  }
+  { title: "Career & Success",  prompt: "What does my birth chart say about my career?" },
+  { title: "Love & Alignment",  prompt: "How will planetary alignments affect my love life?" },
+  { title: "Daily Oracle",      prompt: "Can you give me a general reading for today?" },
+  { title: "Inner Harmony",     prompt: "What is the cosmic advice for finding peace?" },
 ];
-
-const getSuggestionIcon = (iconName: string) => {
-  switch (iconName) {
-    case 'Briefcase': return <Briefcase color="#cebdff" size={20} />;
-    case 'Heart': return <Heart color="#ffb4ab" size={20} />;
-    case 'Compass': return <Compass color="#6D5DFB" size={20} />;
-    case 'Moon': return <Moon color="#c0c6db" size={20} />;
-    default: return <Sparkles color="#6D5DFB" size={20} />;
-  }
-};
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -304,8 +259,8 @@ export default function ChatPage() {
   const router = useRouter();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const parsedCache = useRef<Map<string, { len: number; parts: ReturnType<typeof parseMessageContent> }>>(new Map());
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -638,7 +593,12 @@ export default function ChatPage() {
             {messages.map((m) => {
               if (m.role === 'assistant' && m.content.length === 0) return null;
 
-              const textParts = parseMessageContent(m.content).filter((p) => p.type === 'text');
+              // Cache parse result by message id + content length — only re-parses when content changes
+              const cached = parsedCache.current.get(m.id);
+              if (!cached || cached.len !== m.content.length) {
+                parsedCache.current.set(m.id, { len: m.content.length, parts: parseMessageContent(m.content) });
+              }
+              const textParts = parsedCache.current.get(m.id)!.parts.filter((p) => p.type === 'text');
 
               return (
                 <motion.div
