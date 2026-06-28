@@ -21,11 +21,12 @@ import OnboardingFlow from '@/components/OnboardingFlow';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { useUser } from '@clerk/nextjs';
+import { useUser, useAuth } from '@clerk/nextjs';
 import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from '@/components/Sidebar';
 import QuestionCard from '@/components/QuestionCard';
-import { chatStorage, type ConversationMeta, type StoredMessage } from '@/lib/chat-storage';
+import { getChatStorage, type ConversationMeta, type StoredMessage } from '@/lib/chat-storage';
+import { FREE_MESSAGE_LIMIT } from '@/lib/plans';
 
 type Message = { id: string; role: 'user' | 'assistant'; content: string };
 
@@ -96,51 +97,54 @@ function MarkdownText({ text, isUser }: { text: string; isUser?: boolean }) {
   if (!text) return null;
 
   const lines = text.split('\n');
-  const textSizeClass = isUser ? 'text-sm' : 'text-sm md:text-base';
+  const baseSz = isUser ? 'text-sm' : 'text-sm md:text-base';
+  // User bubble is inverted (bg-foreground text-background) — don't override inherited color
+  const bodyColor = isUser ? '' : 'text-foreground/90';
+  const headingColor = isUser ? '' : 'text-foreground';
 
   return (
-    <div className="markdown-content">
+    <div className="markdown-content space-y-0.5">
       {lines.map((line, index) => {
         const trimmed = line.trim();
 
         if (trimmed.startsWith('### ')) {
           return (
-            <h4 key={index} className={`font-semibold text-accent mt-3 mb-1 ${isUser ? 'text-sm' : 'text-sm md:text-base'}`}>
-              {renderInline(trimmed.slice(4))}
+            <h4 key={index} className={`font-semibold text-sm mt-3 mb-0.5 ${headingColor}`}>
+              {renderInline(trimmed.slice(4), isUser)}
             </h4>
           );
         }
         if (trimmed.startsWith('## ')) {
           return (
-            <h3 key={index} className={`font-bold text-accent mt-4 mb-1.5 ${isUser ? 'text-base' : 'text-base md:text-lg'}`}>
-              {renderInline(trimmed.slice(3))}
+            <h3 key={index} className={`font-semibold text-base mt-4 mb-1 ${headingColor}`}>
+              {renderInline(trimmed.slice(3), isUser)}
             </h3>
           );
         }
         if (trimmed.startsWith('# ')) {
           return (
-            <h2 key={index} className={`font-bold text-accent mt-5 mb-2 ${isUser ? 'text-lg' : 'text-lg md:text-xl'}`}>
-              {renderInline(trimmed.slice(2))}
+            <h2 key={index} className={`font-bold text-lg mt-4 mb-1 ${headingColor}`}>
+              {renderInline(trimmed.slice(2), isUser)}
             </h2>
           );
         }
 
         if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
           return (
-            <div key={index} className={`flex items-start gap-2 my-1 pl-2 ${textSizeClass}`}>
-              <span className="text-primary mt-1.5 flex-shrink-0" style={{ fontSize: '0.65rem' }}>◆</span>
-              <span className="leading-relaxed">{renderInline(trimmed.slice(2))}</span>
+            <div key={index} className={`flex items-start gap-2 my-0.5 pl-1 ${baseSz}`}>
+              <span className={`mt-[5px] shrink-0 text-[0.5rem] ${isUser ? 'opacity-60' : 'text-primary/70'}`}>◆</span>
+              <span className={`leading-relaxed ${bodyColor}`}>{renderInline(trimmed.slice(2), isUser)}</span>
             </div>
           );
         }
 
         if (trimmed === '') {
-          return <div key={index} className="h-2" />;
+          return <div key={index} className="h-1.5" />;
         }
 
         return (
-          <p key={index} className={`my-1.5 leading-relaxed ${textSizeClass}`}>
-            {renderInline(line)}
+          <p key={index} className={`leading-relaxed ${baseSz} ${bodyColor}`}>
+            {renderInline(line, isUser)}
           </p>
         );
       })}
@@ -148,21 +152,28 @@ function MarkdownText({ text, isUser }: { text: string; isUser?: boolean }) {
   );
 }
 
-function renderInline(text: string) {
-  const parts = text.split(/(\*\*.*?\*\*|\*.*?\*)/g);
+function renderInline(text: string, isUser?: boolean) {
+  const parts = text.split(/(\*\*.*?\*\*|\*.*?\*|`[^`]+`)/g);
   return parts.map((part, i) => {
     if (part.startsWith('**') && part.endsWith('**')) {
       return (
-        <strong key={i} className="font-semibold" style={{ color: 'var(--accent)' }}>
+        <strong key={i} className={`font-semibold ${isUser ? '' : 'text-foreground'}`}>
           {part.slice(2, -2)}
         </strong>
       );
     }
-    if (part.startsWith('*') && part.endsWith('*')) {
+    if (part.startsWith('*') && part.endsWith('*') && part.length > 2) {
       return (
-        <em key={i} className="italic">
+        <em key={i} className={`italic ${isUser ? 'opacity-80' : 'text-foreground/80'}`}>
           {part.slice(1, -1)}
         </em>
+      );
+    }
+    if (part.startsWith('`') && part.endsWith('`')) {
+      return (
+        <code key={i} className={`px-1 py-0.5 rounded text-[0.8em] font-mono ${isUser ? 'bg-background/20' : 'bg-foreground/[0.08] text-foreground'}`}>
+          {part.slice(1, -1)}
+        </code>
       );
     }
     return part;
@@ -259,6 +270,7 @@ function relativeTime(iso: string) {
 
 export default function ChatPage() {
   const { user } = useUser();
+  const { userId } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -340,7 +352,7 @@ export default function ChatPage() {
 
   const switchConversation = async (id: string | null) => {
     if (!id) { handleNewConversation(); return; }
-    const msgs = await chatStorage.getMessages(id);
+    const msgs = await getChatStorage(userId || 'anon').getMessages(id);
     setMessages(msgs.map((m, i) => ({ ...m, id: `loaded-${i}` })));
     setActiveConvId(id);
     setIsInQuestionMode(false);
@@ -357,12 +369,11 @@ export default function ChatPage() {
     window.dispatchEvent(new CustomEvent('chat:active-changed', { detail: { id: null } }));
   };
 
-  // Load most recent conversation on mount (after user/onboarding check)
+  // Load most recent conversation on mount — waits for both onboarding check and Clerk userId
   useEffect(() => {
-    if (!checkingDetails && !showOnboardingForm) {
-      chatStorage.listConversations().then(list => {
+    if (!checkingDetails && !showOnboardingForm && userId) {
+      getChatStorage(userId).listConversations().then(list => {
         setConversations(list);
-        // If the sidebar navigated here with a specific conversation, open it
         const pending = localStorage.getItem('sidebar:pending-conv');
         if (pending) {
           localStorage.removeItem('sidebar:pending-conv');
@@ -373,7 +384,7 @@ export default function ChatPage() {
       });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [checkingDetails, showOnboardingForm]);
+  }, [checkingDetails, showOnboardingForm, userId]);
 
   // Listen for sidebar new/switch events
   useEffect(() => {
@@ -433,7 +444,7 @@ export default function ChatPage() {
     let convId = activeConvIdRef.current;
     if (!convId) {
       const title = messageText.slice(0, 45) + (messageText.length > 45 ? '…' : '');
-      const meta = await chatStorage.createConversation(title);
+      const meta = await getChatStorage(userId || 'anon').createConversation(title);
       convId = meta.id;
       setActiveConvId(meta.id);
       setConversations(prev => [meta, ...prev]);
@@ -487,7 +498,7 @@ export default function ChatPage() {
           ...newMessages.map(({ role, content }) => ({ role, content } as StoredMessage)),
           { role: 'assistant', content: aiContent },
         ];
-        chatStorage.saveMessages(convId, finalMessages).then(() => {
+        getChatStorage(userId || 'anon').saveMessages(convId, finalMessages).then(() => {
           setConversations(prev =>
             prev
               .map(c => c.id === convId ? { ...c, updatedAt: new Date().toISOString() } : c)
@@ -569,9 +580,9 @@ export default function ChatPage() {
                 <path d="M16 4L19.09 12.26L28 13.27L21.5 19.64L23.18 28L16 24L8.82 28L10.5 19.64L4 13.27L12.91 12.26L16 4Z" fill="currentColor" className="text-primary" />
               </svg>
             </div>
-            <h2 className="text-lg font-semibold text-foreground tracking-tight">You've used all 15 free messages</h2>
+            <h2 className="text-lg font-semibold text-foreground tracking-tight">You've used all {FREE_MESSAGE_LIMIT} free messages</h2>
             <p className="text-sm text-foreground/55 leading-relaxed">
-              Upgrade to continue your cosmic journey — unlimited messages, voice sessions, and deeper astrological insights.
+              Top up to continue your cosmic journey — more messages, voice sessions, and deeper astrological insights.
             </p>
             <button
               onClick={() => router.push('/pricing')}
@@ -651,7 +662,7 @@ export default function ChatPage() {
                       <div className="w-8 h-8 rounded-full bg-card border border-gray-200 dark:border-border flex items-center justify-center shrink-0 shadow-sm">
                         <img src="/logo.png" alt="Astro" className="object-contain" />
                       </div>
-                      <div className="bg-[#f4f4f5] dark:bg-card/60 border border-gray-200 dark:border-border text-foreground/95 px-5 py-3.5 rounded-2xl text-sm leading-relaxed max-w-xl shadow-sm">
+                      <div className="bg-card border border-border text-foreground/90 px-5 py-3.5 rounded-2xl text-sm leading-relaxed max-w-xl shadow-sm">
                         {textParts.map((part, pi) => (
                           <MarkdownText key={pi} text={part.content} />
                         ))}
@@ -674,7 +685,7 @@ export default function ChatPage() {
                 <div className="w-8 h-8 rounded bg-card border border-gray-200 dark:border-border flex items-center justify-center shrink-0 shadow-sm">
                   <img src="/logo.png" alt="Astro" className="w-5 h-5 object-contain" />
                 </div>
-                <div className="p-4 bg-[#f4f4f5] dark:bg-card/60 border border-gray-200 dark:border-border text-foreground/90 rounded-2xl flex items-center gap-3 shadow-sm">
+                <div className="p-4 bg-card border border-border text-foreground/90 rounded-2xl flex items-center gap-3 shadow-sm">
                   <div className="flex items-center gap-1">
                     <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]"></span>
                     <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]"></span>

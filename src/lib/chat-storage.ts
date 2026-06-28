@@ -18,7 +18,38 @@ interface StorageAdapter {
 
 // ── Local Storage adapter ─────────────────────────────────────────────────────
 class LocalStorageAdapter implements StorageAdapter {
-  private metaKey = 'astro_conversations';
+  private metaKey: string;
+  private msgPrefix: string;
+
+  constructor(userId: string) {
+    const safe = userId.replace(/[^a-zA-Z0-9_-]/g, '_');
+    this.metaKey = `astro_${safe}_conversations`;
+    this.msgPrefix = `astro_${safe}_msgs_`;
+    if (typeof window !== 'undefined') this.migrateFromLegacy();
+  }
+
+  // One-time migration: move data stored under the old non-namespaced keys
+  private migrateFromLegacy() {
+    const LEGACY_META = 'astro_conversations';
+    const LEGACY_MSG_PREFIX = 'astro_msgs_';
+    const raw = localStorage.getItem(LEGACY_META);
+    if (!raw) return;
+    try {
+      const old: ConversationMeta[] = JSON.parse(raw);
+      if (!old.length) return;
+      // Only migrate if the namespaced slot is empty (don't overwrite real data)
+      if (this.getMeta().length === 0) {
+        this.setMeta(old);
+        for (const c of old) {
+          const msgs = localStorage.getItem(`${LEGACY_MSG_PREFIX}${c.id}`);
+          if (msgs) localStorage.setItem(`${this.msgPrefix}${c.id}`, msgs);
+        }
+      }
+      // Clean up legacy keys regardless
+      for (const c of old) localStorage.removeItem(`${LEGACY_MSG_PREFIX}${c.id}`);
+      localStorage.removeItem(LEGACY_META);
+    } catch { /* ignore */ }
+  }
 
   private getMeta(): ConversationMeta[] {
     if (typeof window === 'undefined') return [];
@@ -36,7 +67,7 @@ class LocalStorageAdapter implements StorageAdapter {
     const id = `conv_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     const meta: ConversationMeta = { id, title, updatedAt: new Date().toISOString() };
     this.setMeta([meta, ...this.getMeta()]);
-    localStorage.setItem(`astro_msgs_${id}`, '[]');
+    localStorage.setItem(`${this.msgPrefix}${id}`, '[]');
     return meta;
   }
 
@@ -46,11 +77,11 @@ class LocalStorageAdapter implements StorageAdapter {
 
   async getMessages(id: string) {
     if (typeof window === 'undefined') return [];
-    try { return JSON.parse(localStorage.getItem(`astro_msgs_${id}`) || '[]'); } catch { return []; }
+    try { return JSON.parse(localStorage.getItem(`${this.msgPrefix}${id}`) || '[]'); } catch { return []; }
   }
 
   async saveMessages(id: string, messages: StoredMessage[]) {
-    localStorage.setItem(`astro_msgs_${id}`, JSON.stringify(messages));
+    localStorage.setItem(`${this.msgPrefix}${id}`, JSON.stringify(messages));
     this.setMeta(
       this.getMeta()
         .map(m => m.id === id ? { ...m, updatedAt: new Date().toISOString() } : m)
@@ -59,7 +90,7 @@ class LocalStorageAdapter implements StorageAdapter {
   }
 
   async deleteConversation(id: string) {
-    localStorage.removeItem(`astro_msgs_${id}`);
+    localStorage.removeItem(`${this.msgPrefix}${id}`);
     this.setMeta(this.getMeta().filter(m => m.id !== id));
   }
 }
@@ -106,6 +137,14 @@ class DBStorageAdapter implements StorageAdapter {
   }
 }
 
-export const chatStorage: StorageAdapter = USE_DB_STORAGE
-  ? new DBStorageAdapter()
-  : new LocalStorageAdapter();
+// ── Factory (cached per userId) ───────────────────────────────────────────────
+const _cache = new Map<string, StorageAdapter>();
+
+export function getChatStorage(userId: string): StorageAdapter {
+  if (USE_DB_STORAGE) return new DBStorageAdapter();
+  const key = userId || 'anon';
+  if (!_cache.has(key)) {
+    _cache.set(key, new LocalStorageAdapter(key));
+  }
+  return _cache.get(key)!;
+}

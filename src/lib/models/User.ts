@@ -8,6 +8,7 @@ const UserSchema = new mongoose.Schema({
   isPro: { type: Boolean, default: false },
   messageCount: { type: Number, default: 0 },
   totalChatMessages: { type: Number, default: 0 },
+  messageBalance: { type: Number, default: 0 },
   voiceBalanceInSeconds: { type: Number, default: 0 },
   totalVoiceSecondsConsumed: { type: Number, default: 0 },
   voiceSessionCount: { type: Number, default: 0 },

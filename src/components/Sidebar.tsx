@@ -19,7 +19,7 @@ import {
   MessageSquare,
   Trash2,
 } from 'lucide-react';
-import { chatStorage, type ConversationMeta } from '@/lib/chat-storage';
+import { getChatStorage, type ConversationMeta } from '@/lib/chat-storage';
 import { useTheme } from './ThemeProvider';
 import { Sun, Moon } from 'lucide-react';
 
@@ -74,21 +74,23 @@ export default function Sidebar() {
     }
   }, [userId]);
 
-  // Load conversations on all pages
+  // Load conversations on all pages — scoped to the signed-in user
   useEffect(() => {
-    chatStorage.listConversations().then(setConversations);
-  }, []);
+    if (userId) {
+      getChatStorage(userId).listConversations().then(setConversations);
+    }
+  }, [userId]);
 
   // Re-read list when chat page signals a change
   useEffect(() => {
     const handler = (e: Event) => {
-      chatStorage.listConversations().then(setConversations);
+      if (userId) getChatStorage(userId).listConversations().then(setConversations);
       const detail = (e as CustomEvent).detail;
       if (detail?.activeId !== undefined) setActiveConvId(detail.activeId);
     };
     window.addEventListener('chat:list-changed', handler);
     return () => window.removeEventListener('chat:list-changed', handler);
-  }, []);
+  }, [userId]);
 
   // Sync active conversation from chat page
   useEffect(() => {
@@ -138,7 +140,7 @@ export default function Sidebar() {
 
   const handleDeleteConversation = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    await chatStorage.deleteConversation(id);
+    await getChatStorage(userId || 'anon').deleteConversation(id);
     const updated = conversations.filter(c => c.id !== id);
     setConversations(updated);
     if (activeConvId === id) {

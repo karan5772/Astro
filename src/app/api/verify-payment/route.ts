@@ -5,6 +5,7 @@ import connectToDatabase from '@/lib/mongodb';
 import User from '@/lib/models/User';
 import Payment from '@/lib/models/Payment';
 import { logEvent } from '@/lib/log-event';
+import { PLANS } from '@/lib/plans';
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,7 +15,12 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { razorpay_payment_id, razorpay_order_id, razorpay_signature, amount, durationInMinutes = 10, plan } = body;
+    const { razorpay_payment_id, razorpay_order_id, razorpay_signature, amount, plan } = body;
+
+    // Resolve plan details from shared definition
+    const planDef = PLANS.find(p => p.id === plan);
+    const messagesGranted = planDef?.messagesGranted ?? 0;
+    const durationInMinutes = planDef?.voiceMinutes ?? 0;
 
     const secret = process.env.RAZORPAY_KEY_SECRET;
     
@@ -50,14 +56,18 @@ export async function POST(req: NextRequest) {
       plan: plan || null,
       amount: amount || 999,
       currency: 'INR',
-      durationInMinutes
+      messagesGranted,
+      durationInMinutes,
     });
 
     const dbUser = await User.findOneAndUpdate(
       { clerkId: userId },
       {
         $set: { isPro: true, lastActiveAt: new Date() },
-        $inc: { voiceBalanceInSeconds: durationInMinutes * 60 }
+        $inc: {
+          messageBalance: messagesGranted,
+          voiceBalanceInSeconds: durationInMinutes * 60,
+        },
       },
       { new: true }
     );
@@ -70,7 +80,7 @@ export async function POST(req: NextRequest) {
       durationInMinutes,
     });
 
-    return NextResponse.json({ success: true, isPro: dbUser.isPro, voiceBalanceInSeconds: dbUser.voiceBalanceInSeconds });
+    return NextResponse.json({ success: true, isPro: dbUser.isPro, messageBalance: dbUser.messageBalance, voiceBalanceInSeconds: dbUser.voiceBalanceInSeconds });
   } catch (error) {
     console.error('Payment verification error:', error);
     return new NextResponse('Internal Server Error', { status: 500 });

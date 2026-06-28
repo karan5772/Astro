@@ -45,6 +45,7 @@ export async function GET() {
       email: dbUser.email,
       isPro: dbUser.isPro,
       messageCount: dbUser.messageCount || 0,
+      messageBalance: dbUser.messageBalance || 0,
       voiceBalanceInSeconds: dbUser.voiceBalanceInSeconds || 0,
       birthDate: dbUser.birthDate || null,
       birthTime: dbUser.birthTime || null,

@@ -7,6 +7,7 @@ const PaymentSchema = new mongoose.Schema({
   plan: { type: String },
   amount: { type: Number, required: true },
   currency: { type: String, default: 'INR' },
+  messagesGranted: { type: Number, default: 0 },
   durationInMinutes: { type: Number, required: true },
   date: { type: Date, default: Date.now }
 }, { timestamps: true });

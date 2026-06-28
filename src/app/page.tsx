@@ -247,7 +247,7 @@ export default function HomePage() {
               Ask the question you've been carrying.
             </h2>
             <p className="text-foreground/45 text-base mb-10 max-w-md mx-auto">
-              15 free messages. No credit card. No commitment. Just your chart and the question you actually want answered.
+              5 free messages. No credit card. No commitment. Just your chart and the question you actually want answered.
             </p>
             <Link
               href={userId ? "/chat" : "/sign-up"}

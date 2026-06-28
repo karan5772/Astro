@@ -2,258 +2,205 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Star, Zap, Sparkles, CheckCircle2 } from "lucide-react";
+import { Check, MessageCircle, Mic, Sparkles } from "lucide-react";
 import toast from "react-hot-toast";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-
-interface Plan {
-  id: string;
-  name: string;
-  displayName: string;
-  price: number;
-  durationInMinutes: number;
-  description: string;
-  icon: string;
-  iconColor: string;
-  featured?: boolean;
-  badgeText?: string;
-  features: string[];
-}
-
-const PLANS: Plan[] = [
-  {
-    id: "quick-clarity",
-    name: "5 Min Pass",
-    displayName: "Quick Clarity",
-    price: 2,
-    durationInMinutes: 5,
-    description: "A fast, focused cosmic check-in when you only need a clean answer.",
-    icon: "star",
-    iconColor: "var(--tertiary)",
-    features: ["Live voice access", "Fast emotional support", "Private and secure"],
-  },
-  {
-    id: "deep-healing",
-    name: "15 Min Pass",
-    displayName: "Deep Healing",
-    price: 5,
-    durationInMinutes: 15,
-    description: "A more complete reading for patterns, transitions, and recurring themes.",
-    icon: "bolt",
-    iconColor: "var(--tertiary)",
-    featured: true,
-    badgeText: "MOST LOVED",
-    features: ["Everything in Quick Clarity", "Hidden life patterns", "Longer guided session"],
-  },
-  {
-    id: "cosmic-awakening",
-    name: "40 Min Pass",
-    displayName: "Cosmic Awakening",
-    price: 10,
-    durationInMinutes: 40,
-    description: "A full session for deeper forecasting and a broader life review.",
-    icon: "stars",
-    iconColor: "var(--tertiary)",
-    features: ["Everything in Deep Healing", "Complete future forecasting", "Maximum session depth"],
-  },
-];
-
-const getPlanIcon = (iconName: string, iconColor: string) => {
-  switch (iconName) {
-    case "star":
-      return <Star size={28} style={{ color: iconColor }} fill="currentColor" />;
-    case "bolt":
-      return <Zap size={28} style={{ color: iconColor }} fill="currentColor" />;
-    case "stars":
-      return <Sparkles size={28} style={{ color: iconColor }} fill="currentColor" />;
-    default:
-      return <Star size={28} style={{ color: iconColor }} fill="currentColor" />;
-  }
-};
+import { PLANS, FREE_PLAN, FREE_MESSAGE_LIMIT } from "@/lib/plans";
 
 export default function PricingPage() {
-  const [loading, setLoading] = useState(false);
-  const [voiceBalanceInSeconds, setVoiceBalanceInSeconds] = useState<number>(0);
+  const [loading, setLoading] = useState<string | null>(null);
+  const [userData, setUserData] = useState<{ messageCount: number; messageBalance: number; voiceBalanceInSeconds: number } | null>(null);
 
   useEffect(() => {
-    document.body.classList.add("astraeus-active");
-
     fetch("/api/user")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.isPro && data?.voiceBalanceInSeconds) {
-          setVoiceBalanceInSeconds(data.voiceBalanceInSeconds);
-        }
-      })
+      .then(r => r.json())
+      .then(d => setUserData({ messageCount: d.messageCount || 0, messageBalance: d.messageBalance || 0, voiceBalanceInSeconds: d.voiceBalanceInSeconds || 0 }))
       .catch(console.error);
-
-    return () => {
-      document.body.classList.remove("astraeus-active");
-    };
   }, []);
 
-  const loadRazorpayScript = () => {
-    return new Promise((resolve) => {
-      if (typeof window !== "undefined" && (window as Window & { Razorpay?: unknown }).Razorpay) {
-        resolve(true);
-        return;
-      }
+  const loadRazorpay = () => new Promise<boolean>(resolve => {
+    if (typeof window !== "undefined" && (window as any).Razorpay) return resolve(true);
+    const s = document.createElement("script");
+    s.src = "https://checkout.razorpay.com/v1/checkout.js";
+    s.onload = () => resolve(true);
+    s.onerror = () => resolve(false);
+    document.body.appendChild(s);
+  });
 
-      const script = document.createElement("script");
-      script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-  };
+  const handleBuy = async (planId: string) => {
+    const plan = PLANS.find(p => p.id === planId);
+    if (!plan) return;
 
-  const handleSubscribe = async (plan: string, amount: number, durationInMinutes: number) => {
-    setLoading(true);
+    setLoading(planId);
     try {
-      const isLoaded = await loadRazorpayScript();
-      if (!isLoaded) {
-        toast.error("Razorpay SDK failed to load. Please check your connection.");
-        return;
-      }
+      const ok = await loadRazorpay();
+      if (!ok) { toast.error("Payment SDK failed to load."); return; }
 
       const res = await fetch("/api/razorpay", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount, plan }),
+        body: JSON.stringify({ amount: plan.price, plan: plan.id }),
       });
       const data = await res.json();
+      if (!data.orderId) throw new Error("Order creation failed");
 
-      if (!data.orderId) {
-        throw new Error("Order creation failed");
-      }
-
-      const options = {
+      const rzp = new (window as any).Razorpay({
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: data.amount,
         currency: data.currency || "INR",
-        name: "Astraeus",
-        description: `Subscription to ${plan} Plan`,
+        name: "Astro AI",
+        description: `${plan.name} — ${plan.messagesGranted} messages + ${plan.voiceMinutes} min voice`,
         order_id: data.orderId,
-        handler: async (response: {
-          razorpay_payment_id: string;
-          razorpay_order_id: string;
-          razorpay_signature: string;
-        }) => {
-          try {
-            const verifyRes = await fetch("/api/verify-payment", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_signature: response.razorpay_signature,
-                amount,
-                durationInMinutes,
-              }),
-            });
-
-            if (verifyRes.ok) {
-              toast.success("Payment successful. You are now a Cosmic Oracle.");
-              window.location.href = "/chat";
-            } else {
-              toast.error("Payment verification failed.");
-            }
-          } catch (error) {
-            console.error(error);
-            toast.error("Error verifying payment.");
+        handler: async (response: any) => {
+          const verifyRes = await fetch("/api/verify-payment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
+              amount: plan.price,
+              plan: plan.id,
+            }),
+          });
+          if (verifyRes.ok) {
+            toast.success("Payment successful — credits added.");
+            window.location.href = "/chat";
+          } else {
+            toast.error("Payment verification failed.");
           }
         },
         theme: { color: "#6D5DFB" },
-      };
-
-      const rzp1 = new (window as unknown as { Razorpay: new (options: unknown) => { open: () => void } }).Razorpay(options);
-      rzp1.open();
-    } catch (error) {
-      console.error(error);
+      });
+      rzp.open();
+    } catch (err) {
+      console.error(err);
       toast.error("Failed to initiate payment.");
     } finally {
-      setLoading(false);
+      setLoading(null);
     }
   };
 
+  const freeUsed = Math.min(userData?.messageCount ?? 0, FREE_MESSAGE_LIMIT);
+  const freeLeft = Math.max(FREE_MESSAGE_LIMIT - freeUsed, 0);
+  const paidMessages = userData?.messageBalance ?? 0;
+  const voiceMins = Math.ceil((userData?.voiceBalanceInSeconds ?? 0) / 60);
+
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col justify-between selection:bg-primary/30 selection:text-white">
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
       <Navbar variant="pricing" />
 
-      <main className="relative z-10 pt-32 pb-16 max-w-[1280px] mx-auto px-6 flex-grow w-full">
-        {/* Glow Background Orbs */}
-        <div className="absolute w-[400px] h-[400px] rounded-full bg-primary/5 blur-3xl pointer-events-none" style={{ top: '15%', left: '10%' }}></div>
-        <div className="absolute w-[400px] h-[400px] rounded-full bg-[#9d4edd]/5 blur-3xl pointer-events-none" style={{ bottom: '15%', right: '10%' }}></div>
+      <main className="flex-grow pt-32 pb-20 max-w-[1280px] mx-auto px-6 w-full">
 
-        <header className="flex flex-col gap-3 mb-12 text-center max-w-[720px] mx-auto">
-          <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-foreground leading-tight">Invest in focused guidance, not a bloated subscription.</h1>
-          <p className="text-sm text-foreground/50 leading-relaxed max-w-[580px] mx-auto mt-2">
-            Your first 15 text messages are free. When you want deeper voice sessions, pick the pass that fits the depth of the conversation.
+        {/* Header */}
+        <div className="text-center max-w-[600px] mx-auto mb-16">
+          <p className="text-[10px] uppercase tracking-[0.18em] text-foreground/40 font-bold mb-4">Pricing</p>
+          <h1 className="text-4xl font-semibold tracking-tight leading-tight mb-4">
+            Pay for what you use.<br />Nothing more.
+          </h1>
+          <p className="text-foreground/50 text-base leading-relaxed">
+            Start free with {FREE_MESSAGE_LIMIT} messages. Top up with bundles — messages and voice together, no subscriptions.
           </p>
+        </div>
 
-          {voiceBalanceInSeconds > 0 && (
-            <div className="inline-block mt-6 p-4 bg-secondary/80 border border-border rounded-lg max-w-[500px] mx-auto text-left">
-              <p className="text-foreground font-semibold text-sm">You currently have an active Cosmic Session.</p>
-              <p className="text-foreground/50 text-xs mt-1">
-                You have {Math.ceil(voiceBalanceInSeconds / 60)} minutes of active voice time remaining.
-              </p>
+        {/* Current balance banner */}
+        {userData && (paidMessages > 0 || voiceMins > 0 || freeLeft > 0) && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-[700px] mx-auto mb-12 bg-card border border-border rounded-2xl p-5 flex flex-wrap gap-6 items-center justify-between"
+          >
+            <p className="text-sm font-semibold text-foreground/70">Your current balance</p>
+            <div className="flex gap-6">
+              <div className="flex items-center gap-2">
+                <MessageCircle size={14} className="text-foreground/35" />
+                <span className="text-sm font-semibold text-foreground">{freeLeft > 0 ? `${freeLeft} free` : `${paidMessages} paid`}</span>
+                <span className="text-xs text-foreground/40">messages</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Mic size={14} className="text-foreground/35" />
+                <span className="text-sm font-semibold text-foreground">{voiceMins}</span>
+                <span className="text-xs text-foreground/40">min voice</span>
+              </div>
             </div>
-          )}
-        </header>
+          </motion.div>
+        )}
 
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
-          {PLANS.map((plan) => {
-            const isFeatured = plan.featured;
+        {/* Free tier */}
+        <div className="max-w-[700px] mx-auto mb-6">
+          <div className="flex items-center gap-4 px-6 py-4 bg-card/50 border border-border rounded-2xl">
+            <div className="w-8 h-8 rounded-lg bg-foreground/[0.05] border border-border flex items-center justify-center shrink-0">
+              <Sparkles size={14} className="text-foreground/35" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-foreground">{FREE_PLAN.name}</p>
+              <p className="text-xs text-foreground/45 mt-0.5">{FREE_PLAN.features.join(' · ')}</p>
+            </div>
+            <span className="text-lg font-semibold text-foreground/60">$0</span>
+          </div>
+        </div>
 
-            return (
-              <motion.article
-                key={plan.id}
-                initial={{ opacity: 0, y: 18 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-                className={`p-8 bg-card/40 backdrop-blur-lg border rounded-lg shadow-xl relative flex flex-col justify-between h-full transition-all duration-300 hover:border-primary/50 hover:shadow-[0_8px_32px_rgba(109,93,251,0.05)] hover:-translate-y-1 ${isFeatured ? "border-primary bg-secondary/60 hover:border-primary/80 shadow-[0_0_30px_rgba(109,93,251,0.15)]" : "border-border"}`}
-              >
-                {isFeatured && plan.badgeText && (
-                  <div className="absolute top-4 right-4 bg-primary text-foreground text-[9px] uppercase tracking-widest font-extrabold px-2.5 py-1 rounded-full">{plan.badgeText}</div>
-                )}
-
-                <div>
-                  <div className="flex items-start gap-4 mb-6">
-                    <div className="w-12 h-12 rounded-lg bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shrink-0">{getPlanIcon(plan.icon, plan.iconColor)}</div>
-                    <div>
-                      <h2 className="text-lg font-bold text-foreground">{plan.displayName}</h2>
-                      <p className="text-xs text-foreground/50 leading-relaxed mt-1">{plan.description}</p>
-                    </div>
-                  </div>
-
-                  <div className="text-3xl font-black text-foreground my-6 flex items-baseline gap-1">
-                    ${plan.price}
-                    <span className="text-xs font-medium text-foreground/40">/ {plan.durationInMinutes} mins</span>
-                  </div>
-
-                  <ul className="flex flex-col gap-3 mb-8 list-none p-0">
-                    {plan.features.map((feature) => (
-                      <li key={feature} className="flex items-center gap-2.5 text-xs text-foreground/70">
-                        <CheckCircle2 size={18} className="text-primary shrink-0" />
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
+        {/* Paid plans */}
+        <div className="max-w-[700px] mx-auto flex flex-col gap-4">
+          {PLANS.map((plan, i) => (
+            <motion.div
+              key={plan.id}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: i * 0.07 }}
+              className={`relative rounded-2xl border p-6 flex flex-col sm:flex-row gap-6 items-start sm:items-center transition-all ${
+                plan.featured
+                  ? "bg-card border-primary/40 shadow-[0_0_40px_rgba(109,93,251,0.08)]"
+                  : "bg-card/50 border-border"
+              }`}
+            >
+              {plan.badge && (
+                <div className="absolute -top-2.5 left-6 px-2.5 py-0.5 bg-primary text-white text-[9px] uppercase tracking-widest font-bold rounded-full">
+                  {plan.badge}
                 </div>
+              )}
 
+              {/* Left: name + features */}
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-foreground mb-3">{plan.name}</p>
+                <div className="flex flex-wrap gap-x-5 gap-y-1.5">
+                  {plan.features.map(f => (
+                    <div key={f} className="flex items-center gap-1.5">
+                      <Check size={11} className="text-foreground/40 shrink-0" />
+                      <span className="text-[12px] text-foreground/55">{f}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Right: price + CTA */}
+              <div className="flex items-center gap-4 shrink-0">
+                <div className="text-right">
+                  <p className="text-2xl font-semibold text-foreground">${plan.price}</p>
+                  <p className="text-[10px] text-foreground/35 mt-0.5">one-time</p>
+                </div>
                 <button
-                  type="button"
-                  onClick={() => handleSubscribe(plan.name, plan.price, plan.durationInMinutes)}
-                  className={`w-full text-center py-3 rounded-lg font-bold text-xs uppercase tracking-wider cursor-pointer transition-all duration-300 ${isFeatured ? "bg-gradient-to-r from-primary to-[#4f46e5] text-foreground shadow-[0_0_20px_rgba(109,93,251,0.3)] hover:shadow-[0_0_30px_rgba(109,93,251,0.5)]" : "bg-secondary/80 border border-border hover:border-border text-foreground"}`}
-                  disabled={loading}
+                  onClick={() => handleBuy(plan.id)}
+                  disabled={loading !== null}
+                  className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer disabled:opacity-60 ${
+                    plan.featured
+                      ? "bg-primary hover:bg-primary/90 text-white shadow-[0_0_20px_rgba(109,93,251,0.3)]"
+                      : "bg-foreground/[0.07] hover:bg-foreground/[0.11] text-foreground border border-border"
+                  }`}
                 >
-                  {loading ? "Processing..." : isFeatured ? "Start Deep Healing" : plan.id === "quick-clarity" ? "Begin Quick Session" : "Embrace Awakening"}
+                  {loading === plan.id ? "Processing…" : "Buy"}
                 </button>
-              </motion.article>
-            );
-          })}
-        </section>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Footer note */}
+        <p className="text-center text-[11px] text-foreground/30 mt-10">
+          Credits never expire · Secure payments via Razorpay · All prices in USD
+        </p>
+
       </main>
 
       <Footer />

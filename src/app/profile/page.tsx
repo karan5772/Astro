@@ -6,11 +6,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles, MapPin, Calendar, Clock, Globe, Compass,
   Loader2, Search, ShieldCheck, ShieldAlert, Pencil, X,
+  MessageCircle, Mic,
 } from 'lucide-react';
 import { DatePicker } from '@/components/ui/date-time-picker';
 import { TimePicker } from '@/components/ui/date-time-picker';
 import Navbar from '@/components/Navbar';
 import toast from 'react-hot-toast';
+import { FREE_MESSAGE_LIMIT } from '@/lib/plans';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -20,7 +22,7 @@ interface UserData {
   birthTimezone: string | null; birthLocation: string | null;
   birthLatitude: number | null; birthLongitude: number | null;
   hasBirthDetails: boolean; predictionsCount: number;
-  messageCount: number; voiceBalanceInSeconds: number; payments: any[];
+  messageCount: number; messageBalance: number; voiceBalanceInSeconds: number; payments: any[];
 }
 interface GeocodeResult { name: string; latitude: number; longitude: number }
 
@@ -161,65 +163,6 @@ function ZodiacWheel({ userRashi }: { userRashi: RashiData | null }) {
   );
 }
 
-// ── Message Gauge ─────────────────────────────────────────────────────────────
-
-function MessageGauge({ used, total, isPro }: { used: number; total: number; isPro: boolean }) {
-  const pct = isPro ? 1 : Math.min(1, used / total);
-  const left = Math.max(0, total - used);
-  const R = 52, circ = 2 * Math.PI * R;
-  const offset = circ * (1 - pct);
-  const stroke = isPro ? '#6D5DFB' : (pct < 0.6 ? '#51cf66' : pct < 0.87 ? '#ffd43b' : '#ff6b6b');
-  return (
-    <div className="flex flex-col items-center gap-2">
-      <div className="relative">
-        <svg width="132" height="132" viewBox="0 0 128 128">
-          <circle cx="64" cy="64" r={R} fill="none" stroke="var(--border)" strokeWidth="9" />
-          <circle cx="64" cy="64" r={R} fill="none" stroke={stroke} strokeWidth="9"
-            strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={isPro ? 0 : offset}
-            transform="rotate(-90 64 64)"
-            style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1), stroke 0.3s' }} />
-          <text x="64" y="57" textAnchor="middle" fill="var(--foreground)" fontSize="22"
-            fontWeight="700" fontFamily="Inter,sans-serif">{isPro ? '∞' : String(left)}</text>
-          <text x="64" y="72" textAnchor="middle" fill="var(--foreground)" opacity="0.45"
-            fontSize="9" fontFamily="Inter,sans-serif">{isPro ? 'unlimited' : 'left'}</text>
-        </svg>
-        <div className="absolute inset-0 rounded-full blur-2xl opacity-15 pointer-events-none"
-          style={{ backgroundColor: stroke }} />
-      </div>
-      <p className="text-[11px] text-foreground/40">{isPro ? 'Unlimited messages' : `${left} of ${total} remaining`}</p>
-    </div>
-  );
-}
-
-// ── Voice Gauge ───────────────────────────────────────────────────────────────
-
-function VoiceGauge({ remainingMin, totalMin }: { remainingMin: number; totalMin: number }) {
-  const pct = totalMin > 0 ? Math.min(1, remainingMin / totalMin) : 0;
-  const R = 52, circ = 2 * Math.PI * R;
-  const offset = circ * (1 - pct);
-  const stroke = pct > 0.5 ? '#51cf66' : pct > 0.2 ? '#ffd43b' : '#ff6b6b';
-  return (
-    <div className="flex flex-col items-center gap-2">
-      <div className="relative">
-        <svg width="132" height="132" viewBox="0 0 128 128">
-          <circle cx="64" cy="64" r={R} fill="none" stroke="var(--border)" strokeWidth="9" />
-          <circle cx="64" cy="64" r={R} fill="none" stroke={stroke} strokeWidth="9"
-            strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={offset}
-            transform="rotate(-90 64 64)"
-            style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1), stroke 0.3s' }} />
-          <text x="64" y="57" textAnchor="middle" fill="var(--foreground)" fontSize="22"
-            fontWeight="700" fontFamily="Inter,sans-serif">{remainingMin}</text>
-          <text x="64" y="72" textAnchor="middle" fill="var(--foreground)" opacity="0.45"
-            fontSize="9" fontFamily="Inter,sans-serif">min left</text>
-        </svg>
-        <div className="absolute inset-0 rounded-full blur-2xl opacity-15 pointer-events-none"
-          style={{ backgroundColor: stroke }} />
-      </div>
-      <p className="text-[11px] text-foreground/40">{remainingMin} of {totalMin} min remaining</p>
-    </div>
-  );
-}
-
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
@@ -227,14 +170,9 @@ export default function ProfilePage() {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const getVoiceTimeRemaining = () =>
-    Math.max(0, Math.ceil(((userData?.voiceBalanceInSeconds) || 0) / 60));
-
-  const getTotalVoiceMinutes = () =>
-    (userData?.payments ?? []).reduce((a, p) => a + (p.durationInMinutes || 0), 0);
-
-  const getVoiceTimeUsed = () =>
-    Math.max(0, getTotalVoiceMinutes() - getVoiceTimeRemaining());
+  const voiceMinsRemaining = Math.max(0, Math.ceil(((userData?.voiceBalanceInSeconds) || 0) / 60));
+  const totalVoicePurchased = (userData?.payments ?? []).reduce((a, p) => a + (p.durationInMinutes || 0), 0);
+  const totalMsgsPurchased = (userData?.payments ?? []).reduce((a, p) => a + (p.messagesGranted || 0), 0);
 
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
@@ -341,9 +279,12 @@ export default function ProfilePage() {
   }
 
   const rashi = getVedicRashi(userData?.birthDate ?? null);
-  const msgCount = userData?.messageCount || 0;
-  const msgPct = msgCount / 15;
-  const msgLeft = Math.max(0, 15 - msgCount);
+  const freeUsed = Math.min(userData?.messageCount || 0, FREE_MESSAGE_LIMIT);
+  const freeLeft = Math.max(0, FREE_MESSAGE_LIMIT - freeUsed);
+  const paidMsgs = userData?.messageBalance || 0;
+  const onFree = freeLeft > 0;
+  const hasVoice = voiceMinsRemaining > 0;
+  const hasPaidMsgs = paidMsgs > 0;
 
   const FIELD = 'w-full px-3 py-2.5 bg-foreground/[0.04] border border-border rounded-lg text-sm text-foreground placeholder-foreground/25 outline-none focus:border-primary/40 transition-colors';
   const LABEL = 'block text-[10px] uppercase tracking-widest text-foreground/40 mb-1.5 font-medium';
@@ -531,70 +472,88 @@ export default function ProfilePage() {
         <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
           <p className={SECTION}>Account & Usage</p>
 
-          {/* Gauges row */}
-          <div className={`flex ${userData?.isPro ? 'justify-around' : 'justify-center'} gap-8 mb-8`}>
-            <div className="flex flex-col items-center gap-1">
-              <p className="text-[9px] uppercase tracking-widest text-foreground/35 mb-3">Messages</p>
-              <MessageGauge used={msgCount} total={15} isPro={userData?.isPro || false} />
-            </div>
-            {userData?.isPro && (
-              <div className="flex flex-col items-center gap-1">
-                <p className="text-[9px] uppercase tracking-widest text-foreground/35 mb-3">Voice Time</p>
-                <VoiceGauge remainingMin={getVoiceTimeRemaining()} totalMin={getTotalVoiceMinutes()} />
+          {/* Balance cards */}
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            {/* Messages */}
+            <div className="bg-card border border-border rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <MessageCircle size={13} className="text-foreground/35" />
+                <p className="text-[10px] uppercase tracking-widest text-foreground/40 font-semibold">Messages</p>
               </div>
-            )}
-          </div>
-
-          {/* Free: progress bar + dots */}
-          {!userData?.isPro && (
-            <div className="space-y-3 mb-8">
-              <div className="h-1.5 rounded-full bg-foreground/[0.07] overflow-hidden">
-                <motion.div className="h-full rounded-full"
-                  style={{ background: msgPct > 0.8 ? 'linear-gradient(90deg,#ff8c00,#ff3838)' : msgPct > 0.5 ? 'linear-gradient(90deg,#6D5DFB,#ffd43b)' : 'linear-gradient(90deg,#6D5DFB,#a78bfa)' }}
-                  initial={{ width: '0%' }}
-                  animate={{ width: `${Math.min(100, msgPct * 100)}%` }}
-                  transition={{ duration: 0.9, ease: 'easeOut', delay: 0.3 }} />
-              </div>
-              <div className="flex gap-1">
-                {Array.from({ length: 15 }).map((_, i) => (
-                  <motion.div key={i} className="flex-1 h-1 rounded-full"
-                    style={{ backgroundColor: i < msgCount ? (i >= 12 ? '#ff6b6b' : i >= 8 ? '#ffd43b' : '#6D5DFB') : 'var(--border)' }}
-                    initial={{ scaleY: 0 }} animate={{ scaleY: 1 }}
-                    transition={{ duration: 0.12, delay: 0.4 + i * 0.035 }} />
-                ))}
-              </div>
-              {msgCount >= 8 && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}>
-                  <div className="border border-border rounded-xl p-4 bg-secondary/50">
-                    <p className="text-[11px] text-foreground/50 mb-2.5">
-                      {msgCount >= 15 ? 'All free messages used.' : `${msgLeft} ${msgLeft === 1 ? 'message' : 'messages'} remaining on free plan.`}
-                    </p>
-                    <a href="/pricing" className="text-[11px] font-semibold text-foreground/55 hover:text-foreground transition-colors">
-                      Upgrade for unlimited readings →
-                    </a>
+              {onFree ? (
+                <>
+                  <p className="text-2xl font-bold text-foreground">{freeLeft}</p>
+                  <p className="text-[11px] text-foreground/40 mt-0.5">free remaining</p>
+                  <div className="mt-4 h-1 rounded-full bg-foreground/[0.07] overflow-hidden">
+                    <motion.div className="h-full rounded-full bg-primary/60"
+                      initial={{ width: '0%' }}
+                      animate={{ width: `${(freeUsed / FREE_MESSAGE_LIMIT) * 100}%` }}
+                      transition={{ duration: 0.9, ease: 'easeOut', delay: 0.3 }} />
                   </div>
-                </motion.div>
+                  <p className="text-[10px] text-foreground/30 mt-1.5">{freeUsed} of {FREE_MESSAGE_LIMIT} used</p>
+                </>
+              ) : hasPaidMsgs ? (
+                <>
+                  <p className="text-2xl font-bold text-foreground">{paidMsgs}</p>
+                  <p className="text-[11px] text-foreground/40 mt-0.5">paid credits left</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-2xl font-bold text-foreground/25">0</p>
+                  <p className="text-[11px] text-foreground/35 mt-0.5">no credits left</p>
+                </>
               )}
             </div>
-          )}
 
-          {/* Pro: low voice nudge */}
-          {userData?.isPro && getVoiceTimeRemaining() < 5 && (
-            <div className="border border-border rounded-xl p-4 text-center bg-secondary/50 mb-8">
-              <p className="text-[11px] text-foreground/50 mb-2">Voice time running low</p>
-              <a href="/pricing" className="text-[11px] font-semibold text-foreground/55 hover:text-foreground transition-colors">Top up →</a>
+            {/* Voice */}
+            <div className="bg-card border border-border rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <Mic size={13} className="text-foreground/35" />
+                <p className="text-[10px] uppercase tracking-widest text-foreground/40 font-semibold">Voice</p>
+              </div>
+              {hasVoice ? (
+                <>
+                  <p className="text-2xl font-bold text-foreground">{voiceMinsRemaining}</p>
+                  <p className="text-[11px] text-foreground/40 mt-0.5">minutes remaining</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-2xl font-bold text-foreground/25">0</p>
+                  <p className="text-[11px] text-foreground/35 mt-0.5">no time left</p>
+                </>
+              )}
+              <div className="mt-4 h-1 rounded-full bg-foreground/[0.07] overflow-hidden">
+                <motion.div className="h-full rounded-full bg-primary/60"
+                  initial={{ width: '0%' }}
+                  animate={{ width: `${totalVoicePurchased > 0 ? (voiceMinsRemaining / totalVoicePurchased) * 100 : 0}%` }}
+                  transition={{ duration: 0.9, ease: 'easeOut', delay: 0.35 }} />
+              </div>
+              <p className="text-[10px] text-foreground/30 mt-1.5">of {totalVoicePurchased} min total</p>
             </div>
-          )}
+          </div>
+
+          {/* Low balance nudge */}
+          {!onFree && !hasPaidMsgs ? (
+            <div className="border border-border rounded-xl p-4 text-center bg-secondary/50 mb-6">
+              <p className="text-[11px] text-foreground/50 mb-2">No message credits left</p>
+              <a href="/pricing" className="text-[11px] font-semibold text-foreground/65 hover:text-foreground transition-colors">Top up →</a>
+            </div>
+          ) : onFree && freeLeft <= 2 && !hasPaidMsgs ? (
+            <div className="border border-border rounded-xl p-4 text-center bg-secondary/50 mb-6">
+              <p className="text-[11px] text-foreground/50 mb-2">
+                {freeLeft === 1 ? '1 free message left.' : '2 free messages left.'}
+              </p>
+              <a href="/pricing" className="text-[11px] font-semibold text-foreground/65 hover:text-foreground transition-colors">Top up →</a>
+            </div>
+          ) : null}
 
           {/* Stat cells */}
           <div className="grid grid-cols-2 gap-2.5">
             {[
-              { label: 'Messages Left', value: userData?.isPro ? '∞' : String(msgLeft), sub: userData?.isPro ? 'unlimited' : 'remaining' },
               { label: 'Predictions', value: String(userData?.predictionsCount || 0), sub: 'generated' },
-              ...(userData?.isPro ? [
-                { label: 'Voice Purchased', value: `${getTotalVoiceMinutes()}m`, sub: 'all time' },
-                { label: 'Voice Used', value: `${getVoiceTimeUsed()}m`, sub: 'consumed' },
-              ] : []),
+              { label: 'Free Used', value: `${freeUsed} / ${FREE_MESSAGE_LIMIT}`, sub: 'messages' },
+              { label: 'Voice Used', value: `${totalVoicePurchased - voiceMinsRemaining}m`, sub: 'consumed' },
+              { label: 'Purchases', value: String(userData?.payments?.length || 0), sub: 'total' },
             ].map(({ label, value, sub }) => (
               <div key={label} className="bg-card border border-border rounded-xl p-4 shadow-sm">
                 <p className="text-[9px] uppercase tracking-widest text-foreground/40 mb-1">{label}</p>
@@ -611,14 +570,26 @@ export default function ProfilePage() {
             <p className={SECTION}>Billing</p>
             <div className="border border-border rounded-xl overflow-hidden bg-card shadow-sm">
               {userData!.payments.map((p: any, i: number) => (
-                <div key={i} className="flex justify-between items-center px-5 py-3.5 border-b border-border last:border-0 hover:bg-foreground/[0.02] transition-colors">
+                <div key={i} className="flex justify-between items-center px-5 py-4 border-b border-border last:border-0 hover:bg-foreground/[0.02] transition-colors">
                   <div>
-                    <p className="text-sm text-foreground">{p.durationInMinutes} Min Pass
-                      {p.plan ? <span className="text-foreground/35 ml-1.5 text-xs">· {p.plan}</span> : null}
-                    </p>
-                    <p className="text-[11px] text-foreground/35 mt-0.5">
-                      {p.date || p.createdAt ? new Date(p.date || p.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
-                    </p>
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-sm text-foreground font-medium capitalize">{p.plan || 'Bundle'}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {p.messagesGranted > 0 && (
+                        <span className="text-[11px] text-foreground/40 flex items-center gap-1">
+                          <MessageCircle size={10} /> {p.messagesGranted} msgs
+                        </span>
+                      )}
+                      {p.durationInMinutes > 0 && (
+                        <span className="text-[11px] text-foreground/40 flex items-center gap-1">
+                          <Mic size={10} /> {p.durationInMinutes} min
+                        </span>
+                      )}
+                      <span className="text-[11px] text-foreground/30">
+                        {p.date || p.createdAt ? new Date(p.date || p.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                      </span>
+                    </div>
                   </div>
                   <p className="text-sm font-semibold text-foreground">${p.amount}</p>
                 </div>
