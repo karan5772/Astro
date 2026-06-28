@@ -91,12 +91,12 @@ export default function PricingPage() {
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <Navbar variant="pricing" />
 
-      <main className="flex-grow pt-32 pb-20 max-w-[1280px] mx-auto px-6 w-full">
+      <main className="flex-grow pt-24 md:pt-32 pb-20 max-w-[1280px] mx-auto px-6 w-full">
 
         {/* Header */}
-        <div className="text-center max-w-[600px] mx-auto mb-16">
+        <div className="text-center max-w-[600px] mx-auto mb-10 md:mb-16">
           <p className="text-[10px] uppercase tracking-[0.18em] text-foreground/40 font-bold mb-4">Pricing</p>
-          <h1 className="text-4xl font-semibold tracking-tight leading-tight mb-4">
+          <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight leading-tight mb-4">
             Pay for what you use.<br />Nothing more.
           </h1>
           <p className="text-foreground/50 text-base leading-relaxed">
@@ -175,15 +175,15 @@ export default function PricingPage() {
               </div>
 
               {/* Right: price + CTA */}
-              <div className="flex items-center gap-4 shrink-0">
-                <div className="text-right">
+              <div className="flex items-center gap-4 shrink-0 w-full sm:w-auto justify-between sm:justify-start border-t sm:border-t-0 border-border pt-4 sm:pt-0 mt-1 sm:mt-0">
+                <div>
                   <p className="text-2xl font-semibold text-foreground">${plan.price}</p>
                   <p className="text-[10px] text-foreground/35 mt-0.5">one-time</p>
                 </div>
                 <button
                   onClick={() => handleBuy(plan.id)}
                   disabled={loading !== null}
-                  className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer disabled:opacity-60 ${
+                  className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer disabled:opacity-60 ${
                     plan.featured
                       ? "bg-primary hover:bg-primary/90 text-white shadow-[0_0_20px_rgba(109,93,251,0.3)]"
                       : "bg-foreground/[0.07] hover:bg-foreground/[0.11] text-foreground border border-border"

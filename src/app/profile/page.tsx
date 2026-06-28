@@ -294,7 +294,7 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-background text-foreground selection:bg-primary/20">
       <Navbar variant="dashboard" />
 
-      <main className="max-w-3xl mx-auto px-5 pt-28 pb-20 space-y-16">
+      <main className="max-w-3xl mx-auto px-5 pt-20 md:pt-28 pb-20 space-y-12 md:space-y-16">
 
         {/* ══ 1. BIRTH DETAILS ══════════════════════════════════════════════════ */}
         <section>
@@ -318,7 +318,7 @@ export default function ProfilePage() {
 
           {/* Zodiac wheel */}
           <motion.div
-            className="flex flex-col items-center gap-5 mb-10"
+            className="flex flex-col items-center gap-5 mb-6 md:mb-10"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
@@ -473,7 +473,7 @@ export default function ProfilePage() {
           <p className={SECTION}>Account & Usage</p>
 
           {/* Balance cards */}
-          <div className="grid grid-cols-2 gap-3 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
             {/* Messages */}
             <div className="bg-card border border-border rounded-2xl p-5">
               <div className="flex items-center gap-2 mb-4">

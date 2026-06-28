@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 
 export async function GET(req: NextRequest) {
   try {
+    const { userId } = await auth();
+    if (!userId) return new NextResponse('Unauthorized', { status: 401 });
+
     const { searchParams } = new URL(req.url);
     const q = searchParams.get('q');
 

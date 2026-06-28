@@ -21,7 +21,7 @@ export default function PrivacyPage() {
           </p>
         </div>
 
-        <section className="p-8 bg-secondary/40 backdrop-blur-lg border border-card-border rounded-lg shadow-xl">
+        <section className="p-5 sm:p-8 bg-secondary/40 backdrop-blur-lg border border-card-border rounded-lg shadow-xl">
           <h2 className="text-white font-semibold text-lg mb-4" style={{ fontSize: "1.5rem" }}>Information We Collect</h2>
           <ul className="list-disc pl-5 flex flex-col gap-3 text-sm text-white/50">
             <li>Personal data you provide when signing up, such as name and email address.</li>

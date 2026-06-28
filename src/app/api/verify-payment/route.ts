@@ -42,10 +42,16 @@ export async function POST(req: NextRequest) {
 
     // Connect to DB and update the user's isPro status & payment details
     await connectToDatabase();
-    
+
     const currentUserDoc = await User.findOne({ clerkId: userId });
     if (!currentUserDoc) {
       return new NextResponse('User not found in DB', { status: 404 });
+    }
+
+    // Prevent replay: reject if this payment ID was already processed
+    const existingPayment = await Payment.findOne({ paymentId: razorpay_payment_id });
+    if (existingPayment) {
+      return new NextResponse('Payment already processed', { status: 409 });
     }
 
     // Create the payment record in the separate payments collection

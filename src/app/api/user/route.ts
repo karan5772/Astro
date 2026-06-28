@@ -31,8 +31,8 @@ export async function GET() {
       });
     }
 
-    // Downgrade pro only when balance hits zero — fire-and-forget, don't block the response
-    if (dbUser.isPro && (dbUser.voiceBalanceInSeconds || 0) <= 0) {
+    // Downgrade pro only when ALL balances are exhausted
+    if (dbUser.isPro && (dbUser.voiceBalanceInSeconds || 0) <= 0 && (dbUser.messageBalance || 0) <= 0) {
       User.updateOne({ clerkId: userId }, { $set: { isPro: false } }).catch(console.error);
       dbUser.isPro = false;
     }

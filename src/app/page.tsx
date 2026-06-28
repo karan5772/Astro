@@ -56,7 +56,7 @@ export default function HomePage() {
       <Navbar />
 
       {/* ── HERO ────────────────────────────────────────────────────────────── */}
-      <section className="relative max-w-[1280px] mx-auto px-6 lg:px-10 pt-32 pb-24 flex flex-col lg:flex-row items-center gap-14 lg:gap-20">
+      <section className="relative max-w-[1280px] mx-auto px-6 lg:px-10 pt-24 pb-14 lg:pt-32 lg:pb-24 flex flex-col lg:flex-row items-center gap-14 lg:gap-20">
 
         {/* Ambient glow */}
         <div className="absolute top-40 right-0 -z-10 w-[600px] h-[500px] rounded-full bg-primary/10 blur-3xl pointer-events-none" />
@@ -68,7 +68,7 @@ export default function HomePage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         >
-          <h1 className="text-[2.6rem] lg:text-[3.4rem] font-semibold leading-[1.12] tracking-tight mb-6">
+          <h1 className="text-[1.9rem] sm:text-[2.4rem] lg:text-[3.4rem] font-semibold leading-[1.12] tracking-tight mb-6">
             Astrology that looks polished,{" "}
             reads clearly,{" "}
             and answers fast.
@@ -79,23 +79,23 @@ export default function HomePage() {
             interpretation into one focused experience for text or voice readings.
           </p>
 
-          <div className="flex flex-wrap gap-3 mb-12">
+          <div className="flex flex-col sm:flex-row gap-3 mb-10">
             <Link
               href={userId ? "/chat" : "/sign-up"}
-              className="inline-flex items-center gap-2 px-7 py-3.5 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold text-[13px] tracking-widest uppercase transition-all shadow-[0_0_28px_rgba(124,111,253,0.35)] hover:shadow-[0_0_40px_rgba(124,111,253,0.5)]"
+              className="inline-flex items-center justify-center w-full sm:w-auto gap-2 px-7 py-3.5 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold text-[13px] tracking-widest uppercase transition-all shadow-[0_0_28px_rgba(124,111,253,0.35)] hover:shadow-[0_0_40px_rgba(124,111,253,0.5)]"
             >
               Open chat terminal
             </Link>
             <Link
               href={userId ? "/voice" : "/sign-up"}
-              className="inline-flex items-center gap-2 px-7 py-3.5 border border-border hover:border-primary/40 bg-foreground/[0.03] text-foreground/65 hover:text-foreground rounded-xl font-bold text-[13px] tracking-widest uppercase transition-all"
+              className="inline-flex items-center justify-center w-full sm:w-auto gap-2 px-7 py-3.5 border border-border hover:border-primary/40 bg-foreground/[0.03] text-foreground/65 hover:text-foreground rounded-xl font-bold text-[13px] tracking-widest uppercase transition-all"
             >
               <Mic size={14} /> Try voice reading
             </Link>
           </div>
 
           {/* 3 stat columns */}
-          <div className="flex flex-wrap border-t border-border pt-8 gap-0">
+          <div className="grid grid-cols-3 border-t border-border pt-6 gap-0">
             {[
               { label: "Charting mode", value: "Raman sidereal" },
               { label: "Input style", value: "Birth chart + chat" },
@@ -103,10 +103,10 @@ export default function HomePage() {
             ].map((stat, i) => (
               <div
                 key={stat.label}
-                className={`flex flex-col pr-8 py-1 ${i < 2 ? "mr-8 border-r border-border" : ""}`}
+                className={`flex flex-col py-1 px-2 ${i > 0 ? "border-l border-border" : ""}`}
               >
-                <span className="text-[9px] uppercase tracking-[0.2em] text-foreground/35 font-bold mb-1.5">{stat.label}</span>
-                <span className="text-sm font-semibold text-foreground/80">{stat.value}</span>
+                <span className="text-[8px] sm:text-[9px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-foreground/35 font-bold mb-1.5 leading-tight">{stat.label}</span>
+                <span className="text-xs sm:text-sm font-semibold text-foreground/80 leading-snug">{stat.value}</span>
               </div>
             ))}
           </div>
@@ -138,16 +138,16 @@ export default function HomePage() {
       {/* ── FEATURES ────────────────────────────────────────────────────────── */}
       <section className="border-t border-border">
         {/* Section header */}
-        <div className="max-w-[1280px] mx-auto px-6 lg:px-10 pt-24 pb-16 text-center">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-10 pt-16 pb-10 lg:pt-24 lg:pb-16 text-center">
           <p className="text-[10px] uppercase tracking-[0.18em] text-foreground/40 font-bold mb-4">What Astro AI does</p>
           <h2 className="text-3xl font-semibold leading-tight">One chart. Every question answered.</h2>
         </div>
 
-        <div className="max-w-[1280px] mx-auto px-6 lg:px-10 pb-24">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-10 pb-14 lg:pb-24">
           <div className="flex flex-col lg:flex-row gap-8 lg:gap-14 items-center">
 
             {/* Left: tab list */}
-            <div className="flex flex-row lg:flex-col gap-2 w-full lg:w-[280px] shrink-0">
+            <div className="flex flex-row lg:flex-col gap-2 w-full lg:w-[280px] shrink-0 overflow-x-auto pb-1 lg:pb-0">
               {FEATURES.map((f, i) => {
                 const Icon = f.icon;
                 const active = activeFeature === i;
@@ -155,7 +155,7 @@ export default function HomePage() {
                   <button
                     key={f.label}
                     onClick={() => setActiveFeature(i)}
-                    className={`flex-1 lg:flex-none text-left px-4 py-4 rounded-xl border transition-all duration-300 cursor-pointer ${active ? "bg-card border-border shadow-sm" : "border-transparent hover:border-border/60 hover:bg-card/40"
+                    className={`flex-1 shrink-0 lg:flex-none text-left px-4 py-4 rounded-xl border transition-all duration-300 cursor-pointer ${active ? "bg-card border-border shadow-sm" : "border-transparent hover:border-border/60 hover:bg-card/40"
                       }`}
                   >
                     <div className="flex items-center gap-2.5 mb-1">
@@ -202,9 +202,9 @@ export default function HomePage() {
 
       {/* ── HOW IT WORKS ────────────────────────────────────────────────────── */}
       <section className="border-t border-border bg-card/40">
-        <div className="max-w-[1280px] mx-auto px-6 lg:px-10 py-20">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-10 py-14 lg:py-20">
           <motion.div
-            className="mb-14 text-center max-w-xl mx-auto"
+            className="mb-10 md:mb-14 text-center max-w-xl mx-auto"
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -235,7 +235,7 @@ export default function HomePage() {
 
       {/* ── CTA BANNER ──────────────────────────────────────────────────────── */}
       <section className="border-t border-border">
-        <div className="max-w-[1280px] mx-auto px-6 lg:px-10 py-20 text-center">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-10 py-14 lg:py-20 text-center">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -243,7 +243,7 @@ export default function HomePage() {
             transition={{ duration: 0.5 }}
           >
             <p className="text-[10px] uppercase tracking-[0.18em] text-foreground/40 font-bold mb-5">✦ Get started</p>
-            <h2 className="text-3xl lg:text-4xl font-bold leading-tight mb-4 max-w-lg mx-auto">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight mb-4 max-w-lg mx-auto">
               Ask the question you've been carrying.
             </h2>
             <p className="text-foreground/45 text-base mb-10 max-w-md mx-auto">

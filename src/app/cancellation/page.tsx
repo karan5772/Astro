@@ -21,7 +21,7 @@ export default function CancellationPage() {
           </p>
         </div>
 
-        <section className="p-8 bg-secondary/40 backdrop-blur-lg border border-card-border rounded-lg shadow-xl">
+        <section className="p-5 sm:p-8 bg-secondary/40 backdrop-blur-lg border border-card-border rounded-lg shadow-xl">
           <h2 className="text-white font-semibold text-lg mb-4" style={{ fontSize: "1.5rem" }}>Cancellation</h2>
           <ul className="list-disc pl-5 flex flex-col gap-3 text-sm text-white/50 mb-6">
             <li>You cannot cancel your subscription at this time. We will notify you when the feature becomes available.</li>

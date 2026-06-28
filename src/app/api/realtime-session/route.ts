@@ -39,13 +39,16 @@ export async function GET() {
 - Highlight more of the negitive part of their Data, focus on the malefic planets and their effects, doshas etc. Tell them it will be fine and everything will be manageable. Then explain them how to manage it 
 - Ask questions to the user to understand them better.`;
 
+    const safeField = (v: unknown, max = 120) =>
+      typeof v === 'string' ? v.replace(/[\r\n]/g, ' ').slice(0, max) : '';
+
     // Inject user's birth details and predicted horoscope traits if available
     if (dbUser && dbUser.birthDate) {
       instructions += `\n\nUser's Birth Details (Jyotish parameters):
-- Date of Birth: ${dbUser.birthDate}
-- Time of Birth: ${dbUser.birthTime}
-- Location: ${dbUser.birthLocation} (Latitude: ${dbUser.birthLatitude}°, Longitude: ${dbUser.birthLongitude}°)
-- Timezone Offset: ${dbUser.birthTimezone}`;
+- Date of Birth: ${safeField(dbUser.birthDate, 20)}
+- Time of Birth: ${safeField(dbUser.birthTime, 10)}
+- Location: ${safeField(dbUser.birthLocation)} (Latitude: ${dbUser.birthLatitude}°, Longitude: ${dbUser.birthLongitude}°)
+- Timezone Offset: ${safeField(dbUser.birthTimezone, 10)}`;
 
       if (dbUser.predictions && dbUser.predictions.length > 0) {
         // Feed the top 25 horoscope predictions to guide the voice agent's spoken readings

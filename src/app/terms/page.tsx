@@ -21,7 +21,7 @@ export default function TermsPage() {
           </p>
         </div>
 
-        <section className="p-8 bg-secondary/40 backdrop-blur-lg border border-card-border rounded-lg shadow-xl">
+        <section className="p-5 sm:p-8 bg-secondary/40 backdrop-blur-lg border border-card-border rounded-lg shadow-xl">
           <h2 className="text-white font-semibold text-lg mb-4" style={{ fontSize: "1.5rem" }}>1. Service Description</h2>
           <p className="text-sm text-white/50 leading-relaxed mb-6">
             Astraeus provides AI-generated astrological insights, chat, and voice sessions. The service is offered on a subscription basis.

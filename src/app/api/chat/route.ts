@@ -105,30 +105,38 @@ export async function POST(req: NextRequest) {
     }
 
     await connectToDatabase();
-    const dbUser = await User.findOne({ clerkId: userId });
 
-    // Enforce message limits
-    if (dbUser) {
-      const onFree = dbUser.messageCount < FREE_MESSAGE_LIMIT;
-      const hasPaidBalance = (dbUser.messageBalance || 0) > 0;
+    // Atomically consume one free message (race-condition safe)
+    const consumedFree = await User.findOneAndUpdate(
+      { clerkId: userId, messageCount: { $lt: FREE_MESSAGE_LIMIT } },
+      { $inc: { messageCount: 1, totalChatMessages: 1 }, $set: { lastActiveAt: new Date() } },
+      { new: true },
+    );
 
-      if (!onFree && !hasPaidBalance) {
-        logEvent(userId, 'message_limit_hit', { messageCount: dbUser.messageCount, messageBalance: dbUser.messageBalance });
+    let dbUser = consumedFree;
+
+    if (!consumedFree) {
+      // Atomically consume one paid message
+      const consumedPaid = await User.findOneAndUpdate(
+        { clerkId: userId, messageBalance: { $gt: 0 } },
+        { $inc: { messageBalance: -1, totalChatMessages: 1 }, $set: { lastActiveAt: new Date() } },
+        { new: true },
+      );
+
+      if (!consumedPaid) {
+        // Neither free nor paid credits remain
+        const snap = await User.findOne({ clerkId: userId });
+        logEvent(userId, 'message_limit_hit', {
+          messageCount: snap?.messageCount,
+          messageBalance: snap?.messageBalance,
+        });
         return new Response('TRIAL_LIMIT_REACHED', { status: 403 });
       }
 
-      if (onFree) {
-        dbUser.messageCount += 1;
-      } else {
-        dbUser.messageBalance -= 1;
-      }
+      dbUser = consumedPaid;
     }
 
-    // Track lifetime message count for all users and bump lastActiveAt
     if (dbUser) {
-      dbUser.totalChatMessages = (dbUser.totalChatMessages || 0) + 1;
-      dbUser.lastActiveAt = new Date();
-      await dbUser.save();
       logEvent(userId, 'chat_message_sent', {
         isPro: dbUser.isPro,
         messageCount: dbUser.messageCount,
@@ -136,7 +144,18 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const { messages } = await req.json();
+    const { messages: rawMessages } = await req.json();
+
+    // Validate and sanitize messages — cap length and strip disallowed roles
+    const MAX_MESSAGES = 60;
+    const MAX_CONTENT_LENGTH = 4000;
+    const messages = (Array.isArray(rawMessages) ? rawMessages : [])
+      .filter((m: any) => m && (m.role === 'user' || m.role === 'assistant'))
+      .slice(-MAX_MESSAGES)
+      .map((m: any) => ({
+        role: m.role as 'user' | 'assistant',
+        content: typeof m.content === 'string' ? m.content.slice(0, MAX_CONTENT_LENGTH) : '',
+      }));
     const lastMessage = messages[messages.length - 1];
 
     // Prepare system prompt with memory context
@@ -183,13 +202,17 @@ Critical rules:
 <q>{"question":"What are you truly hoping will happen?","options":["A clear sign or answer","Things to stay the same","A fresh new beginning","More time to decide"]}</q>`;
 
 
+    // Strip newlines and limit length to prevent prompt injection via user-controlled fields
+    const safeField = (v: unknown, max = 120) =>
+      typeof v === 'string' ? v.replace(/[\r\n]/g, ' ').slice(0, max) : '';
+
     // Inject user's birth chart details and calculated predictions if available
     if (dbUser && dbUser.birthDate) {
       systemPrompt += `\n\nUser's Birth Details (Vedic/Jyotish parameters):
-- Date of Birth: ${dbUser.birthDate}
-- Time of Birth: ${dbUser.birthTime}
-- Location: ${dbUser.birthLocation} (Latitude: ${dbUser.birthLatitude}°, Longitude: ${dbUser.birthLongitude}°)
-- Timezone Offset: ${dbUser.birthTimezone}`;
+- Date of Birth: ${safeField(dbUser.birthDate, 20)}
+- Time of Birth: ${safeField(dbUser.birthTime, 10)}
+- Location: ${safeField(dbUser.birthLocation)} (Latitude: ${dbUser.birthLatitude}°, Longitude: ${dbUser.birthLongitude}°)
+- Timezone Offset: ${safeField(dbUser.birthTimezone, 10)}`;
 
       if (dbUser.predictions && dbUser.predictions.length > 0) {
         const selected = selectPredictions(dbUser.predictions, messages, 75);

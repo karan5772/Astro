@@ -263,7 +263,7 @@ export default function BirthChartPage() {
     <div className="min-h-screen bg-background text-foreground flex flex-col lg:flex-row selection:bg-primary/30 selection:text-white">
       <Sidebar />
 
-      <main className={`flex-1 flex items-center justify-center min-h-screen px-5 py-16 relative z-10 transition-all duration-300 ${sidebarCollapsed ? 'lg:pl-[72px]' : 'lg:pl-[260px]'}`}>
+      <main className={`flex-1 flex items-center justify-center min-h-screen px-5 pt-24 pb-10 lg:py-16 relative z-10 transition-all duration-300 ${sidebarCollapsed ? 'lg:pl-[72px]' : 'lg:pl-[260px]'}`}>
 
         {/* Ambient orbs */}
         <div className="fixed w-[500px] h-[500px] rounded-full bg-primary/5 blur-3xl pointer-events-none -top-32 -left-32" />

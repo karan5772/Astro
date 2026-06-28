@@ -407,7 +407,7 @@ export default function VoicePage() {
         <div className="w-full max-w-[1280px] my-auto">
           <div className="flex justify-center w-full pb-12">
             <motion.section
-              className="w-full max-w-[700px] bg-secondary/40 backdrop-blur-lg border border-border rounded-2xl p-8 relative flex flex-col items-center gap-8 transition-shadow duration-700"
+              className="w-full max-w-[700px] bg-secondary/40 backdrop-blur-lg border border-border rounded-2xl p-5 sm:p-8 relative flex flex-col items-center gap-8 transition-shadow duration-700"
               style={glowStyle}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}

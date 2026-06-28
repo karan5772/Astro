@@ -603,7 +603,7 @@ export default function ChatPage() {
       <Sidebar />
 
       {/* Main Chat Workspace */}
-      <main className={`flex-1 flex flex-col h-screen min-w-0 relative z-10 w-full bg-transparent overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:pl-[72px]' : 'lg:pl-[260px]'}`}>
+      <main className={`flex-1 flex flex-col h-screen min-w-0 relative z-10 w-full bg-transparent overflow-hidden transition-all duration-300 pt-16 lg:pt-0 ${sidebarCollapsed ? 'lg:pl-[72px]' : 'lg:pl-[260px]'}`}>
         {/* Subtle Linear Grid Pattern Background - light mode only */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#f3f4f6_1px,transparent_1px),linear-gradient(to_bottom,#f3f4f6_1px,transparent_1px)] dark:bg-none bg-[size:24px_24px] pointer-events-none opacity-40 z-0" />
 

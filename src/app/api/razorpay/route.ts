@@ -2,6 +2,7 @@ import Razorpay from 'razorpay';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { logEvent } from '@/lib/log-event';
+import { PLANS } from '@/lib/plans';
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,7 +10,12 @@ export async function POST(req: NextRequest) {
     if (!userId) return new NextResponse('Unauthorized', { status: 401 });
 
     const body = await req.json();
-    const { amount, plan } = body;
+    const { plan } = body;
+
+    // Resolve plan and price server-side — never trust client-sent amount
+    const planDef = PLANS.find(p => p.id === plan);
+    if (!planDef) return new NextResponse('Invalid plan', { status: 400 });
+    const amount = planDef.price;
 
     // Initialize Razorpay
     const razorpay = new Razorpay({
