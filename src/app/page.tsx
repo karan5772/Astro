@@ -5,30 +5,38 @@ import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { ArrowRight, Mic, BarChart3, MessageCircle, Shield } from "lucide-react";
+import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useTheme } from "@/components/ThemeProvider";
 
 const FEATURES = [
   {
-    icon: BarChart3,
-    title: "Full Vedic birth chart",
-    body: "Sidereal chart from your exact birth date, time, and place. Rasi, Navamsa, all 12 houses — calculated once, used in every reading.",
-  },
-  {
     icon: MessageCircle,
-    title: "Live AI readings",
-    body: "Ask anything — love, career, timing, life path. The AI reads your actual planetary positions and responds with specific, grounded guidance.",
+    label: "Live Chat",
+    title: "Ask anything. Get a real answer.",
+    body: "Love, career, timing, life path — the AI reads your actual planetary positions and responds with specific, grounded guidance. Not generic horoscopes.",
+    href: "/chat",
+    imgDark: "/chat-dark.png",
+    imgLight: "/chat-light.png",
   },
   {
     icon: Mic,
-    title: "Voice sessions",
-    body: "Speak naturally. The AI listens and responds in real time — like a session with a knowledgeable astrologer, without the appointment.",
+    label: "Voice",
+    title: "Speak naturally. Hear your reading.",
+    body: "A real-time voice session with your Vedic chart as context. Ask follow-up questions, go deeper, and get answers that are specific to you.",
+    href: "/voice",
+    imgDark: "/voice-dark.png",
+    imgLight: "/voice-light.png",
   },
   {
-    icon: Shield,
-    title: "Private & precise",
-    body: "Your chart data stays yours. No generic horoscopes — every answer is specific to your unique Vedic placements.",
+    icon: BarChart3,
+    label: "Birth Chart",
+    title: "Your full Vedic chart, calculated instantly.",
+    body: "Sidereal positions from your exact birth date, time, and place. Rasi, Navamsa, all 12 houses — calculated once and referenced in every reading.",
+    href: "/chart",
+    imgDark: "/chart-dark.png",
+    imgLight: "/chart-light.png",
   },
 ];
 
@@ -41,6 +49,7 @@ const STEPS = [
 export default function HomePage() {
   const { userId } = useAuth();
   const { theme } = useTheme();
+  const [activeFeature, setActiveFeature] = useState(0);
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
@@ -113,7 +122,7 @@ export default function HomePage() {
           <div className="rounded-2xl overflow-hidden border border-border shadow-[0_24px_80px_rgba(0,0,0,0.3)]">
             <div className="relative bg-background overflow-hidden">
               <Image
-                src={theme === "dark" ? "/voice-dark.png" : "/voice-light.png"}
+                src={theme === "dark" ? "/hero-voice-dark.png" : "/hero-voice-light.png"}
                 alt="Astraeus AI — voice reading"
                 width={1366}
                 height={1500}
@@ -128,40 +137,65 @@ export default function HomePage() {
 
       {/* ── FEATURES ────────────────────────────────────────────────────────── */}
       <section className="border-t border-border">
-        <div className="max-w-[1280px] mx-auto px-6 lg:px-10 py-20">
-          <motion.div
-            className="mb-14 text-center max-w-xl mx-auto"
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-          >
-            <p className="text-[10px] uppercase tracking-[0.18em] text-foreground/40 font-bold mb-4">What Astro AI does</p>
-            <h2 className="text-3xl font-bold leading-tight">One chart. Every question answered.</h2>
-          </motion.div>
+        {/* Section header */}
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-10 pt-24 pb-16 text-center">
+          <p className="text-[10px] uppercase tracking-[0.18em] text-foreground/40 font-bold mb-4">What Astro AI does</p>
+          <h2 className="text-3xl font-semibold leading-tight">One chart. Every question answered.</h2>
+        </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {FEATURES.map((f, i) => {
-              const Icon = f.icon;
-              return (
-                <motion.div
-                  key={f.title}
-                  initial={{ opacity: 0, y: 16 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.45, delay: i * 0.08 }}
-                  className="bg-card border border-border rounded-xl p-6 flex flex-col gap-4"
-                >
-                  <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
-                    <Icon size={17} className="text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-sm text-foreground mb-2">{f.title}</p>
-                    <p className="text-[13px] text-foreground/50 leading-relaxed">{f.body}</p>
-                  </div>
-                </motion.div>
-              );
-            })}
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-10 pb-24">
+          <div className="flex flex-col lg:flex-row gap-8 lg:gap-14 items-center">
+
+            {/* Left: tab list */}
+            <div className="flex flex-row lg:flex-col gap-2 w-full lg:w-[280px] shrink-0">
+              {FEATURES.map((f, i) => {
+                const Icon = f.icon;
+                const active = activeFeature === i;
+                return (
+                  <button
+                    key={f.label}
+                    onClick={() => setActiveFeature(i)}
+                    className={`flex-1 lg:flex-none text-left px-4 py-4 rounded-xl border transition-all duration-300 cursor-pointer ${active ? "bg-card border-border shadow-sm" : "border-transparent hover:border-border/60 hover:bg-card/40"
+                      }`}
+                  >
+                    <div className="flex items-center gap-2.5 mb-1">
+                      <div className={`w-6 h-6 rounded-md flex items-center justify-center transition-colors ${active ? "bg-primary/10 border border-primary/20" : "bg-foreground/[0.04] border border-border"}`}>
+                        <Icon size={12} className={active ? "text-primary" : "text-foreground/35"} />
+                      </div>
+                      <span className={`text-xs font-semibold transition-colors ${active ? "text-foreground" : "text-foreground/45"}`}>{f.label}</span>
+                    </div>
+                    <motion.div
+                      initial={false}
+                      animate={{ height: active ? "auto" : 0, opacity: active ? 1 : 0 }}
+                      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                      className="overflow-hidden hidden lg:block"
+                    >
+                      <p className="text-[12px] text-foreground/45 leading-relaxed pt-1.5">{f.body}</p>
+                    </motion.div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Right: screenshot */}
+            <div className="flex-1 w-full min-w-0">
+              <motion.div
+                key={activeFeature}
+                initial={{ opacity: 0, scale: 0.98, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                className="rounded-2xl overflow-hidden border border-border shadow-[0_20px_70px_rgba(0,0,0,0.18)]"
+              >
+                <Image
+                  src={theme === "dark" ? FEATURES[activeFeature].imgDark : FEATURES[activeFeature].imgLight}
+                  alt={`Astro AI — ${FEATURES[activeFeature].label}`}
+                  width={1366}
+                  height={900}
+                  className="w-full h-auto object-cover object-top"
+                />
+              </motion.div>
+            </div>
+
           </div>
         </div>
       </section>

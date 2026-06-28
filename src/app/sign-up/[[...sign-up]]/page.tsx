@@ -1,131 +1,98 @@
 "use client";
 
-import { useEffect } from 'react';
 import { SignUp } from "@clerk/nextjs";
 import Navbar from '@/components/Navbar';
+import { useTheme } from '@/components/ThemeProvider';
 
 export default function Page() {
-  useEffect(() => {
-    // Body styling is handled via Tailwind and globals.css
-  }, []);
+  const { theme } = useTheme();
+  const dark = theme === 'dark';
+
+  const appearance = {
+    variables: {
+      colorPrimary: '#6D5DFB',
+      colorBackground: dark ? '#0a0a0a' : '#f8f3ea',
+      colorText: dark ? '#ededed' : '#1c1a14',
+      colorTextOnPrimaryBackground: '#ffffff',
+      colorTextSecondary: dark ? 'rgba(237,237,237,0.55)' : '#7a7263',
+      colorInputBackground: dark ? 'rgba(237,237,237,0.04)' : 'rgba(28,26,20,0.04)',
+      colorInputText: dark ? '#ededed' : '#1c1a14',
+      colorBorder: dark ? 'rgba(237,237,237,0.09)' : 'rgba(28,26,20,0.12)',
+    },
+    elements: {
+      card: {
+        border: dark ? '1px solid rgba(237,237,237,0.09)' : '1px solid rgba(28,26,20,0.12)',
+        background: dark ? 'rgba(20,20,20,0.90)' : 'rgba(253,250,243,0.92)',
+        backdropFilter: 'blur(16px)',
+        boxShadow: dark
+          ? '0 8px 32px rgba(0,0,0,0.4), 0 0 40px rgba(109,93,251,0.06)'
+          : '0 8px 32px rgba(28,26,20,0.08)',
+        borderRadius: '12px',
+      },
+      headerTitle: {
+        fontSize: '1.5rem',
+        fontWeight: '600',
+        color: dark ? '#ededed' : '#1c1a14',
+      },
+      headerSubtitle: {
+        color: dark ? 'rgba(237,237,237,0.55)' : '#7a7263',
+      },
+      socialButtonsBlockButton: {
+        backgroundColor: dark ? 'rgba(237,237,237,0.04)' : 'rgba(28,26,20,0.04)',
+        border: dark ? '1px solid rgba(237,237,237,0.09)' : '1px solid rgba(28,26,20,0.12)',
+        borderRadius: '8px',
+        color: dark ? '#ededed' : '#1c1a14',
+      },
+      socialButtonsBlockButtonText: {
+        color: dark ? '#ededed' : '#1c1a14',
+        fontWeight: '500',
+      },
+      dividerLine: {
+        backgroundColor: dark ? 'rgba(237,237,237,0.09)' : 'rgba(28,26,20,0.10)',
+      },
+      dividerText: {
+        color: dark ? 'rgba(237,237,237,0.40)' : '#7a7263',
+      },
+      formFieldLabel: {
+        color: dark ? 'rgba(237,237,237,0.55)' : '#7a7263',
+      },
+      formFieldInput: {
+        backgroundColor: dark ? 'rgba(237,237,237,0.04)' : 'rgba(28,26,20,0.04)',
+        border: dark ? '1px solid rgba(237,237,237,0.09)' : '1px solid rgba(28,26,20,0.12)',
+        borderRadius: '8px',
+        color: dark ? '#ededed' : '#1c1a14',
+      },
+      formButtonPrimary: {
+        backgroundColor: '#6D5DFB',
+        color: '#ffffff',
+        fontWeight: '600',
+        borderRadius: '8px',
+        padding: '0.75rem 1.5rem',
+      },
+      footerActionText: {
+        color: dark ? 'rgba(237,237,237,0.50)' : '#7a7263',
+      },
+      footerActionLink: {
+        color: '#6D5DFB',
+        fontWeight: '600',
+      },
+      identityPreviewText: {
+        color: dark ? '#ededed' : '#1c1a14',
+      },
+      formFieldInputShowPasswordButton: {
+        color: dark ? 'rgba(237,237,237,0.40)' : '#7a7263',
+      },
+    },
+  };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0F1115] text-white">
+    <div className="min-h-screen flex flex-col bg-background text-foreground">
       <Navbar variant="legal" />
-
       <main className="max-w-[1280px] mx-auto px-6 relative z-10 flex items-center justify-center flex-grow min-h-[calc(100vh-130px)] pt-[130px] pb-[60px] w-full">
-        {/* Glow Background Orbs */}
-        <div className="absolute w-[300px] h-[300px] rounded-full bg-primary/10 blur-3xl pointer-events-none" style={{ top: '20%', left: '10%' }}></div>
-        <div className="absolute w-[300px] h-[300px] rounded-full bg-[#9d4edd]/10 blur-3xl pointer-events-none" style={{ bottom: '20%', right: '10%' }}></div>
-        
+        <div className="absolute w-[300px] h-[300px] rounded-full bg-primary/10 blur-3xl pointer-events-none" style={{ top: '20%', left: '10%' }} />
+        <div className="absolute w-[300px] h-[300px] rounded-full bg-primary/[0.07] blur-3xl pointer-events-none" style={{ bottom: '20%', right: '10%' }} />
         <div className="relative z-10">
-          <SignUp 
-            path="/sign-up" 
-            routing="path" 
-            signInUrl="/sign-in" 
-            fallbackRedirectUrl="/" 
-            appearance={{
-              variables: {
-                colorPrimary: '#6D5DFB',
-                colorBackground: '#0F1115',
-                colorText: '#ffffff',
-                colorTextOnPrimaryBackground: '#ffffff',
-                colorTextSecondary: '#c0c6db',
-                colorInputBackground: 'rgba(255, 255, 255, 0.03)',
-                colorInputText: '#ffffff',
-                colorBorder: 'rgba(255, 255, 255, 0.08)',
-              },
-              elements: {
-                card: {
-                  border: '1px solid #27272A',
-                  background: 'rgba(24, 24, 27, 0.85)',
-                  backdropFilter: 'blur(16px)',
-                  boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.3), 0 0 40px rgba(109, 93, 251, 0.05)',
-                  borderRadius: '8px',
-                },
-                headerTitle: {
-                  fontFamily: 'var(--font-display)',
-                  fontSize: '1.8rem',
-                  fontWeight: '700',
-                  color: '#ffffff',
-                },
-                headerSubtitle: {
-                  color: '#c0c6db',
-                },
-                socialButtonsBlockButton: {
-                  backgroundColor: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: '8px',
-                  color: '#ffffff',
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-                    borderColor: 'var(--primary)',
-                  }
-                },
-                socialButtonsBlockButtonText: {
-                  color: '#ffffff',
-                  fontWeight: '500',
-                },
-                dividerLine: {
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                },
-                dividerText: {
-                  color: '#c0c6db',
-                },
-                formFieldLabel: {
-                  color: '#c0c6db',
-                },
-                formFieldInput: {
-                  backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: '8px',
-                  color: '#ffffff',
-                  transition: 'all 0.2s ease',
-                  '&:focus': {
-                    borderColor: 'var(--primary)',
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  }
-                },
-                formButtonPrimary: {
-                  backgroundColor: 'var(--primary)',
-                  color: '#ffffff',
-                  fontFamily: 'var(--font-body)',
-                  fontWeight: '600',
-                  textTransform: 'none',
-                  borderRadius: '8px',
-                  padding: '0.75rem 1.5rem',
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    backgroundColor: '#4f46e5',
-                    transform: 'translateY(-1px)',
-                    boxShadow: '0 4px 12px rgba(109, 93, 251, 0.2)',
-                  },
-                  '&:active': {
-                    transform: 'translateY(0)',
-                  }
-                },
-                footerActionText: {
-                  color: '#c0c6db',
-                },
-                footerActionLink: {
-                  color: 'var(--primary)',
-                  fontWeight: '600',
-                  transition: 'color 0.2s ease',
-                  '&:hover': {
-                    color: '#4f46e5',
-                    textDecoration: 'underline',
-                  }
-                },
-                identityPreviewText: {
-                  color: '#ffffff',
-                },
-                formFieldInputShowPasswordButton: {
-                  color: '#c0c6db',
-                }
-              }
-            }}
-          />
+          <SignUp path="/sign-up" routing="path" signInUrl="/sign-in" fallbackRedirectUrl="/" appearance={appearance} />
         </div>
       </main>
     </div>

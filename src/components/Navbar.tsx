@@ -61,7 +61,7 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
     <>
       <nav className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-center transition-all duration-500 ease-in-out ${isNavbarScrolled ? 'bg-navbar/95 backdrop-blur-md border-b border-foreground/10 shadow-sm py-3 px-5 md:px-16' : 'bg-navbar/30 backdrop-blur-sm border-b border-foreground/5 py-4 px-5 md:px-16'}`}>
         <div className="w-full max-w-[1280px] flex justify-between items-center">
-          <Link href="/" className="flex items-center text-2xl md:text-3xl font-extrabold tracking-tight text-foreground hover:text-primary transition-colors" onClick={closeMobileMenu}>
+          <Link href="/" className="flex items-center text-2xl md:text-3xl font-extrabold tracking-tight text-foreground transition-colors" onClick={closeMobileMenu}>
             <img src="/logo.png" alt="Astraeus Logo" className="w-8 h-8 object-contain mr-2" />
             <span>Astro.AI</span>
           </Link>

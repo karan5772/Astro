@@ -228,7 +228,7 @@ export default function OnboardingFlow({ onComplete }: Props) {
               transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}>
 
               <div className="text-center mb-10">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-primary/60 mb-3">Step 1 of 2</p>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-foreground/40 mb-3">Step 1 of 2</p>
                 <h1 className="text-[28px] font-bold text-white mb-2 leading-tight">When were you born?</h1>
                 <p className="text-[13px] text-white/30 leading-relaxed">
                   Your exact birth time shapes every planetary placement in your chart.
@@ -271,7 +271,7 @@ export default function OnboardingFlow({ onComplete }: Props) {
               transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}>
 
               <div className="text-center mb-10">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-primary/60 mb-3">Step 2 of 2</p>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-foreground/40 mb-3">Step 2 of 2</p>
                 <h1 className="text-[28px] font-bold text-white mb-2 leading-tight">Where were you born?</h1>
                 <p className="text-[13px] text-white/30 leading-relaxed">
                   Your birth location determines your ascendant and house positions.

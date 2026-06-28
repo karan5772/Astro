@@ -194,7 +194,7 @@ export default function PricingPage() {
 
           {voiceBalanceInSeconds > 0 && (
             <div className="inline-block mt-6 p-4 bg-secondary/80 border border-border rounded-lg max-w-[500px] mx-auto text-left">
-              <p className="text-primary font-semibold text-sm">You currently have an active Cosmic Session.</p>
+              <p className="text-foreground font-semibold text-sm">You currently have an active Cosmic Session.</p>
               <p className="text-foreground/50 text-xs mt-1">
                 You have {Math.ceil(voiceBalanceInSeconds / 60)} minutes of active voice time remaining.
               </p>

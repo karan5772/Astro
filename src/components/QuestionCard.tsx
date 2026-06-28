@@ -63,8 +63,8 @@ export default function QuestionCard({
           {/* Header row */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-1.5">
-              <span className="text-primary" style={{ fontSize: 9 }}>✦</span>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-primary/60">
+              <span className="text-foreground/35" style={{ fontSize: 9 }}>✦</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/40">
                 Question {currentIndex + 1}
               </span>
               <span className="text-[10px] text-foreground/25">/ {total}</span>

@@ -27,7 +27,7 @@ export default function Footer() {
 
           {/* Column 2: Elements */}
           <div className="flex flex-col gap-4">
-            <h4 className="text-xs uppercase tracking-wider font-semibold text-primary">The Elements</h4>
+            <h4 className="text-xs uppercase tracking-wider font-semibold text-foreground/45">The Elements</h4>
             <div className="flex flex-col gap-2">
               <Link href="#birth-chart" className="text-sm text-foreground/60 hover:text-primary transition-colors">Fire Signs</Link>
               <Link href="#birth-chart" className="text-sm text-foreground/60 hover:text-primary transition-colors">Earth Signs</Link>
@@ -38,7 +38,7 @@ export default function Footer() {
 
           {/* Column 3: Legal */}
           <div className="flex flex-col gap-4">
-            <h4 className="text-xs uppercase tracking-wider font-semibold text-primary">Legal</h4>
+            <h4 className="text-xs uppercase tracking-wider font-semibold text-foreground/45">Legal</h4>
             <div className="flex flex-col gap-2">
               <Link href="/privacy" className="text-sm text-foreground/60 hover:text-primary transition-colors">Privacy Policy</Link>
               <Link href="/terms" className="text-sm text-foreground/60 hover:text-primary transition-colors">Terms &amp; Conditions</Link>

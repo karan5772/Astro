@@ -436,7 +436,7 @@ export default function ProfilePage() {
                         { icon: <Compass size={11} />, label: 'Coordinates', value: latitude !== null && longitude !== null ? `${latitude.toFixed(2)}° · ${longitude.toFixed(2)}°` : '—', wide: false },
                       ].map(({ icon, label, value, wide }) => (
                         <div key={label} className={`bg-card border border-border rounded-xl px-4 py-3 shadow-sm ${wide ? 'col-span-2' : ''}`}>
-                          <div className="flex items-center gap-1.5 text-primary/60 mb-1.5">{icon}
+                          <div className="flex items-center gap-1.5 text-foreground/35 mb-1.5">{icon}
                             <span className="text-[9px] uppercase tracking-widest font-medium">{label}</span>
                           </div>
                           <p className="text-[13px] text-foreground/90 font-medium leading-snug">{value}</p>
@@ -447,7 +447,7 @@ export default function ProfilePage() {
                     <div className="border border-dashed border-border rounded-xl p-8 text-center">
                       <p className="text-[12px] text-foreground/30 mb-4">No birth details added yet</p>
                       <button onClick={() => setIsEditingBirth(true)}
-                        className="text-[11px] font-semibold text-primary hover:opacity-75 transition-opacity">
+                        className="text-[11px] font-semibold text-foreground/55 hover:text-foreground transition-colors">
                         Add birth details →
                       </button>
                     </div>
@@ -569,7 +569,7 @@ export default function ProfilePage() {
                     <p className="text-[11px] text-foreground/50 mb-2.5">
                       {msgCount >= 15 ? 'All free messages used.' : `${msgLeft} ${msgLeft === 1 ? 'message' : 'messages'} remaining on free plan.`}
                     </p>
-                    <a href="/pricing" className="text-[11px] font-semibold text-primary hover:opacity-75 transition-opacity">
+                    <a href="/pricing" className="text-[11px] font-semibold text-foreground/55 hover:text-foreground transition-colors">
                       Upgrade for unlimited readings →
                     </a>
                   </div>
@@ -582,7 +582,7 @@ export default function ProfilePage() {
           {userData?.isPro && getVoiceTimeRemaining() < 5 && (
             <div className="border border-border rounded-xl p-4 text-center bg-secondary/50 mb-8">
               <p className="text-[11px] text-foreground/50 mb-2">Voice time running low</p>
-              <a href="/pricing" className="text-[11px] font-semibold text-primary hover:opacity-75 transition-opacity">Top up →</a>
+              <a href="/pricing" className="text-[11px] font-semibold text-foreground/55 hover:text-foreground transition-colors">Top up →</a>
             </div>
           )}
 
