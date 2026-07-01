@@ -3,12 +3,15 @@
 import * as React from 'react';
 import { format } from 'date-fns';
 import { CalendarIcon, ClockIcon } from 'lucide-react';
-import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 
 // ── DatePicker ────────────────────────────────────────────────────────────────
 // value: 'YYYY-MM-DD' | ''   onChange: (v: string) => void
+//
+// Uses a native <input type="date"> to avoid native-select conflicts inside
+// Base UI popovers (the captionLayout="dropdown" approach caused the calendar
+// to dismiss before the year/month selection could register).
 
 interface DatePickerProps {
   value: string;
@@ -24,45 +27,28 @@ export function DatePicker({
   placeholder = 'Pick a date',
   className,
 }: DatePickerProps) {
-  const [open, setOpen] = React.useState(false);
-  const date = value ? new Date(value + 'T00:00:00') : undefined;
+  const today = format(new Date(), 'yyyy-MM-dd');
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger
+    <div className={cn('relative', className)}>
+      <input
+        type="date"
+        value={value || ''}
+        max={today}
+        min="1920-01-01"
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
         className={cn(
-          'w-full px-4 py-3.5 bg-foreground/[0.04] border border-border rounded-xl text-sm text-left outline-none',
-          'focus:border-primary/40 hover:border-primary/30 transition-colors',
-          'flex items-center justify-between gap-2',
-          open && 'border-primary/40',
-          className,
+          'w-full px-4 py-3.5 pr-10 bg-foreground/[0.04] border border-border rounded-xl text-sm outline-none',
+          'focus:border-primary/40 hover:border-primary/30 transition-colors cursor-pointer',
+          value ? 'text-foreground' : 'text-foreground/30',
+          '[color-scheme:light] dark:[color-scheme:dark]',
+          /* stretch the native picker indicator to fill the input so clicking anywhere triggers the picker */
+          '[&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer',
         )}
-      >
-        <span className={date ? 'text-foreground' : 'text-foreground/30'}>
-          {date ? format(date, 'd MMMM yyyy') : placeholder}
-        </span>
-        <CalendarIcon size={14} className="text-foreground/30 shrink-0" />
-      </PopoverTrigger>
-      <PopoverContent
-        side="bottom"
-        align="start"
-        className="w-auto p-0 bg-popover border-border shadow-2xl"
-      >
-        <Calendar
-          mode="single"
-          selected={date}
-          onSelect={(d) => {
-            if (d) {
-              onChange(format(d, 'yyyy-MM-dd'));
-              setOpen(false);
-            }
-          }}
-          captionLayout="dropdown"
-          startMonth={new Date(1920, 0, 1)}
-          endMonth={new Date()}
-        />
-      </PopoverContent>
-    </Popover>
+      />
+      <CalendarIcon size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/30 pointer-events-none shrink-0" />
+    </div>
   );
 }
 

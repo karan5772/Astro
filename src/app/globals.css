@@ -29,13 +29,30 @@
   --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 
   @keyframes spin-linear {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+      transform: rotate(0deg);
+    }
+
+    to {
+      transform: rotate(360deg);
+    }
   }
+
   @keyframes spin-linear-reverse {
-    from { transform: rotate(360deg); }
-    to { transform: rotate(0deg); }
+    from {
+      transform: rotate(360deg);
+    }
+
+    to {
+      transform: rotate(0deg);
+    }
   }
+}
+
+/* Hide "Secured by Clerk" badge — target the parent container via :has() */
+*:has(> a[href*="go.clerk.com"]),
+*:has(> a[href*="clerk.dev"]) {
+  display: none !important;
 }
 
 /* Base styles */
@@ -50,9 +67,11 @@
     overflow-x: hidden;
     @apply bg-background text-foreground;
   }
+
   * {
     @apply border-border outline-ring/50;
   }
+
   html {
     @apply font-sans;
   }
@@ -118,10 +137,10 @@
   --accent: #eee4cf;
   --accent-foreground: #1c1a14;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: rgba(28,26,20,0.12);
-  --input: rgba(28,26,20,0.08);
+  --border: rgba(28, 26, 20, 0.12);
+  --input: rgba(28, 26, 20, 0.08);
   --ring: #6D5DFB;
-  --card-border: rgba(28,26,20,0.12);
+  --card-border: rgba(28, 26, 20, 0.12);
   --chart-1: #6D5DFB;
   --chart-2: #a78bfa;
   --chart-3: #7c3aed;
@@ -129,12 +148,12 @@
   --chart-5: #818cf8;
   --radius: 0.625rem;
   /* custom tokens for home page & components */
-  --ink-ghost: rgba(28,26,20,0.07);
-  --ink-border: rgba(28,26,20,0.13);
-  --ink-faint: rgba(28,26,20,0.40);
-  --ink-half: rgba(28,26,20,0.58);
-  --accent-dim: rgba(109,93,251,0.08);
-  --accent-edge: rgba(109,93,251,0.20);
+  --ink-ghost: rgba(28, 26, 20, 0.07);
+  --ink-border: rgba(28, 26, 20, 0.13);
+  --ink-faint: rgba(28, 26, 20, 0.40);
+  --ink-half: rgba(28, 26, 20, 0.58);
+  --accent-dim: rgba(109, 93, 251, 0.08);
+  --accent-edge: rgba(109, 93, 251, 0.20);
   /* navbar + sidebar — neutral, less creamy than main canvas */
   --navbar: #f2f1ee;
   --sidebar: #f2f1ee;
@@ -143,7 +162,7 @@
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #e6e4df;
   --sidebar-accent-foreground: #1c1a14;
-  --sidebar-border: rgba(28,26,20,0.11);
+  --sidebar-border: rgba(28, 26, 20, 0.11);
   --sidebar-ring: #6D5DFB;
 }
 
@@ -159,26 +178,26 @@
   --secondary: #1c1c1c;
   --secondary-foreground: #ededed;
   --muted: #1c1c1c;
-  --muted-foreground: rgba(237,237,237,0.50);
+  --muted-foreground: rgba(237, 237, 237, 0.50);
   --accent: #7c6ffd;
   --accent-foreground: #ffffff;
   --destructive: oklch(0.704 0.191 22.216);
-  --border: rgba(237,237,237,0.09);
-  --input: rgba(237,237,237,0.06);
+  --border: rgba(237, 237, 237, 0.09);
+  --input: rgba(237, 237, 237, 0.06);
   --ring: #7c6ffd;
-  --card-border: rgba(237,237,237,0.09);
+  --card-border: rgba(237, 237, 237, 0.09);
   --chart-1: #7c6ffd;
   --chart-2: #a78bfa;
   --chart-3: #7c3aed;
   --chart-4: #4f46e5;
   --chart-5: #818cf8;
   /* custom tokens */
-  --ink-ghost: rgba(237,237,237,0.06);
-  --ink-border: rgba(237,237,237,0.09);
-  --ink-faint: rgba(237,237,237,0.28);
-  --ink-half: rgba(237,237,237,0.52);
-  --accent-dim: rgba(124,111,253,0.11);
-  --accent-edge: rgba(124,111,253,0.22);
+  --ink-ghost: rgba(237, 237, 237, 0.06);
+  --ink-border: rgba(237, 237, 237, 0.09);
+  --ink-faint: rgba(237, 237, 237, 0.28);
+  --ink-half: rgba(237, 237, 237, 0.52);
+  --accent-dim: rgba(124, 111, 253, 0.11);
+  --accent-edge: rgba(124, 111, 253, 0.22);
   /* navbar + sidebar */
   --navbar: #0a0a0a;
   --sidebar: #111111;
@@ -187,20 +206,35 @@
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #1c1c1c;
   --sidebar-accent-foreground: #ededed;
-  --sidebar-border: rgba(237,237,237,0.08);
+  --sidebar-border: rgba(237, 237, 237, 0.08);
   --sidebar-ring: #7c6ffd;
 }
 
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 
 @keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
 }
+
 .animate-marquee {
   animation: marquee 55s linear infinite;
 }
+
 @media (prefers-reduced-motion: reduce) {
-  .animate-marquee { animation: none; }
+  .animate-marquee {
+    animation: none;
+  }
 }
