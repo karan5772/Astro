@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import connectToDatabase from '@/lib/mongodb';
 import User from '@/lib/models/User';
 import { logEvent } from '@/lib/log-event';
+import { fetchDasaForUser } from '@/lib/fetch-dasha';
 
 export async function GET() {
   try {
@@ -53,10 +54,22 @@ export async function GET() {
 ## What NOT to do
 - Do not read out all predictions at once — reference them naturally and contextually.
 - Do not use negative fear-mongering language. If a challenging planetary influence exists, acknowledge it honestly and then explain how to navigate it with strength.
-- Do not refuse questions related to astrology, life, relationships, health, or personal growth.`;
+- Do not refuse questions related to astrology, life, relationships, health, or personal growth.
+
+## Timing — always be specific
+Today's date is ${new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}. Use the user's Dasha periods to give year-specific predictions. Never say "soon" — always name a year or a range. Examples: "This will happen around 2027", "Expect a shift by mid-2026", "The next two years, 2026 to 2027, will be transformative."`;
 
     const safeField = (v: unknown, max = 120) =>
       typeof v === 'string' ? v.replace(/[\r\n]/g, ' ').slice(0, max) : '';
+
+    // Backfill Dasha for existing users who don't have it yet
+    if (dbUser && dbUser.birthDate && !dbUser.currentDasha?.mahadasha) {
+      const dasha = await fetchDasaForUser(dbUser);
+      if (dasha) {
+        User.updateOne({ clerkId: userId }, { $set: { currentDasha: dasha } }).catch(() => {});
+        dbUser.currentDasha = dasha;
+      }
+    }
 
     // Inject user's birth details and predicted horoscope traits if available
     if (dbUser && dbUser.birthDate) {
@@ -72,6 +85,15 @@ export async function GET() {
           .join('\n');
 
         instructions += `\n\nHere are the calculated Vedic Horoscope Predictions for this user from the VedAstro engine. Reference these insights naturally and contextually during your spoken conversation. Do NOT read them all out at once — use them to enrich and personalise your reading:\n${userPredictionsText}`;
+      }
+
+      if (dbUser.currentDasha?.mahadasha) {
+        const d = dbUser.currentDasha;
+        instructions += `\n\nCurrent Vimshottari Dasha:
+- Mahadasha: ${d.mahadasha} (${d.mahadashaNature})
+- Bhukti: ${d.bhukti} (${d.bhuktiNature})
+- Antaram: ${d.antaram}
+Use these Dasha periods to anchor your predictions to specific years. The Mahadasha sets the overarching theme; the Bhukti colours the current few years.`;
       }
     }
 

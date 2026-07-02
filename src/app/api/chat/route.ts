@@ -1,7 +1,13 @@
-import { openai } from '@ai-sdk/openai';
+import { createOpenAI } from '@ai-sdk/openai';
 import { streamText } from 'ai';
 import { auth } from '@clerk/nextjs/server';
 import { NextRequest } from 'next/server';
+
+const groq = createOpenAI({
+  baseURL: 'https://api.groq.com/openai/v1',
+  apiKey: process.env.GROQ_API_KEY,
+  compatibility: 'compatible',
+});
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -10,91 +16,8 @@ import connectToDatabase from '@/lib/mongodb';
 import User from '@/lib/models/User';
 import { logEvent } from '@/lib/log-event';
 import { FREE_MESSAGE_LIMIT } from '@/lib/plans';
+import { fetchDasaForUser } from '@/lib/fetch-dasha';
 
-// ── Prediction tag selector ───────────────────────────────────────────────────
-
-const KEYWORD_TO_TAGS: { keywords: string[]; tags: string[] }[] = [
-  {
-    keywords: ['career', 'job', 'work', 'business', 'profession', 'money', 'finance', 'wealth', 'salary', 'income', 'success', 'promotion', 'office', 'entrepreneur', 'startup'],
-    tags: ['Career', 'Profession', 'Finance', 'Wealth', 'Money', 'Business', 'Job', 'Income', 'Success'],
-  },
-  {
-    keywords: ['love', 'marriage', 'relationship', 'partner', 'wife', 'husband', 'romance', 'dating', 'breakup', 'divorce', 'wedding', 'girlfriend', 'boyfriend', 'crush', 'soulmate'],
-    tags: ['Love', 'Marriage', 'Relationship', 'Spouse', 'Partner', 'Romance', 'Husband', 'Wife', 'Divorce'],
-  },
-  {
-    keywords: ['health', 'sick', 'illness', 'disease', 'body', 'pain', 'medical', 'doctor', 'hospital', 'energy', 'tired', 'fatigue', 'healing', 'fitness', 'mental health', 'anxiety', 'depression'],
-    tags: ['Health', 'Body', 'Disease', 'Vitality', 'Medical', 'Healing'],
-  },
-  {
-    keywords: ['family', 'children', 'child', 'kids', 'mother', 'father', 'parent', 'sibling', 'brother', 'sister', 'home', 'son', 'daughter', 'pregnancy', 'baby'],
-    tags: ['Family', 'Children', 'Child', 'Mother', 'Father', 'Parent', 'Home', 'Sibling'],
-  },
-  {
-    keywords: ['spiritual', 'religion', 'god', 'faith', 'meditation', 'karma', 'dharma', 'purpose', 'soul', 'prayer', 'temple', 'divine', 'universe'],
-    tags: ['Spirituality', 'Religion', 'Dharma', 'Karma', 'Faith', 'God'],
-  },
-  {
-    keywords: ['travel', 'abroad', 'foreign', 'journey', 'move', 'relocate', 'immigration', 'visa', 'country', 'overseas'],
-    tags: ['Travel', 'Foreign', 'Journey', 'Abroad', 'Immigration'],
-  },
-  {
-    keywords: ['education', 'study', 'learning', 'school', 'college', 'university', 'degree', 'knowledge', 'exam', 'student', 'course', 'skill'],
-    tags: ['Education', 'Intelligence', 'Learning', 'Study', 'Knowledge'],
-  },
-  {
-    keywords: ['property', 'house', 'land', 'real estate', 'rent', 'buy', 'home', 'invest', 'asset'],
-    tags: ['Property', 'Land', 'House', 'RealEstate', 'Investment'],
-  },
-  {
-    keywords: ['friend', 'social', 'network', 'community', 'society', 'reputation', 'status', 'fame', 'public'],
-    tags: ['Friends', 'Social', 'Reputation', 'Fame', 'Status', 'Community'],
-  },
-];
-
-function selectPredictions(
-  predictions: { name: string; description: string; tags: string[] }[],
-  messages: { role: string; content: string }[],
-  limit = 75,
-): { name: string; description: string; tags: string[] }[] {
-  if (!predictions || predictions.length === 0) return [];
-
-  const userMessages = messages.filter(m => m.role === 'user');
-
-  // Don't try to infer topic from the first message — it's usually too vague
-  if (userMessages.length <= 1) return predictions.slice(0, limit);
-
-  // Build context from last 6 user messages (starting from the 2nd)
-  const userText = userMessages
-    .slice(-6)
-    .map(m => (m.content || '').toLowerCase())
-    .join(' ');
-
-  // Collect matching tags based on keywords found in user text
-  const relevantTags = new Set<string>();
-  for (const group of KEYWORD_TO_TAGS) {
-    if (group.keywords.some(kw => userText.includes(kw))) {
-      group.tags.forEach(t => relevantTags.add(t.toLowerCase()));
-    }
-  }
-
-  // If specific topics detected, filter then pad if needed
-  if (relevantTags.size > 0) {
-    const matched = predictions.filter(p =>
-      (p.tags || []).some(t => relevantTags.has(t.toLowerCase()))
-    );
-    if (matched.length >= 15) {
-      return matched.slice(0, limit);
-    }
-    // Not enough tagged matches — merge with general predictions, deduplicated
-    const matchedIds = new Set(matched.map(p => p.name));
-    const rest = predictions.filter(p => !matchedIds.has(p.name));
-    return [...matched, ...rest].slice(0, limit);
-  }
-
-  // No specific topic detected — return a general spread
-  return predictions.slice(0, limit);
-}
 
 // ── Jailbreak detection ───────────────────────────────────────────────────────
 
@@ -165,7 +88,7 @@ export async function POST(req: NextRequest) {
     const consumedFree = await User.findOneAndUpdate(
       { clerkId: userId, messageCount: { $lt: FREE_MESSAGE_LIMIT } },
       { $inc: { messageCount: 1, totalChatMessages: 1 }, $set: { lastActiveAt: new Date() } },
-      { new: true },
+      { returnDocument: 'after' },
     );
 
     let dbUser = consumedFree;
@@ -175,7 +98,7 @@ export async function POST(req: NextRequest) {
       const consumedPaid = await User.findOneAndUpdate(
         { clerkId: userId, messageBalance: { $gt: 0 } },
         { $inc: { messageBalance: -1, totalChatMessages: 1 }, $set: { lastActiveAt: new Date() } },
-        { new: true },
+        { returnDocument: 'after' },
       );
 
       if (!consumedPaid) {
@@ -242,12 +165,35 @@ Critical rules:
 <q>{"question":"How long has this been weighing on you?","options":["Just a few days","A few weeks","Several months","Over a year"]}</q>
 <q>{"question":"How do you feel about this situation right now?","options":["Confused and lost","Hopeful but anxious","Stuck and frustrated","Strangely at peace"]}</q>
 <q>{"question":"Have you recently gone through a big life change?","options":["Yes, a major one","A few smaller ones","Not really","I'm expecting one soon"]}</q>
-<q>{"question":"What are you truly hoping will happen?","options":["A clear sign or answer","Things to stay the same","A fresh new beginning","More time to decide"]}</q>`;
+<q>{"question":"What are you truly hoping will happen?","options":["A clear sign or answer","Things to stay the same","A fresh new beginning","More time to decide"]}</q>
+
+## Timing — always be specific
+Today's date is ${new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}. You know the user's Mahadasha and Bhukti periods from their chart. Use these to anchor every prediction to a real timeframe. Never say "soon" or "in the near future" — always give a specific year or range.
+
+Rules:
+- Near-term events: name the month and year (e.g. "by October 2026")
+- Medium-term: a year range (e.g. "between 2027 and 2028")
+- Long-term: a specific year (e.g. "around 2030")
+- When a Dasha period is ending soon, mention when the next period begins and what it brings
+- Always attach a timeframe to every prediction, insight, or reading you give
+
+✓ "Your career shift is most likely in late 2027 as your Saturn Bhukti takes hold."
+✓ "A financial opportunity opens up around mid-2026 — act before year-end."
+✗ "Opportunities are coming your way soon." (banned — always attach a year)`;
 
 
     // Strip newlines and limit length to prevent prompt injection via user-controlled fields
     const safeField = (v: unknown, max = 120) =>
       typeof v === 'string' ? v.replace(/[\r\n]/g, ' ').slice(0, max) : '';
+
+    // Backfill Dasha for existing users who don't have it yet
+    if (dbUser && dbUser.birthDate && !dbUser.currentDasha?.mahadasha) {
+      const dasha = await fetchDasaForUser(dbUser);
+      if (dasha) {
+        User.updateOne({ clerkId: userId }, { $set: { currentDasha: dasha } }).catch(() => { });
+        dbUser.currentDasha = dasha;
+      }
+    }
 
     // Inject user's birth chart details and calculated predictions if available
     if (dbUser && dbUser.birthDate) {
@@ -258,18 +204,25 @@ Critical rules:
 - Timezone Offset: ${safeField(dbUser.birthTimezone, 10)}`;
 
       if (dbUser.predictions && dbUser.predictions.length > 0) {
-        const selected = selectPredictions(dbUser.predictions, messages, 75);
-        const userPredictionsText = selected
+        const userPredictionsText = dbUser.predictions
           .map((p: any) => `- [${p.name}]: ${p.description}`)
           .join('\n');
 
         systemPrompt += `\n\nHere are the calculated Vedic Horoscope Predictions for this user from the VedAstro system. Reference these predictions naturally in your conversation to show your clairvoyant/astrological accuracy. Do NOT list them all out in one reply; use them contextually to guide the user's reading:\n${userPredictionsText}`;
       }
+
+      if (dbUser.currentDasha?.mahadasha) {
+        const d = dbUser.currentDasha;
+        systemPrompt += `\n\nCurrent Vimshottari Dasha (as of today):
+- Mahadasha: ${d.mahadasha} (${d.mahadashaNature}) — ${d.mahadashaDescription}
+- Bhukti (sub-period): ${d.bhukti} (${d.bhuktiNature}) — ${d.bhuktiDescription}
+- Antaram: ${d.antaram}`;
+      }
     }
 
     // 3. Generate response with OpenAI
     const result = streamText({
-      model: openai('gpt-4.1-nano'),
+      model: groq.chat('llama-3.3-70b-versatile'),
       system: systemPrompt,
       messages,
     });

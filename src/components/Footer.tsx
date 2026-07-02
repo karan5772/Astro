@@ -49,7 +49,7 @@ export default function Footer() {
 
           {/* Column 4: CTA */}
           <div className="col-span-2 lg:col-span-1 flex items-start lg:justify-end">
-            <Link href={userId ? "/chat" : "/sign-up"} className="inline-flex items-center justify-center py-3 px-6 bg-gradient-to-r from-primary to-[#4f46e5] text-white rounded-lg font-semibold text-sm uppercase tracking-wider shadow-[0_0_20px_rgba(109,93,251,0.3)] hover:shadow-[0_0_30px_rgba(109,93,251,0.5)] transition-all duration-300">
+            <Link href={userId ? "/chat" : "/sign-up"} className="inline-flex items-center justify-center py-3 px-6 bg-gradient-to-r from-primary to-[#b09038] text-white rounded-lg font-semibold text-sm uppercase tracking-wider shadow-[0_0_20px_rgba(200,150,44,0.3)] hover:shadow-[0_0_30px_rgba(200,150,44,0.5)] transition-all duration-300">
               Start Chat
             </Link>
           </div>

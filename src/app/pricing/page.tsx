@@ -71,7 +71,7 @@ export default function PricingPage() {
             toast.error("Payment verification failed.");
           }
         },
-        theme: { color: "#6D5DFB" },
+        theme: { color: "#c8962c" },
       });
       rzp.open();
     } catch (err) {
@@ -151,7 +151,7 @@ export default function PricingPage() {
               transition={{ duration: 0.35, delay: i * 0.07 }}
               className={`relative rounded-2xl border p-6 flex flex-col sm:flex-row gap-6 items-start sm:items-center transition-all ${
                 plan.featured
-                  ? "bg-card border-primary/40 shadow-[0_0_40px_rgba(109,93,251,0.08)]"
+                  ? "bg-card border-primary/40 shadow-[0_0_40px_rgba(200,150,44,0.08)]"
                   : "bg-card/50 border-border"
               }`}
             >
@@ -185,7 +185,7 @@ export default function PricingPage() {
                   disabled={loading !== null}
                   className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer disabled:opacity-60 ${
                     plan.featured
-                      ? "bg-primary hover:bg-primary/90 text-white shadow-[0_0_20px_rgba(109,93,251,0.3)]"
+                      ? "bg-primary hover:bg-primary/90 text-white shadow-[0_0_20px_rgba(200,150,44,0.3)]"
                       : "bg-foreground/[0.07] hover:bg-foreground/[0.11] text-foreground border border-border"
                   }`}
                 >

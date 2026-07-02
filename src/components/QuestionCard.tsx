@@ -30,7 +30,7 @@ export default function QuestionCard({
         className="w-full relative rounded-2xl overflow-hidden bg-card border border-border shadow-lg"
         style={{
           boxShadow:
-            "0 0 0 1px rgba(109,93,251,0.15), 0 8px 32px rgba(109,93,251,0.08), 0 2px 8px rgba(0,0,0,0.06)",
+            "0 0 0 1px rgba(200,150,44,0.15), 0 8px 32px rgba(200,150,44,0.08), 0 2px 8px rgba(0,0,0,0.06)",
         }}
       >
         {/* Animated progress line — top edge */}
@@ -38,7 +38,7 @@ export default function QuestionCard({
           <motion.div
             className="h-full rounded-full"
             style={{
-              background: "linear-gradient(90deg, #6D5DFB, #a78bfa)",
+              background: "linear-gradient(90deg, #c8962c, #c4a048)",
             }}
             initial={{ width: `${(currentIndex / total) * 100}%` }}
             animate={{ width: `${((currentIndex + 1) / total) * 100}%` }}
@@ -50,7 +50,7 @@ export default function QuestionCard({
         <div
           className="absolute -top-10 -right-10 w-40 h-40 rounded-full pointer-events-none"
           style={{
-            background: "radial-gradient(circle, rgba(109,93,251,0.08) 0%, transparent 70%)",
+            background: "radial-gradient(circle, rgba(200,150,44,0.08) 0%, transparent 70%)",
           }}
         />
 

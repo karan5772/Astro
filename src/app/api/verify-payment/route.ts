@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
           voiceBalanceInSeconds: durationInMinutes * 60,
         },
       },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     logEvent(userId, 'payment_completed', {

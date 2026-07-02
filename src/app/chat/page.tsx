@@ -690,7 +690,7 @@ export default function ChatPage() {
             ) : (
               <motion.div
                 key="input-mode"
-                className="w-full max-w-2xl bg-white dark:bg-card border border-gray-200 dark:border-border rounded-full px-5 py-2 flex items-end gap-3 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] focus-within:border-gray-300 dark:focus-within:border-border transition-all"
+                className="w-full max-w-2xl bg-white dark:bg-card border border-gray-200 dark:border-border rounded-[28px] px-5 py-2.5 flex items-end gap-3 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] focus-within:border-gray-300 dark:focus-within:border-border transition-all"
                 initial={{ opacity: 0, y: 16, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 16, scale: 0.98 }}
@@ -714,7 +714,7 @@ export default function ChatPage() {
                       }
                     }
                   }}
-                  className="flex-grow bg-transparent text-sm text-foreground placeholder-gray-400 outline-none border-none resize-none py-1.5 min-h-[24px] max-h-[140px] leading-relaxed align-bottom"
+                  className="flex-grow bg-transparent text-sm text-foreground placeholder-gray-400 outline-none border-none resize-none py-1.5 min-h-[24px] max-h-[200px] leading-relaxed overflow-y-auto"
                 />
                 <button
                   onClick={() => {

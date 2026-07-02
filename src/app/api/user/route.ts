@@ -4,6 +4,7 @@ import connectToDatabase from '@/lib/mongodb';
 import User from '@/lib/models/User';
 import Payment from '@/lib/models/Payment';
 import { logEvent } from '@/lib/log-event';
+import { fetchDasaForUser } from '@/lib/fetch-dasha';
 
 export async function GET() {
   try {
@@ -37,6 +38,15 @@ export async function GET() {
       dbUser.isPro = false;
     }
 
+    // Backfill Dasha on profile load for existing users who don't have it yet
+    if (dbUser.birthDate && !dbUser.currentDasha?.mahadasha) {
+      const dasha = await fetchDasaForUser(dbUser);
+      if (dasha) {
+        User.updateOne({ clerkId: userId }, { $set: { currentDasha: dasha } }).catch(() => {});
+        dbUser.currentDasha = dasha;
+      }
+    }
+
     // Retrieve payments from separate Payment model
     const payments = await Payment.find({ clerkId: userId }).sort({ date: -1 });
 
@@ -55,6 +65,7 @@ export async function GET() {
       birthLongitude: dbUser.birthLongitude !== undefined ? dbUser.birthLongitude : null,
       hasBirthDetails: !!dbUser.birthDate,
       predictionsCount: (dbUser.predictions || []).length,
+      currentDasha: dbUser.currentDasha || null,
       payments: payments || [],
     });
   } catch (error) {
@@ -141,7 +152,38 @@ export async function POST(req: NextRequest) {
       tags: item.Tags || [],
     }));
 
-    // 3. Update the user in the database
+    // 3. Fetch current Dasha period from VedAstro (non-critical — proceed without it on failure)
+    let currentDasha: Record<string, string> = {};
+    try {
+      const locationEncoded = encodeURIComponent(birthLocation);
+      const timeEncoded = encodeURIComponent(stdTime);
+      const dasaRes = await fetch(
+        `https://api.vedastro.org/api/Calculate/DasaForNow/Location/${locationEncoded}/Time/${timeEncoded}`
+      );
+      if (dasaRes.ok) {
+        const dasaJson = await dasaRes.json();
+        const dasaPayload = dasaJson?.Payload?.DasaForNow;
+        if (dasaPayload) {
+          const mahaKey = Object.keys(dasaPayload)[0];
+          const maha = dasaPayload[mahaKey];
+          const bhuktiKey = maha?.SubDasas ? Object.keys(maha.SubDasas)[0] : '';
+          const bhukti = bhuktiKey ? maha.SubDasas[bhuktiKey] : null;
+          const antaramKey = bhukti?.SubDasas ? Object.keys(bhukti.SubDasas)[0] : '';
+          currentDasha = {
+            mahadasha: mahaKey || '',
+            bhukti: bhuktiKey || '',
+            antaram: antaramKey || '',
+            mahadashaNature: maha?.Nature || '',
+            bhuktiNature: bhukti?.Nature || '',
+            mahadashaDescription: maha?.Description || '',
+            bhuktiDescription: bhukti?.Description || '',
+          };
+          console.log(`Fetched Dasha for user ${userId}: ${mahaKey} / ${bhuktiKey} / ${antaramKey}`);
+        }
+      }
+    } catch { /* non-critical — proceed without Dasha */ }
+
+    // 4. Update the user in the database
     const updatedUser = await User.findOneAndUpdate(
       { clerkId: userId },
       {
@@ -153,9 +195,10 @@ export async function POST(req: NextRequest) {
           birthLatitude: parseFloat(birthLatitude),
           birthLongitude: parseFloat(birthLongitude),
           predictions: mappedPredictions,
+          ...(Object.keys(currentDasha).length > 0 ? { currentDasha } : {}),
         },
       },
-      { new: true, upsert: true }
+      { returnDocument: 'after', upsert: true }
     );
 
     logEvent(userId, 'onboarding_completed', {

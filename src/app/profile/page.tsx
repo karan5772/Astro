@@ -16,13 +16,21 @@ import { FREE_MESSAGE_LIMIT } from '@/lib/plans';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
+interface CurrentDasha {
+  mahadasha: string; bhukti: string; antaram: string;
+  mahadashaNature: string; bhuktiNature: string;
+  mahadashaDescription: string; bhuktiDescription: string;
+}
+
 interface UserData {
   clerkId: string; email: string; isPro: boolean;
   birthDate: string | null; birthTime: string | null;
   birthTimezone: string | null; birthLocation: string | null;
   birthLatitude: number | null; birthLongitude: number | null;
   hasBirthDetails: boolean; predictionsCount: number;
-  messageCount: number; messageBalance: number; voiceBalanceInSeconds: number; payments: any[];
+  messageCount: number; messageBalance: number; voiceBalanceInSeconds: number;
+  currentDasha: CurrentDasha | null;
+  payments: any[];
 }
 interface GeocodeResult { name: string; latitude: number; longitude: number }
 
@@ -468,7 +476,78 @@ export default function ProfilePage() {
           </motion.div>
         </section>
 
-        {/* ══ 2. ACCOUNT & USAGE ═══════════════════════════════════════════════ */}
+        {/* ══ 2. PLANETARY PERIOD (DASHA) ══════════════════════════════════════ */}
+        {userData?.currentDasha?.mahadasha && (
+          <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
+            <p className={SECTION}>Active Planetary Period</p>
+
+            {(() => {
+              const d = userData.currentDasha!;
+              const natureStyle = (n: string) => {
+                if (n === 'Good') return { color: '#4ade80', bg: 'rgba(74,222,128,0.1)', border: 'rgba(74,222,128,0.25)' };
+                if (n === 'Bad')  return { color: '#f87171', bg: 'rgba(248,113,113,0.1)', border: 'rgba(248,113,113,0.25)' };
+                return { color: 'var(--color-muted)', bg: 'rgba(161,161,170,0.08)', border: 'rgba(161,161,170,0.2)' };
+              };
+              const mStyle = natureStyle(d.mahadashaNature);
+              const bStyle = natureStyle(d.bhuktiNature);
+
+              return (
+                <div className="space-y-3">
+                  {/* Hierarchy strip */}
+                  <div className="flex items-center gap-2 text-[11px] text-foreground/35 mb-1 flex-wrap">
+                    <span className="font-semibold text-foreground/60">{d.mahadasha}</span>
+                    <span>›</span>
+                    <span className="font-medium text-foreground/50">{d.bhukti}</span>
+                    <span>›</span>
+                    <span>{d.antaram}</span>
+                  </div>
+
+                  {/* Mahadasha card */}
+                  <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <div>
+                        <p className="text-[9px] uppercase tracking-widest text-foreground/35 mb-1">Mahadasha · Major Period</p>
+                        <p className="text-[15px] font-semibold text-foreground">{d.mahadasha}</p>
+                      </div>
+                      <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full shrink-0 mt-0.5"
+                        style={{ color: mStyle.color, backgroundColor: mStyle.bg, border: `1px solid ${mStyle.border}` }}>
+                        {d.mahadashaNature}
+                      </span>
+                    </div>
+                    {d.mahadashaDescription && (
+                      <p className="text-[12px] text-foreground/50 leading-relaxed">{d.mahadashaDescription}</p>
+                    )}
+                  </div>
+
+                  {/* Bhukti card */}
+                  <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <div>
+                        <p className="text-[9px] uppercase tracking-widest text-foreground/35 mb-1">Bhukti · Sub-Period</p>
+                        <p className="text-[15px] font-semibold text-foreground">{d.mahadasha}–{d.bhukti}</p>
+                      </div>
+                      <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full shrink-0 mt-0.5"
+                        style={{ color: bStyle.color, backgroundColor: bStyle.bg, border: `1px solid ${bStyle.border}` }}>
+                        {d.bhuktiNature}
+                      </span>
+                    </div>
+                    {d.bhuktiDescription && (
+                      <p className="text-[12px] text-foreground/50 leading-relaxed">{d.bhuktiDescription}</p>
+                    )}
+                  </div>
+
+                  {/* Antaram pill */}
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-foreground/[0.03] border border-border rounded-lg">
+                    <p className="text-[9px] uppercase tracking-widest text-foreground/30 font-medium">Antaram</p>
+                    <span className="text-[11px] text-foreground/55 font-medium">{d.antaram}</span>
+                  </div>
+                </div>
+              );
+            })()}
+          </motion.section>
+        )}
+
+        {/* ══ 3. ACCOUNT & USAGE ═══════════════════════════════════════════════ */}
         <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
           <p className={SECTION}>Account & Usage</p>
 
@@ -564,7 +643,7 @@ export default function ProfilePage() {
           </div>
         </motion.section>
 
-        {/* ══ 3. BILLING ═══════════════════════════════════════════════════════ */}
+        {/* ══ 4. BILLING ═══════════════════════════════════════════════════════ */}
         {(userData?.payments?.length ?? 0) > 0 && (
           <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
             <p className={SECTION}>Billing</p>

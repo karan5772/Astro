@@ -138,7 +138,7 @@ export default function OnboardingFlow({ onComplete }: Props) {
           <div className="flex items-center justify-center gap-2 mb-12">
             {[1, 2].map(s => (
               <motion.div key={s} className="rounded-full"
-                animate={{ width: step === s ? 28 : 7, backgroundColor: step === s ? '#6D5DFB' : 'rgba(255,255,255,0.12)' }}
+                animate={{ width: step === s ? 28 : 7, backgroundColor: step === s ? '#c8962c' : 'rgba(255,255,255,0.12)' }}
                 style={{ height: 7 }}
                 transition={{ duration: 0.3 }}
               />

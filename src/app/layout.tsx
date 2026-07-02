@@ -14,6 +14,17 @@ export const metadata: Metadata = {
   icons: {
     icon: "/logo.png",
   },
+  openGraph: {
+    title: 'Astro AI',
+    description: 'AI-powered astrology and horoscope readings with voice and text agents.',
+    images: [{ url: '/og.png' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Astro AI',
+    description: 'AI-powered astrology and horoscope readings with voice and text agents.',
+    images: ['/og.png'],
+  },
 }
 
 export default function RootLayout({

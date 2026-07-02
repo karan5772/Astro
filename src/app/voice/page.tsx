@@ -392,7 +392,7 @@ export default function VoicePage() {
         {/* Ambient glow orbs — shift to rashi color when active */}
         <div
           className="absolute w-[400px] h-[400px] rounded-full blur-3xl pointer-events-none transition-colors duration-700"
-          style={{ top: '15%', left: '10%', backgroundColor: isSessionActive && rashi ? rashi.glowColor : 'rgba(109,93,251,0.06)' }}
+          style={{ top: '15%', left: '10%', backgroundColor: isSessionActive && rashi ? rashi.glowColor : 'rgba(200,150,44,0.06)' }}
         />
         <div
           className="absolute w-[400px] h-[400px] rounded-full blur-3xl pointer-events-none transition-colors duration-700"
@@ -456,7 +456,7 @@ export default function VoicePage() {
                 {!isSessionActive ? (
                   <button
                     onClick={startSession}
-                    className="w-full text-center py-4 rounded-lg font-bold text-xs uppercase tracking-wider cursor-pointer transition-all duration-300 bg-gradient-to-r from-primary to-[#4f46e5] text-foreground shadow-[0_0_20px_rgba(109,93,251,0.3)] hover:shadow-[0_0_30px_rgba(109,93,251,0.5)] disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full text-center py-4 rounded-lg font-bold text-xs uppercase tracking-wider cursor-pointer transition-all duration-300 bg-gradient-to-r from-primary to-[#b09038] text-foreground shadow-[0_0_20px_rgba(200,150,44,0.3)] hover:shadow-[0_0_30px_rgba(200,150,44,0.5)] disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={isLoading || checkingAccess}
                   >
                     {checkingAccess ? 'Checking access...' : isLoading ? 'Connecting...' : 'Start Voice Session'}

@@ -10,7 +10,7 @@ export default function Page() {
 
   const appearance = {
     variables: {
-      colorPrimary: '#6D5DFB',
+      colorPrimary: '#c8962c',
       colorBackground: dark ? '#0a0a0a' : '#f8f3ea',
       colorText: dark ? '#ededed' : '#1c1a14',
       colorTextOnPrimaryBackground: '#ffffff',
@@ -25,7 +25,7 @@ export default function Page() {
         background: dark ? 'rgba(20,20,20,0.90)' : 'rgba(253,250,243,0.92)',
         backdropFilter: 'blur(16px)',
         boxShadow: dark
-          ? '0 8px 32px rgba(0,0,0,0.4), 0 0 40px rgba(109,93,251,0.06)'
+          ? '0 8px 32px rgba(0,0,0,0.4), 0 0 40px rgba(200,150,44,0.06)'
           : '0 8px 32px rgba(28,26,20,0.08)',
         borderRadius: '12px',
       },
@@ -63,7 +63,7 @@ export default function Page() {
         color: dark ? '#ededed' : '#1c1a14',
       },
       formButtonPrimary: {
-        backgroundColor: '#6D5DFB',
+        backgroundColor: '#c8962c',
         color: '#ffffff',
         fontWeight: '600',
         borderRadius: '8px',
@@ -73,7 +73,7 @@ export default function Page() {
         color: dark ? 'rgba(237,237,237,0.50)' : '#7a7263',
       },
       footerActionLink: {
-        color: '#6D5DFB',
+        color: '#c8962c',
         fontWeight: '600',
       },
       identityPreviewText: {

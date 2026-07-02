@@ -24,6 +24,15 @@ const UserSchema = new mongoose.Schema({
     description: { type: String },
     tags: [{ type: String }]
   }],
+  currentDasha: {
+    mahadasha: { type: String },
+    bhukti: { type: String },
+    antaram: { type: String },
+    mahadashaNature: { type: String },
+    bhuktiNature: { type: String },
+    mahadashaDescription: { type: String },
+    bhuktiDescription: { type: String },
+  },
 }, { timestamps: true });
 
 export default mongoose.models.User || mongoose.model('User', UserSchema);
