@@ -6,7 +6,6 @@ import { NextRequest } from 'next/server';
 const groq = createOpenAI({
   baseURL: 'https://api.groq.com/openai/v1',
   apiKey: process.env.GROQ_API_KEY,
-  compatibility: 'compatible',
 });
 
 // Allow streaming responses up to 30 seconds
