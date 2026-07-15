@@ -9,40 +9,29 @@ import Sidebar from "@/components/Sidebar";
 
 // ── Vedic Rashi (element glow) ────────────────────────────────────────────────
 
-type RashiData = { name: string; elementColor: string; glowColor: string };
+type RashiData = { name: string; english: string; elementColor: string; glowColor: string };
 
 const VEDIC_RASHIS: RashiData[] = [
-  { name: 'Mesha',     elementColor: '#ff6b35', glowColor: 'rgba(255,107,53,0.22)'  },
-  { name: 'Vrishabha', elementColor: '#51cf66', glowColor: 'rgba(81,207,102,0.22)' },
-  { name: 'Mithuna',   elementColor: '#74c0fc', glowColor: 'rgba(116,192,252,0.22)' },
-  { name: 'Karka',     elementColor: '#4dabf7', glowColor: 'rgba(77,171,247,0.22)'  },
-  { name: 'Simha',     elementColor: '#ffd43b', glowColor: 'rgba(255,212,59,0.22)'  },
-  { name: 'Kanya',     elementColor: '#63e6be', glowColor: 'rgba(99,230,190,0.22)'  },
-  { name: 'Tula',      elementColor: '#f783ac', glowColor: 'rgba(247,131,172,0.22)' },
-  { name: 'Vrischika', elementColor: '#e64980', glowColor: 'rgba(230,73,128,0.22)'  },
-  { name: 'Dhanu',     elementColor: '#ff8c00', glowColor: 'rgba(255,140,0,0.22)'   },
-  { name: 'Makara',    elementColor: '#868e96', glowColor: 'rgba(134,142,150,0.22)' },
-  { name: 'Kumbha',    elementColor: '#74c0fc', glowColor: 'rgba(116,192,252,0.22)' },
-  { name: 'Meena',     elementColor: '#cc5de8', glowColor: 'rgba(204,93,232,0.22)'  },
+  { name: 'Mesha',     english: 'Aries',       elementColor: '#ff6b35', glowColor: 'rgba(255,107,53,0.22)'  },
+  { name: 'Vrishabha', english: 'Taurus',      elementColor: '#51cf66', glowColor: 'rgba(81,207,102,0.22)' },
+  { name: 'Mithuna',   english: 'Gemini',      elementColor: '#74c0fc', glowColor: 'rgba(116,192,252,0.22)' },
+  { name: 'Karka',     english: 'Cancer',      elementColor: '#4dabf7', glowColor: 'rgba(77,171,247,0.22)'  },
+  { name: 'Simha',     english: 'Leo',         elementColor: '#ffd43b', glowColor: 'rgba(255,212,59,0.22)'  },
+  { name: 'Kanya',     english: 'Virgo',       elementColor: '#63e6be', glowColor: 'rgba(99,230,190,0.22)'  },
+  { name: 'Tula',      english: 'Libra',       elementColor: '#f783ac', glowColor: 'rgba(247,131,172,0.22)' },
+  { name: 'Vrischika', english: 'Scorpio',     elementColor: '#e64980', glowColor: 'rgba(230,73,128,0.22)'  },
+  { name: 'Dhanu',     english: 'Sagittarius', elementColor: '#ff8c00', glowColor: 'rgba(255,140,0,0.22)'   },
+  { name: 'Makara',    english: 'Capricorn',   elementColor: '#868e96', glowColor: 'rgba(134,142,150,0.22)' },
+  { name: 'Kumbha',    english: 'Aquarius',    elementColor: '#74c0fc', glowColor: 'rgba(116,192,252,0.22)' },
+  { name: 'Meena',     english: 'Pisces',      elementColor: '#cc5de8', glowColor: 'rgba(204,93,232,0.22)'  },
 ];
 
-const RASHI_RANGES: [number, number, number, number, number][] = [
-  [1,1,1,14,8],[1,15,2,12,9],[2,13,3,14,10],
-  [3,15,4,13,11],[4,14,5,14,0],[5,15,6,14,1],
-  [6,15,7,16,2],[7,17,8,16,3],[8,17,9,16,4],
-  [9,17,10,17,5],[10,18,11,16,6],[11,17,12,15,7],
-  [12,16,12,31,8],
-];
-
-function getVedicRashi(dateStr: string | null): RashiData | null {
-  if (!dateStr) return null;
-  const [, ms, ds] = dateStr.split('-');
-  const month = parseInt(ms, 10), day = parseInt(ds, 10);
-  for (const [sm, sd, em, ed, idx] of RASHI_RANGES) {
-    if ((month > sm || (month === sm && day >= sd)) && (month < em || (month === em && day <= ed)))
-      return VEDIC_RASHIS[idx];
-  }
-  return VEDIC_RASHIS[8];
+function getRashiByName(name: string | null): RashiData | null {
+  if (!name) return null;
+  const lower = name.toLowerCase();
+  return VEDIC_RASHIS.find(
+    r => r.name.toLowerCase() === lower || r.english.toLowerCase() === lower
+  ) ?? null;
 }
 
 // ── Animated Waveform ─────────────────────────────────────────────────────────
@@ -156,13 +145,13 @@ export default function VoicePage() {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [voiceBalanceInSeconds, setVoiceBalanceInSeconds] = useState(0);
   const [totalBalanceInSeconds, setTotalBalanceInSeconds] = useState(0);
-  const [birthDate, setBirthDate] = useState<string | null>(null);
+  const [rashiName, setRashiName] = useState<string | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [checkingAccess, setCheckingAccess] = useState(true);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  const rashi = getVedicRashi(birthDate);
+  const rashi = getRashiByName(rashiName);
 
   useEffect(() => {
     const handleSync = () => {
@@ -218,7 +207,7 @@ export default function VoicePage() {
           .catch(console.error);
       };
 
-      // Initial load — also capture birthDate and set total for gauge
+      // Initial load — also capture rashiName and set total for gauge
       fetch("/api/user")
         .then((res) => res.json())
         .then((data) => {
@@ -228,7 +217,7 @@ export default function VoicePage() {
             const bal = data.voiceBalanceInSeconds;
             setVoiceBalanceInSeconds(bal);
             setTotalBalanceInSeconds(bal);
-            setBirthDate(data.birthDate ?? null);
+            setRashiName(data.rashiName ?? null);
           }
         })
         .catch(console.error)

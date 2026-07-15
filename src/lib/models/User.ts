@@ -33,6 +33,7 @@ const UserSchema = new mongoose.Schema({
     mahadashaDescription: { type: String },
     bhuktiDescription: { type: String },
   },
+  rashiName: { type: String },
 }, { timestamps: true });
 
 export default mongoose.models.User || mongoose.model('User', UserSchema);

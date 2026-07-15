@@ -30,6 +30,7 @@ interface UserData {
   hasBirthDetails: boolean; predictionsCount: number;
   messageCount: number; messageBalance: number; voiceBalanceInSeconds: number;
   currentDasha: CurrentDasha | null;
+  rashiName: string | null;
   payments: any[];
 }
 interface GeocodeResult { name: string; latitude: number; longitude: number }
@@ -57,23 +58,12 @@ const VEDIC_RASHIS: RashiData[] = [
   { name: 'Meena', english: 'Pisces', glyph: '♓', element: 'Water', quality: 'Dual', ruler: 'Jupiter', elementEmoji: '💧', elementColor: '#cc5de8', glowColor: 'rgba(204,93,232,0.15)' },
 ];
 
-const RASHI_RANGES: [number, number, number, number, number][] = [
-  [1, 1, 1, 14, 8], [1, 15, 2, 12, 9], [2, 13, 3, 14, 10],
-  [3, 15, 4, 13, 11], [4, 14, 5, 14, 0], [5, 15, 6, 14, 1],
-  [6, 15, 7, 16, 2], [7, 17, 8, 16, 3], [8, 17, 9, 16, 4],
-  [9, 17, 10, 17, 5], [10, 18, 11, 16, 6], [11, 17, 12, 15, 7],
-  [12, 16, 12, 31, 8],
-];
-
-function getVedicRashi(dateStr: string | null): RashiData | null {
-  if (!dateStr) return null;
-  const [, ms, ds] = dateStr.split('-');
-  const month = parseInt(ms, 10), day = parseInt(ds, 10);
-  for (const [sm, sd, em, ed, idx] of RASHI_RANGES) {
-    if ((month > sm || (month === sm && day >= sd)) && (month < em || (month === em && day <= ed)))
-      return VEDIC_RASHIS[idx];
-  }
-  return VEDIC_RASHIS[8];
+function getRashiByName(name: string | null): RashiData | null {
+  if (!name) return null;
+  const lower = name.toLowerCase();
+  return VEDIC_RASHIS.find(
+    r => r.name.toLowerCase() === lower || r.english.toLowerCase() === lower
+  ) ?? null;
 }
 
 // ── Zodiac Wheel ──────────────────────────────────────────────────────────────
@@ -286,7 +276,7 @@ export default function ProfilePage() {
     );
   }
 
-  const rashi = getVedicRashi(userData?.birthDate ?? null);
+  const rashi = getRashiByName(userData?.rashiName ?? null);
   const freeUsed = Math.min(userData?.messageCount || 0, FREE_MESSAGE_LIMIT);
   const freeLeft = Math.max(0, FREE_MESSAGE_LIMIT - freeUsed);
   const paidMsgs = userData?.messageBalance || 0;

@@ -22,7 +22,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   title: {
-    default: 'Astro AI — Vedic Astrology Powered by AI',
+    default: 'Astro AI | Vedic Astrology Powered by AI',
     template: '%s | Astro AI',
   },
   description: 'Get personalised Vedic astrology readings powered by AI. Chat or speak with your birth chart — career, love, timing, and life path guidance grounded in Jyotish.',
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: BASE_URL,
     siteName: 'Astro AI',
-    title: 'Astro AI — Vedic Astrology Powered by AI',
+    title: 'Astro AI | Vedic Astrology Powered by AI',
     description: 'Get personalised Vedic astrology readings powered by AI. Chat or speak with your birth chart — career, love, timing, and life path guidance grounded in Jyotish.',
     images: [{ url: '/og.png', width: 1200, height: 630, alt: 'Astro AI — Vedic Astrology Powered by AI' }],
   },
@@ -55,7 +55,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     site: '@astroai',
     creator: '@astroai',
-    title: 'Astro AI — Vedic Astrology Powered by AI',
+    title: 'Astro AI | Vedic Astrology Powered by AI',
     description: 'Get personalised Vedic astrology readings powered by AI. Chat or speak with your birth chart.',
     images: ['/og.png'],
   },
@@ -66,9 +66,6 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: BASE_URL,
-  },
-  verification: {
-    // google: 'your-google-verification-code', // add when needed
   },
 };
 
