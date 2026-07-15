@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 const poppins = Poppins({ subsets: ['latin'], weight: ['300','400','500','600','700'], variable: '--font-sans' });
 
-const BASE_URL = 'https://astro.daranchoudhary.dev';
+const BASE_URL = 'https://astro.karanchoudhary.dev';
 
 export const viewport: Viewport = {
   themeColor: [

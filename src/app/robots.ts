@@ -9,7 +9,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/chat', '/voice', '/profile', '/chart', '/sign-in', '/sign-up', '/api/'],
       },
     ],
-    sitemap: 'https://astro.daranchoudhary.dev/sitemap.xml',
-    host: 'https://astro.daranchoudhary.dev',
+    sitemap: 'https://astro.karanchoudhary.dev/sitemap.xml',
+    host: 'https://astro.karanchoudhary.dev',
   };
 }
