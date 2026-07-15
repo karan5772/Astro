@@ -14,14 +14,14 @@ export default function Footer() {
           {/* Brand Block */}
           <div className="col-span-2 lg:col-span-1 flex flex-col gap-4">
             <div className="flex items-center gap-2 text-xl font-bold text-foreground">
-              <img src="/logo.png" alt="Astraeus Logo" className="w-6 h-6 object-contain" />
-              <span>Astraeus</span>
+              <img src="/logo.png" alt="Astro AI Logo" className="w-6 h-6 object-contain" />
+              <span>Astro AI</span>
             </div>
             <p className="text-sm text-foreground/50 leading-relaxed max-w-[280px]">
               Celestial Modernism for the seeking soul. Connect with the cosmos.
             </p>
             <div className="text-xs text-foreground/30 mt-2">
-              © 2026 Astraeus Celestial Insights.
+              © 2026 Astro AI.
             </div>
           </div>
 
