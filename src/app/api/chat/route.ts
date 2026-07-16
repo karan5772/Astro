@@ -1,11 +1,12 @@
 import { createOpenAI } from '@ai-sdk/openai';
+import { openai } from '@ai-sdk/openai';
 import { streamText } from 'ai';
 import { auth } from '@clerk/nextjs/server';
 import { NextRequest } from 'next/server';
 
 const groq = createOpenAI({
-  baseURL: 'https://api.groq.com/openai/v1',
-  apiKey: process.env.GROQ_API_KEY,
+  // baseURL: 'https://api.groq.com/openai/v1',
+  // apiKey: process.env.GROQ_API_KEY,
 });
 
 // Allow streaming responses up to 30 seconds
@@ -129,18 +130,18 @@ export async function POST(req: NextRequest) {
 ## When to ask questions
 Your VERY FIRST reply MUST contain questions — no exceptions. Begin every new conversation by asking 2–3 questions before giving any reading or insight. This is mandatory: do not skip straight to a reading on the first message under any circumstance.
 
-After the first exchange, ask questions frequently. The only exceptions are when the user has just answered a set of your 3-4 questions (then give them a reading first), or when the answer is already fully clear from context. Treat gathering personal context as your primary goal — the more you know, the more accurate your reading. You may ask 1 to 3 questions per reply.
+After the first exchange, ask questions whenever it's needed . The only exceptions are when the user has just answered a set of your 3-4 questions (then give them a reading first), or when the answer is already fully clear from context. Treat gathering personal context as your primary goal — the more you know, the more accurate your reading. You may ask 1,2 or 3 questions per reply.
 
 ## What to ask
-Ask about the user's LIFE SITUATION and FEELINGS — not technical astrology. The user is here for guidance, not to study charts. They will not know what "dasha", "transit", or "house lord" means. Ask human, relatable questions about:
-- Their current emotional state or mood
+Ask about the user's LIFE SITUATION — not technical astrology. The user is here for guidance, not to study charts. They will not know what "dasha", "transit", or "house lord" means. Ask human, relatable questions about:
+- Their current state or mood
 - What has recently changed in their life
 - How long a problem has been weighing on them
 - Their relationships, family dynamics, career feelings
-- Whether they feel stuck, lost, confused, hopeful, afraid, excited
 - Choices they are facing right now
 - How they have been sleeping, their energy levels
 - What outcome they are secretly hoping for
+Make sure you sound like an Astrologer by asking right kind of questions.
 
 ## How to ask (MACHINE-PARSED FORMAT — follow exactly)
 Each question MUST use this exact structure — a valid JSON object wrapped in <q> </q> tags:
@@ -160,16 +161,15 @@ Critical rules:
 ✗ WRONG (embedded mid-text): "Tell me — <q>{"question":"...","options":[...]}</q> — about yourself"
 ✓ CORRECT: at end of message, after full reading text
 
-## Good behavioral question examples:
-<q>{"question":"How long has this been weighing on you?","options":["Just a few days","A few weeks","Several months","Over a year"]}</q>
-<q>{"question":"How do you feel about this situation right now?","options":["Confused and lost","Hopeful but anxious","Stuck and frustrated","Strangely at peace"]}</q>
-<q>{"question":"Have you recently gone through a big life change?","options":["Yes, a major one","A few smaller ones","Not really","I'm expecting one soon"]}</q>
-<q>{"question":"What are you truly hoping will happen?","options":["A clear sign or answer","Things to stay the same","A fresh new beginning","More time to decide"]}</q>
+## Good question examples:
+<q>{"question":"Question- 1 ?","options":["Option 1","Option 2","Option 3","Opption 4"]}</q>
+<q>{"question":"Question- 2 ?","options":["Option 1","Option 2","Option 3","Opption 4"]}</q>
 
 ## Timing — always be specific
 Today's date is ${new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}. You know the user's Mahadasha and Bhukti periods from their chart. Use these to anchor every prediction to a real timeframe. Never say "soon" or "in the near future" — always give a specific year or range.
 
 Rules:
+- Produce simple and tableless markdown as output.
 - Near-term events: name the month and year (e.g. "by October 2026")
 - Medium-term: a year range (e.g. "between 2027 and 2028")
 - Long-term: a specific year (e.g. "around 2030")
@@ -221,7 +221,7 @@ Rules:
 
     // 3. Generate response with OpenAI
     const result = streamText({
-      model: groq.chat('llama-3.3-70b-versatile'),
+      model: openai.chat('gpt-4.1-nano'),
       system: systemPrompt,
       messages,
     });

@@ -34,6 +34,7 @@ const UserSchema = new mongoose.Schema({
     bhuktiDescription: { type: String },
   },
   rashiName: { type: String },
+  limitReadingClaimedAt: { type: Date },
 }, { timestamps: true });
 
 export default mongoose.models.User || mongoose.model('User', UserSchema);

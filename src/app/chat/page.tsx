@@ -274,6 +274,7 @@ export default function ChatPage() {
   const [checkingDetails, setCheckingDetails] = useState(true);
   const [showOnboardingForm, setShowOnboardingForm] = useState(false);
   const [showTrialModal, setShowTrialModal] = useState(false);
+  const [showInlineUpgrade, setShowInlineUpgrade] = useState(false);
   const [dbUser, setDbUser] = useState<any>(null);
 
 
@@ -290,6 +291,9 @@ export default function ChatPage() {
           if (!data.hasBirthDetails) {
             setShowOnboardingForm(true);
           }
+          // Lock input immediately if user has no credits left
+          const exhausted = (data.messageCount ?? 0) >= FREE_MESSAGE_LIMIT && (data.messageBalance ?? 0) <= 0;
+          if (exhausted) setShowInlineUpgrade(true);
         }
       } catch (err) {
         console.error('Failed to fetch user metadata:', err);
@@ -475,12 +479,61 @@ export default function ChatPage() {
     } catch (e) {
       const err = e instanceof Error ? e : new Error(String(e));
       if (err.message === 'TRIAL_LIMIT_REACHED') {
-        setShowTrialModal(true);
+        // Pass newMessages so the last user turn is saved alongside the reading
+        await streamLimitReading(convId, newMessages);
       } else {
         setError(err.message);
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const streamLimitReading = async (convId: string | null, priorMessages: Message[]) => {
+    try {
+      const res = await fetch('/api/chat/reading', { method: 'POST' });
+      if (!res.ok || !res.body) {
+        // NOT_ELIGIBLE: credits still available, or reading already claimed
+        setShowInlineUpgrade(true);
+        return;
+      }
+
+      const readingId = `ai-limit-reading-${Date.now()}`;
+      setMessages(prev => [...prev, { id: readingId, role: 'assistant', content: '' }]);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let fullContent = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        fullContent += chunk;
+        setMessages(prev =>
+          prev.map(m => m.id === readingId ? { ...m, content: m.content + chunk } : m)
+        );
+      }
+
+      // Save: priorMessages (includes the triggering user turn) + reading
+      if (convId && fullContent) {
+        const toSave: StoredMessage[] = [
+          ...priorMessages.map(({ role, content }) => ({ role, content } as StoredMessage)),
+          { role: 'assistant' as const, content: fullContent },
+        ];
+        getChatStorage(userId || 'anon').saveMessages(convId, toSave).then(() => {
+          setConversations(prev =>
+            prev
+              .map(c => c.id === convId ? { ...c, updatedAt: new Date().toISOString() } : c)
+              .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+          );
+          window.dispatchEvent(new CustomEvent('chat:list-changed', { detail: { activeId: convId } }));
+        });
+      }
+    } catch {
+      // swallow — inline upgrade still shows
+    } finally {
+      setShowInlineUpgrade(true);
     }
   };
 
@@ -491,6 +544,10 @@ export default function ChatPage() {
     setLocalInput('');
     submitMessage(text);
   };
+
+  const isExhausted = !!dbUser &&
+    (dbUser.messageCount ?? 0) >= FREE_MESSAGE_LIMIT &&
+    (dbUser.messageBalance ?? 0) <= 0;
 
   const showTypingIndicator = isLoading && (
     messages.length === 0 ||
@@ -535,9 +592,9 @@ export default function ChatPage() {
                 <path d="M16 4L19.09 12.26L28 13.27L21.5 19.64L23.18 28L16 24L8.82 28L10.5 19.64L4 13.27L12.91 12.26L16 4Z" fill="currentColor" className="text-primary" />
               </svg>
             </div>
-            <h2 className="text-lg font-semibold text-foreground tracking-tight">You've used all {FREE_MESSAGE_LIMIT} free messages</h2>
+            <h2 className="text-lg font-semibold text-foreground tracking-tight">Your free reading is complete</h2>
             <p className="text-sm text-foreground/55 leading-relaxed">
-              Top up to continue your cosmic journey — more messages, voice sessions, and deeper astrological insights.
+              You've used all {FREE_MESSAGE_LIMIT} free messages. Upgrade to continue the conversation — more messages, voice sessions, and deeper astrological insights await.
             </p>
             <button
               onClick={() => router.push('/pricing')}
@@ -662,6 +719,51 @@ export default function ChatPage() {
               </div>
             )}
 
+            {(showInlineUpgrade || isExhausted) && messages.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                className="self-stretch mx-auto w-full max-w-xl"
+              >
+                <div className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/[0.07] via-primary/[0.04] to-transparent p-6 flex flex-col gap-4">
+                  {/* Glow accent */}
+                  <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-primary/10 blur-2xl pointer-events-none" />
+
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/25 flex items-center justify-center shrink-0">
+                      <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
+                        <path d="M16 4L19.09 12.26L28 13.27L21.5 19.64L23.18 28L16 24L8.82 28L10.5 19.64L4 13.27L12.91 12.26L16 4Z" fill="currentColor" className="text-primary" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">Your cosmic reading is complete</p>
+                      <p className="text-xs text-foreground/45 mt-0.5">You've used all {FREE_MESSAGE_LIMIT} free messages</p>
+                    </div>
+                  </div>
+
+                  <p className="text-sm text-foreground/60 leading-relaxed">
+                    Continue the conversation — ask follow-up questions, explore different life areas, or start a voice session with your Vedic astrologer.
+                  </p>
+
+                  <div className="flex flex-col sm:flex-row gap-2.5">
+                    <button
+                      onClick={() => router.push('/pricing')}
+                      className="flex-1 py-2.5 rounded-xl bg-primary text-foreground text-xs font-semibold hover:bg-primary/90 transition-colors"
+                    >
+                      Upgrade to continue
+                    </button>
+                    <button
+                      onClick={() => setShowTrialModal(true)}
+                      className="flex-1 py-2.5 rounded-xl bg-foreground/5 border border-border text-foreground/60 text-xs font-medium hover:bg-foreground/10 transition-colors"
+                    >
+                      View plans
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
             <div ref={messagesEndRef} />
           </div>
         </div>
@@ -669,7 +771,26 @@ export default function ChatPage() {
         {/* Composer / Question area */}
         <div className="p-4 bg-transparent shrink-0 w-full flex justify-center z-10">
           <AnimatePresence mode="wait">
-            {isInQuestionMode ? (
+            {isExhausted ? (
+              <motion.div
+                key="upgrade-input"
+                className="w-full max-w-2xl"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25 }}
+              >
+                <button
+                  onClick={() => router.push('/pricing')}
+                  className="w-full py-3.5 rounded-[28px] border border-primary/30 bg-primary/5 text-sm text-foreground/50 hover:text-foreground/70 hover:bg-primary/10 hover:border-primary/50 transition-all flex items-center justify-center gap-2"
+                >
+                  <svg width="14" height="14" viewBox="0 0 32 32" fill="none">
+                    <path d="M16 4L19.09 12.26L28 13.27L21.5 19.64L23.18 28L16 24L8.82 28L10.5 19.64L4 13.27L12.91 12.26L16 4Z" fill="currentColor" className="text-primary/60" />
+                  </svg>
+                  Upgrade to continue the conversation
+                </button>
+              </motion.div>
+            ) : isInQuestionMode ? (
               <motion.div
                 key="question-mode"
                 className="w-full max-w-2xl"
