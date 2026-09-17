@@ -4,11 +4,17 @@ import connectToDatabase from '@/lib/mongodb';
 import User from '@/lib/models/User';
 import Payment from '@/lib/models/Payment';
 import { logEvent } from '@/lib/log-event';
-import { fetchDasaForUser } from '@/lib/fetch-dasha';
-import { fetchRashiForUser } from '@/lib/fetch-rashi';
+import { backfillMoonLongitude } from '@/lib/backfill-moon';
+import { fetchMoonLongitude } from '@/lib/fetch-moon';
+import { rashiOf, dashaSummaryFor } from '@/lib/vimshottari';
+import { birthInstantUtc } from '@/lib/validate-birth';
 import { parseBirthDetails, toVedAstroStdTime } from '@/lib/validate-birth';
 import { rateLimit, tooManyRequests } from '@/lib/rate-limit';
 import { settleVoiceSession, derivePro } from '@/lib/voice-session';
+import { calcPost, RateLimitedError } from '@/lib/vedastro';
+
+// Room for the upstream calculation queue to drain before responding.
+export const maxDuration = 30;
 
 type VedAstroPrediction = { Name?: string; Description?: string; Tags?: string[] };
 
@@ -54,17 +60,13 @@ export async function GET() {
       dbUser.isPro = shouldBePro;
     }
 
-    // Backfill Dasha + Rashi for existing users who don't have them yet
-    if (dbUser.birthDate && (!dbUser.currentDasha?.mahadasha || !dbUser.rashiName)) {
-      const [dasha, rashi] = await Promise.all([
-        !dbUser.currentDasha?.mahadasha ? fetchDasaForUser(dbUser) : Promise.resolve(null),
-        !dbUser.rashiName ? fetchRashiForUser(dbUser) : Promise.resolve(null),
-      ]);
-      const updates: Record<string, unknown> = {};
-      if (dasha) { updates.currentDasha = dasha; dbUser.currentDasha = dasha; }
-      if (rashi) { updates.rashiName = rashi; dbUser.rashiName = rashi; }
-      if (Object.keys(updates).length > 0) {
-        User.updateOne({ clerkId: userId }, { $set: updates }).catch(() => {});
+    // Backfill the Moon longitude for accounts onboarded before it was stored.
+    // Rate-limited by the same cooldown, since the upstream ceiling is shared.
+    if (dbUser.birthDate && typeof dbUser.moonSiderealLongitude !== 'number') {
+      const moon = await backfillMoonLongitude(userId, dbUser);
+      if (moon !== null) {
+        dbUser.moonSiderealLongitude = moon;
+        dbUser.rashiName = rashiOf(moon);
       }
     }
 
@@ -85,7 +87,7 @@ export async function GET() {
       birthLongitude: dbUser.birthLongitude ?? null,
       hasBirthDetails: !!dbUser.birthDate,
       predictionsCount: (dbUser.predictions || []).length,
-      currentDasha: dbUser.currentDasha || null,
+      currentDasha: dashaSummaryFor(dbUser, birthInstantUtc(dbUser)),
       rashiName: dbUser.rashiName || null,
       payments: payments || [],
     });
@@ -122,33 +124,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Account not initialised' }, { status: 404 });
     }
 
-    const response = await fetch('https://api.vedastro.org/api/Calculate/HoroscopePredictions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        BirthTime: {
-          StdTime: toVedAstroStdTime(details),
-          Location: {
-            Name: details.birthLocation,
-            Latitude: details.birthLatitude,
-            Longitude: details.birthLongitude,
-          },
+    const payload = await calcPost('HoroscopePredictions', {
+      BirthTime: {
+        StdTime: toVedAstroStdTime(details),
+        Location: {
+          Name: details.birthLocation,
+          Latitude: details.birthLatitude,
+          Longitude: details.birthLongitude,
         },
-        FilterTags: [],
-        SortByWeight: false,
-      }),
+      },
+      FilterTags: [],
+      SortByWeight: false,
     });
 
-    if (!response.ok) {
-      console.error('[user:POST] VedAstro predictions error', response.status);
-      return NextResponse.json(
-        { error: 'Could not calculate your chart right now. Please try again.' },
-        { status: 502 }
-      );
-    }
-
-    const resJson = await response.json();
-    const rawPredictions: VedAstroPrediction[] = Array.isArray(resJson?.Payload) ? resJson.Payload : [];
+    const rawPredictions: VedAstroPrediction[] = Array.isArray(payload) ? payload : [];
 
     const mappedPredictions = rawPredictions.map(item => ({
       name: item.Name || '',
@@ -156,11 +145,10 @@ export async function POST(req: NextRequest) {
       tags: Array.isArray(item.Tags) ? item.Tags : [],
     }));
 
-    // Dasha + Rashi are enrichment — proceed without them on failure.
-    const [fetchedDasha, fetchedRashi] = await Promise.all([
-      fetchDasaForUser(details).catch(() => null),
-      fetchRashiForUser(details).catch(() => null),
-    ]);
+    // One call gives the Moon's sidereal longitude, from which the Dasha
+    // sequence and the Moon sign are both derived locally, forever.
+    const moonLongitude = await fetchMoonLongitude(details).catch(() => null);
+    const fetchedRashi = moonLongitude !== null ? rashiOf(moonLongitude) : null;
 
     const updatedUser = await User.findOneAndUpdate(
       { clerkId: userId },
@@ -168,7 +156,9 @@ export async function POST(req: NextRequest) {
         $set: {
           ...details,
           predictions: mappedPredictions,
-          ...(fetchedDasha ? { currentDasha: fetchedDasha } : {}),
+          // Start the retry cooldown even if the lookup came back empty.
+          dashaFetchedAt: new Date(),
+          ...(moonLongitude !== null ? { moonSiderealLongitude: moonLongitude } : {}),
           ...(fetchedRashi ? { rashiName: fetchedRashi } : {}),
         },
       },
@@ -195,6 +185,13 @@ export async function POST(req: NextRequest) {
       rashiName: updatedUser.rashiName || null,
     });
   } catch (error) {
+    if (error instanceof RateLimitedError) {
+      console.error('[user:POST] upstream rate limit reached — set VEDASTRO_API_KEY');
+      return NextResponse.json(
+        { error: 'Our chart service is busy right now. Please try again in a minute.' },
+        { status: 503 },
+      );
+    }
     console.error('[user:POST]', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }

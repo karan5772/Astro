@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { parseBirthDetails, toVedAstroStdTime } from '@/lib/validate-birth';
 import { rateLimit, tooManyRequests } from '@/lib/rate-limit';
+import { calcPostRaw, RateLimitedError } from '@/lib/vedastro';
+
+// Room for the upstream calculation queue to drain before responding.
+export const maxDuration = 30;
 
 export async function POST(req: NextRequest) {
   try {
@@ -29,37 +33,33 @@ export async function POST(req: NextRequest) {
     }
     const details = parsed.value;
 
-    const response = await fetch('https://api.vedastro.org/api/Calculate/SouthIndianChart', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        Time: {
-          StdTime: toVedAstroStdTime(details),
-          Location: {
-            Name: details.birthLocation,
-            Latitude: details.birthLatitude,
-            Longitude: details.birthLongitude,
-          },
+    const svgString = await calcPostRaw('SouthIndianChart', {
+      Time: {
+        StdTime: toVedAstroStdTime(details),
+        Location: {
+          Name: details.birthLocation,
+          Latitude: details.birthLatitude,
+          Longitude: details.birthLongitude,
         },
-        ChartType: 'RasiD1',
-        Ayanamsa: 'RAMAN',
-      }),
+      },
+      ChartType: 'RasiD1',
+      Ayanamsa: 'RAMAN',
     });
 
-    if (!response.ok) {
-      console.error('[chart] VedAstro error', response.status, await response.text());
-      return NextResponse.json({ error: 'Could not calculate the chart right now' }, { status: 502 });
-    }
-
-    const svgString = await response.text();
-
-    if (!svgString || !svgString.includes('<svg')) {
-      console.error('[chart] VedAstro returned a non-SVG payload');
+    if (!svgString.includes('<svg')) {
+      console.error('[chart] calculation service returned a non-SVG payload');
       return NextResponse.json({ error: 'Could not calculate the chart right now' }, { status: 502 });
     }
 
     return NextResponse.json({ svg: svgString });
   } catch (error) {
+    if (error instanceof RateLimitedError) {
+      console.error('[chart] upstream rate limit reached — set VEDASTRO_API_KEY');
+      return NextResponse.json(
+        { error: 'The chart service is busy right now. Please try again in a minute.' },
+        { status: 503 },
+      );
+    }
     console.error('[chart]', error);
     return NextResponse.json({ error: 'Failed to calculate birth chart' }, { status: 500 });
   }

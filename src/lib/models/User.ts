@@ -20,6 +20,15 @@ const UserSchema = new Schema({
   voiceSessionId: { type: String, default: null },
   voiceSessionStartedAt: { type: Date, default: null },
   voiceSessionBilledSeconds: { type: Number, default: 0 },
+  // Uncharged rounds left for answering the astrologer's follow-up questions.
+  freeAnswerRounds: { type: Number, default: null },
+  // What the person has told us about themselves, gathered from those answers.
+  // Carried across conversations so the astrologer stops asking the same things.
+  knownFacts: [{
+    question: { type: String },
+    answer: { type: String },
+    at: { type: Date, default: Date.now },
+  }],
   lastActiveAt: { type: Date },
   birthDate: { type: String },
   birthTime: { type: String },
@@ -41,7 +50,13 @@ const UserSchema = new Schema({
     mahadashaDescription: { type: String },
     bhuktiDescription: { type: String },
   },
+  // The Moon's sidereal longitude at birth, in degrees. Source of truth for the
+  // Vimshottari Dasha sequence and the Moon sign, both computed locally.
+  moonSiderealLongitude: { type: Number, default: null },
   rashiName: { type: String },
+  // When we last *attempted* a Dasha lookup. Without this, a user whose lookup
+  // keeps failing triggers a fresh upstream call on every single request.
+  dashaFetchedAt: { type: Date, default: null },
   limitReadingClaimedAt: { type: Date },
 }, { timestamps: true });
 

@@ -2,13 +2,13 @@ export const FREE_PLAN = {
   id: 'free',
   name: 'Free',
   price: 0,
-  messagesGranted: 5,
+  messagesGranted: 3,
   voiceMinutes: 0,
   badge: null,
   featured: false,
   description: 'Try Astraeus with no card required.',
   features: [
-    '5 text messages',
+    '3 text messages',
     'No voice',
     'Full Vedic chart context',
     'No card required',
@@ -69,3 +69,12 @@ export const PLANS = [
 export type PlanId = typeof PLANS[number]['id'];
 
 export const FREE_MESSAGE_LIMIT = FREE_PLAN.messagesGranted;
+
+/**
+ * Answering the astrologer's own follow-up questions does not spend a message.
+ * The user typed nothing new, and charging for it meant the trial was mostly
+ * questionnaire. These are the uncharged rounds an account gets: a starting
+ * allowance, plus more with every purchase.
+ */
+export const FREE_ANSWER_ROUNDS_ON_SIGNUP = 5;
+export const FREE_ANSWER_ROUNDS_PER_PURCHASE = 3;

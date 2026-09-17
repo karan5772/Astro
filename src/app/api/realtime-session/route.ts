@@ -3,7 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import connectToDatabase from '@/lib/mongodb';
 import User from '@/lib/models/User';
 import { logEvent } from '@/lib/log-event';
-import { fetchDasaForUser } from '@/lib/fetch-dasha';
+import { backfillMoonLongitude } from '@/lib/backfill-moon';
 import { buildBirthContext, currentMonthYear } from '@/lib/astro-context';
 import { openVoiceSession } from '@/lib/voice-session';
 import { rateLimit, tooManyRequests } from '@/lib/rate-limit';
@@ -61,16 +61,13 @@ export async function POST() {
 - Do not use negative fear-mongering language. If a challenging planetary influence exists, acknowledge it honestly and then explain how to navigate it with strength.
 - Do not refuse questions related to astrology, life, relationships, health, or personal growth.
 
-## Timing — always be specific
-Today's date is ${currentMonthYear()}. Use the user's Dasha periods to give year-specific predictions. Never say "soon" — always name a year or a range. Examples: "This will happen around 2027", "Expect a shift by mid-2026", "The next two years, 2026 to 2027, will be transformative."`;
+## Timing — use the real dates you are given
+Today's date is ${currentMonthYear()}. Below you are given this person's Dasha periods with their actual start and end dates, calculated from their chart. Quote those dates — they are true. Never invent one that was not given to you, and never interpolate between two periods. Anchor what you say to when a period turns over. If the chart is flagged as sitting on a nakshatra boundary, quote no dates at all and speak only in periods and phases.`;
 
-    // Backfill Dasha for users onboarded before it was captured.
-    if (dbUser.birthDate && !dbUser.currentDasha?.mahadasha) {
-      const dasha = await fetchDasaForUser(dbUser);
-      if (dasha) {
-        User.updateOne({ clerkId: userId }, { $set: { currentDasha: dasha } }).catch(() => {});
-        dbUser.currentDasha = dasha;
-      }
+    // Backfill the Moon longitude for accounts predating it (rate-limited).
+    if (dbUser.birthDate && typeof dbUser.moonSiderealLongitude !== 'number') {
+      const moon = await backfillMoonLongitude(userId, dbUser);
+      if (moon !== null) dbUser.moonSiderealLongitude = moon;
     }
 
     instructions += buildBirthContext(dbUser, { includeRashi: true });

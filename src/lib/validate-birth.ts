@@ -75,3 +75,20 @@ export function toVedAstroStdTime(d: Pick<BirthDetails, 'birthDate' | 'birthTime
   const [year, month, day] = d.birthDate.split('-');
   return `${d.birthTime} ${day}/${month}/${year} ${d.birthTimezone}`;
 }
+
+/**
+ * The exact UTC instant of birth, which every Dasha date is measured from.
+ * Returns null if the stored fields are incomplete or malformed.
+ */
+export function birthInstantUtc(d: {
+  birthDate?: string | null;
+  birthTime?: string | null;
+  birthTimezone?: string | null;
+}): Date | null {
+  if (!d.birthDate || !d.birthTime || !d.birthTimezone) return null;
+  if (!DATE_RE.test(d.birthDate) || !TIME_RE.test(d.birthTime) || !TZ_RE.test(d.birthTimezone)) {
+    return null;
+  }
+  const instant = new Date(`${d.birthDate}T${d.birthTime}:00${d.birthTimezone}`);
+  return Number.isNaN(instant.getTime()) ? null : instant;
+}

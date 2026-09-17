@@ -136,7 +136,7 @@ const jsonLd = [
         name: 'How accurate are AI astrology predictions?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Astro AI uses VedAstro, a classical Jyotish calculation engine, to compute your birth chart and Vimshottari Dasha periods from your exact birth details. The AI then interprets these real calculations — so every reading is grounded in your actual chart, not generic forecasts.',
+          text: 'Astro AI computes your birth chart and Vimshottari Dasha periods from your exact birth date, time and place using a classical Jyotish calculation engine. The AI then interprets those real calculations — so every reading is grounded in your actual chart, not a generic forecast.',
         },
       },
       {

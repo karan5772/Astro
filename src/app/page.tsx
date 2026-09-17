@@ -8,6 +8,7 @@ import { ArrowRight, Mic, BarChart3, MessageCircle } from "lucide-react";
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { FREE_MESSAGE_LIMIT } from "@/lib/plans";
 import { useTheme } from "@/components/ThemeProvider";
 
 const FEATURES = [
@@ -69,14 +70,13 @@ export default function HomePage() {
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         >
           <h1 className="text-[1.9rem] sm:text-[2.4rem] lg:text-[3.4rem] font-semibold leading-[1.12] tracking-tight mb-6">
-            Astrology that looks polished,{" "}
-            reads clearly,{" "}
-            and answers fast.
+            Ask the question{" "}
+            you&apos;ve been carrying.
           </h1>
 
           <p className="text-foreground/50 text-base leading-relaxed mb-10 max-w-[420px]">
-            Astro AI blends Vedic charting, transit tracking, and AI-guided
-            interpretation into one focused experience for text or voice readings.
+            Your real birth chart, read by an astrologer who already knows it.
+            Career, love, timing — in writing or out loud.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 mb-10">
@@ -84,13 +84,13 @@ export default function HomePage() {
               href={userId ? "/chat" : "/sign-up"}
               className="inline-flex items-center justify-center w-full sm:w-auto gap-2 px-7 py-3.5 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold text-[13px] tracking-widest uppercase transition-all shadow-[0_0_28px_rgba(124,111,253,0.35)] hover:shadow-[0_0_40px_rgba(124,111,253,0.5)]"
             >
-              Open chat terminal
+              Start your reading
             </Link>
             <Link
               href={userId ? "/voice" : "/sign-up"}
               className="inline-flex items-center justify-center w-full sm:w-auto gap-2 px-7 py-3.5 border border-border hover:border-primary/40 bg-foreground/[0.03] text-foreground/65 hover:text-foreground rounded-xl font-bold text-[13px] tracking-widest uppercase transition-all"
             >
-              <Mic size={14} /> Try voice reading
+              <Mic size={14} /> Speak to it instead
             </Link>
           </div>
 
@@ -244,10 +244,10 @@ export default function HomePage() {
           >
             <p className="text-[10px] uppercase tracking-[0.18em] text-foreground/40 font-bold mb-5">✦ Get started</p>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight mb-4 max-w-lg mx-auto">
-              Ask the question you&apos;ve been carrying.
+              Your chart is already written. Come and read it.
             </h2>
             <p className="text-foreground/45 text-base mb-10 max-w-md mx-auto">
-              5 free messages. No credit card. No commitment. Just your chart and the question you actually want answered.
+              {FREE_MESSAGE_LIMIT} free messages. No credit card. No commitment. Just your chart and the question you actually want answered.
             </p>
             <Link
               href={userId ? "/chat" : "/sign-up"}

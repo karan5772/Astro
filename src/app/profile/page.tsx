@@ -20,7 +20,21 @@ import { FREE_MESSAGE_LIMIT } from '@/lib/plans';
 interface CurrentDasha {
   mahadasha: string; bhukti: string; antaram: string;
   mahadashaNature: string; bhuktiNature: string;
-  mahadashaDescription: string; bhuktiDescription: string;
+  mahadashaTheme: string; bhuktiTheme: string;
+  mahadashaStarts: string; mahadashaEnds: string;
+  bhuktiStarts: string; bhuktiEnds: string;
+  nextMahadasha: string; nextMahadashaStarts: string;
+  // True when the birth Moon sits on a nakshatra boundary, making the period
+  // dates unreliable. They are hidden rather than shown with a caveat.
+  datesUncertain: boolean;
+}
+
+/** "Aug 2036" — period boundaries are only ever meaningful to the month. */
+function periodMonth(iso: string): string {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime())
+    ? ''
+    : d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric', timeZone: 'UTC' });
 }
 
 interface UserData {
@@ -505,7 +519,7 @@ export default function ProfilePage() {
               const d = userData.currentDasha!;
               const natureStyle = (n: string) => {
                 if (n === 'Good') return { color: '#4ade80', bg: 'rgba(74,222,128,0.1)', border: 'rgba(74,222,128,0.25)' };
-                if (n === 'Bad')  return { color: '#f87171', bg: 'rgba(248,113,113,0.1)', border: 'rgba(248,113,113,0.25)' };
+                if (n === 'Challenging' || n === 'Bad') return { color: '#f87171', bg: 'rgba(248,113,113,0.1)', border: 'rgba(248,113,113,0.25)' };
                 return { color: 'var(--color-muted)', bg: 'rgba(161,161,170,0.08)', border: 'rgba(161,161,170,0.2)' };
               };
               const mStyle = natureStyle(d.mahadashaNature);
@@ -534,8 +548,14 @@ export default function ProfilePage() {
                         {d.mahadashaNature}
                       </span>
                     </div>
-                    {d.mahadashaDescription && (
-                      <p className="text-[12px] text-foreground/50 leading-relaxed">{d.mahadashaDescription}</p>
+                    {!d.datesUncertain && (
+                      <p className="text-[11px] text-foreground/40 font-medium mb-1.5">
+                        {periodMonth(d.mahadashaStarts)} — {periodMonth(d.mahadashaEnds)}
+                        <span className="text-foreground/25"> · then {d.nextMahadasha} from {periodMonth(d.nextMahadashaStarts)}</span>
+                      </p>
+                    )}
+                    {d.mahadashaTheme && (
+                      <p className="text-[12px] text-foreground/50 leading-relaxed">{d.mahadashaTheme}</p>
                     )}
                   </div>
 
@@ -551,8 +571,13 @@ export default function ProfilePage() {
                         {d.bhuktiNature}
                       </span>
                     </div>
-                    {d.bhuktiDescription && (
-                      <p className="text-[12px] text-foreground/50 leading-relaxed">{d.bhuktiDescription}</p>
+                    {!d.datesUncertain && (
+                      <p className="text-[11px] text-foreground/40 font-medium mb-1.5">
+                        {periodMonth(d.bhuktiStarts)} — {periodMonth(d.bhuktiEnds)}
+                      </p>
+                    )}
+                    {d.bhuktiTheme && (
+                      <p className="text-[12px] text-foreground/50 leading-relaxed">{d.bhuktiTheme}</p>
                     )}
                   </div>
 
@@ -561,6 +586,13 @@ export default function ProfilePage() {
                     <p className="text-[9px] uppercase tracking-widest text-foreground/30 font-medium">Antaram</p>
                     <span className="text-[11px] text-foreground/55 font-medium">{d.antaram}</span>
                   </div>
+
+                  {d.datesUncertain && (
+                    <p className="text-[11px] text-foreground/30 leading-relaxed px-1">
+                      Your birth Moon sits on the edge between two nakshatras, so the exact
+                      dates of these periods can&apos;t be pinned down from your birth time alone.
+                    </p>
+                  )}
                 </div>
               );
             })()}

@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ArrowRight } from "lucide-react";
 
 interface QuestionCardProps {
   question: string;
@@ -19,6 +21,17 @@ export default function QuestionCard({
   onSelect,
   onSkip,
 }: QuestionCardProps) {
+  // The options are shortcuts, not a closed list. A consultation that only ever
+  // accepts four canned answers can't hear anything it didn't already assume.
+  const [custom, setCustom] = useState("");
+
+  const submitCustom = () => {
+    const value = custom.trim();
+    if (!value) return;
+    setCustom("");
+    onSelect(value);
+  };
+
   return (
     <AnimatePresence mode="wait">
       <motion.div
@@ -106,6 +119,32 @@ export default function QuestionCard({
                 </span>
               </motion.button>
             ))}
+          </div>
+
+          {/* Free-text answer — the point of asking at all */}
+          <div className="mt-3 flex items-center gap-2">
+            <input
+              value={custom}
+              onChange={(e) => setCustom(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+                  e.preventDefault();
+                  submitCustom();
+                }
+              }}
+              placeholder="Or say it in your own words…"
+              aria-label="Answer in your own words"
+              maxLength={500}
+              className="flex-1 bg-foreground/[0.02] border border-border rounded-xl px-4 py-3 text-sm text-foreground/85 placeholder:text-foreground/30 outline-none focus:border-primary/40 transition-colors"
+            />
+            <button
+              onClick={submitCustom}
+              disabled={!custom.trim()}
+              aria-label="Send your answer"
+              className="shrink-0 w-10 h-10 rounded-xl bg-primary/90 hover:bg-primary disabled:bg-foreground/[0.06] disabled:text-foreground/25 text-white flex items-center justify-center transition-colors cursor-pointer disabled:cursor-default"
+            >
+              <ArrowRight size={15} />
+            </button>
           </div>
         </div>
       </motion.div>

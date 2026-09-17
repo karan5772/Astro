@@ -11,14 +11,25 @@ export type PaymentRecord = {
   createdAt?: string | null;
 };
 
+/**
+ * The Dasha periods currently running, as GET /api/user returns them.
+ * Dates are ISO strings and are omitted from display when `datesUncertain`.
+ */
 export type Dasha = {
-  mahadasha?: string;
-  bhukti?: string;
-  antaram?: string;
-  mahadashaNature?: string;
-  bhuktiNature?: string;
-  mahadashaDescription?: string;
-  bhuktiDescription?: string;
+  mahadasha: string;
+  bhukti: string;
+  antaram: string;
+  mahadashaNature: string;
+  bhuktiNature: string;
+  mahadashaTheme: string;
+  bhuktiTheme: string;
+  mahadashaStarts: string;
+  mahadashaEnds: string;
+  bhuktiStarts: string;
+  bhuktiEnds: string;
+  nextMahadasha: string;
+  nextMahadashaStarts: string;
+  datesUncertain: boolean;
 };
 
 /** The response body of GET /api/user, shared by every page that reads it. */

@@ -1,3 +1,6 @@
+import { computeVimshottari } from './vimshottari';
+import { birthInstantUtc } from './validate-birth';
+
 /**
  * Builds the birth-chart context block that gets appended to every model
  * prompt (text chat, the limit reading, and the realtime voice session).
@@ -19,7 +22,10 @@ export type DashaLike = {
   bhuktiDescription?: string;
 };
 
+export type KnownFact = { question?: string; answer?: string };
+
 export type ChartUser = {
+  moonSiderealLongitude?: number | null;
   birthDate?: string | null;
   birthTime?: string | null;
   birthTimezone?: string | null;
@@ -29,6 +35,7 @@ export type ChartUser = {
   rashiName?: string | null;
   predictions?: PredictionLike[];
   currentDasha?: DashaLike | null;
+  knownFacts?: KnownFact[];
 };
 
 export function safeField(value: unknown, max = 120): string {
@@ -41,6 +48,7 @@ function safeCoord(value: unknown): string {
 
 /** Caps how much chart data we push into the context window. */
 const MAX_PREDICTIONS = 40;
+const MAX_KNOWN_FACTS = 25;
 
 export function buildBirthContext(
   user: ChartUser,
@@ -63,22 +71,66 @@ export function buildBirthContext(
     const lines = predictions
       .map(p => `- [${safeField(p.name, 80)}]: ${safeField(p.description, 400)}`)
       .join('\n');
-    context += `\n\nHere are the calculated Vedic Horoscope Predictions for this user from the VedAstro engine. Reference these predictions naturally in your conversation to show your astrological accuracy. Do NOT list them all out in one reply; use them contextually to guide the user's reading:\n${lines}`;
+    context += `\n\nCalculated Vedic horoscope indications for this person's chart. Reference them naturally and contextually — never list them out, and never name or describe the system that produced them:\n${lines}`;
   }
 
-  const d = user.currentDasha;
-  if (d?.mahadasha) {
-    context += `\n\nCurrent Vimshottari Dasha (as of today):
-- Mahadasha: ${safeField(d.mahadasha, 40)} (${safeField(d.mahadashaNature, 40)})${
-      opts.includeDashaDescriptions ? ` — ${safeField(d.mahadashaDescription, 500)}` : ''
+  const facts = (user.knownFacts ?? []).slice(-MAX_KNOWN_FACTS);
+  if (facts.length > 0) {
+    const lines = facts
+      .filter(f => f.question && f.answer)
+      .map(f => `- ${safeField(f.question, 200)} → ${safeField(f.answer, 300)}`)
+      .join('\n');
+    if (lines) {
+      context += `\n\nWhat this person has already told you in past conversations. Treat it as known — do NOT ask about any of it again, and reference it naturally so they feel remembered:\n${lines}`;
     }
-- Bhukti (sub-period): ${safeField(d.bhukti, 40)} (${safeField(d.bhuktiNature, 40)})${
-      opts.includeDashaDescriptions ? ` — ${safeField(d.bhuktiDescription, 500)}` : ''
-    }
-- Antaram: ${safeField(d.antaram, 40)}`;
   }
+
+  context += buildDashaContext(user);
 
   return context;
+}
+
+/** "August 2036" — the precision a reading should quote. */
+function monthYear(d: Date): string {
+  return d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+}
+
+/**
+ * The Dasha block, with real start and end dates computed from the stored Moon
+ * longitude. Returns an empty string when we cannot place the Moon, so the
+ * astrologer simply says nothing about timing rather than inventing it.
+ */
+function buildDashaContext(user: ChartUser): string {
+  if (typeof user.moonSiderealLongitude !== 'number') return '';
+
+  const birth = birthInstantUtc(user);
+  if (!birth) return '';
+
+  const v = computeVimshottari(user.moonSiderealLongitude, birth);
+  if (!v) return '';
+
+  const { mahadasha: maha, bhukti, antaram, nextMahadasha: next } = v;
+  const placement = `\n- Moon in ${v.nakshatra} nakshatra (pada ${v.pada}), sign ${v.moonSign}.`;
+
+  // A Moon this close to a nakshatra edge could belong to the neighbouring one
+  // under a different ayanamsa — which would change the whole sequence, not
+  // just the dates. So the dates are withheld entirely rather than shown with a
+  // warning attached: a prompt that states dates and then forbids quoting them
+  // is asking the model to resolve a contradiction, and it will sometimes
+  // resolve it the wrong way.
+  if (v.boundaryUncertain) {
+    return `\n\nThis person's Vimshottari Dasha periods. Their birth Moon sits on a nakshatra boundary, so the timing cannot be pinned down:
+- Mahadasha: ${maha.lord} (${maha.nature}). Signifies ${maha.theme}.
+- Bhukti (sub-period): ${bhukti.lord} (${bhukti.nature}). Signifies ${bhukti.theme}.
+- Antaram: ${antaram.lord}.${placement}
+- You have deliberately NOT been given dates for this chart. Do not state or estimate any month or year. Speak only in periods and phases.`;
+  }
+
+  return `\n\nThis person's Vimshottari Dasha, calculated from their chart. These dates are real — quote them:
+- Mahadasha: ${maha.lord} (${maha.nature}) — runs ${monthYear(maha.start)} to ${monthYear(maha.end)}. Signifies ${maha.theme}.
+- Bhukti (sub-period): ${bhukti.lord} (${bhukti.nature}) — runs ${monthYear(bhukti.start)} to ${monthYear(bhukti.end)}. Signifies ${bhukti.theme}.
+- Antaram: ${antaram.lord} — runs ${monthYear(antaram.start)} to ${monthYear(antaram.end)}.
+- After this Mahadasha, ${next.lord} takes over from ${monthYear(next.start)}, bringing ${next.theme}.${placement}`;
 }
 
 /** The month + year string every prompt uses to anchor its predictions. */

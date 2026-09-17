@@ -182,11 +182,15 @@ function nextReadingId() {
   return `ai-limit-reading-${readingCounter}`;
 }
 
+// The prompt asks for at most 3 questions; this is what actually guarantees it.
+const MAX_QUESTIONS_PER_REPLY = 3;
+
 function parseMessageContent(content: string): ContentPart[] {
   const parts: ContentPart[] = [];
   const regex = /<q>([\s\S]*?)<\/q>/g;
   let lastIndex = 0;
   let match;
+  let questionCount = 0;
 
   while ((match = regex.exec(content)) !== null) {
     if (match.index > lastIndex) {
@@ -194,8 +198,11 @@ function parseMessageContent(content: string): ContentPart[] {
     }
 
     const question = tryParseQuestion(match[1]);
-    if (question) {
+    if (question && questionCount < MAX_QUESTIONS_PER_REPLY) {
+      questionCount += 1;
       parts.push({ type: 'question', ...question });
+    } else if (question) {
+      // Over the cap — drop it silently rather than showing raw markup.
     } else {
       // Parsing/validation failed — emit as plain text so nothing is hidden
       parts.push({ type: 'text', content: match[0] });
@@ -353,14 +360,23 @@ export default function ChatPage() {
     if (questionIndex < questionQueue.length - 1) {
       setQuestionAnswers(updated);
       setQuestionIndex(questionIndex + 1);
-    } else {
-      setIsInQuestionMode(false);
-      setQuestionQueue([]);
-      setQuestionIndex(0);
-      setQuestionAnswers([]);
-      const combined = formatAnswers(updated);
-      if (combined) submitMessage(combined);
+      return;
     }
+
+    setIsInQuestionMode(false);
+    setQuestionQueue([]);
+    setQuestionIndex(0);
+    setQuestionAnswers([]);
+
+    const answered = updated.filter((a): a is { question: string; answer: string } => a.answer !== null);
+    const combined = formatAnswers(updated);
+
+    // Skipping every question used to leave the conversation dead: the reply
+    // never came and the transcript just ended on unanswered questions.
+    submitMessage(
+      combined || "I'd rather skip those — please carry on with the reading.",
+      { kind: 'answers', answers: answered },
+    );
   };
 
   const scrollToBottom = () => {
@@ -371,7 +387,10 @@ export default function ChatPage() {
     scrollToBottom();
   }, [messages]);
 
-  const submitMessage = async (messageText: string) => {
+  const submitMessage = async (
+    messageText: string,
+    opts?: { kind: 'answers'; answers: { question: string; answer: string }[] },
+  ) => {
     if (!messageText || !messageText.trim() || isLoading) return;
 
     setIsLoading(true);
@@ -395,7 +414,11 @@ export default function ChatPage() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: newMessages })
+        body: JSON.stringify({
+          messages: newMessages,
+          // Answering the astrologer's own questions doesn't spend a message.
+          ...(opts?.kind === 'answers' ? { kind: 'answers', answers: opts.answers } : {}),
+        })
       });
 
       if (!res.ok) {

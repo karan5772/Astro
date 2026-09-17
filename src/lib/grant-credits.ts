@@ -2,7 +2,7 @@ import connectToDatabase from './mongodb';
 import User from './models/User';
 import Payment from './models/Payment';
 import { logEvent } from './log-event';
-import { PLANS } from './plans';
+import { PLANS, FREE_ANSWER_ROUNDS_PER_PURCHASE } from './plans';
 import type { TrustedOrder } from './razorpay';
 
 export type GrantResult =
@@ -58,6 +58,9 @@ export async function grantCreditsForPayment(params: {
       $inc: {
         messageBalance: planDef.messagesGranted,
         voiceBalanceInSeconds: planDef.voiceMinutes * 60,
+        // Top up the uncharged follow-up rounds too, so a paying customer is
+        // never billed for answering the astrologer's own questions.
+        freeAnswerRounds: FREE_ANSWER_ROUNDS_PER_PURCHASE,
       },
     },
     { returnDocument: 'after' }
