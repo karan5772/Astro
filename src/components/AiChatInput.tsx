@@ -3,7 +3,9 @@
 import * as React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
-function cn(...inputs: any[]) {
+type ClassValue = string | false | null | undefined;
+
+function cn(...inputs: ClassValue[]) {
   return inputs.filter(Boolean).join(" ");
 }
 

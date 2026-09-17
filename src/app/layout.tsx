@@ -5,6 +5,7 @@ import { ToastProvider } from '@/components/ToastProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { Poppins } from "next/font/google";
 import { cn } from "@/lib/utils";
+import { FREE_MESSAGE_LIMIT, PLANS } from '@/lib/plans';
 
 const poppins = Poppins({ subsets: ['latin'], weight: ['300','400','500','600','700'], variable: '--font-sans' });
 
@@ -111,14 +112,12 @@ const jsonLd = [
     offers: {
       '@type': 'Offer',
       price: '0',
-      priceCurrency: 'INR',
-      description: 'Free tier with 10 messages. Paid plans available.',
+      priceCurrency: 'USD',
+      description: `Free tier with ${FREE_MESSAGE_LIMIT} messages. Paid plans from $${PLANS[0].price}.`,
     },
-    aggregateRating: {
-      '@type': 'AggregateRating',
-      ratingValue: '4.8',
-      ratingCount: '120',
-    },
+    // No aggregateRating here until there are real, collected reviews to back
+    // it: inventing one violates Google's structured data policy and is a
+    // false claim to anyone reading the search result.
   },
   {
     '@context': 'https://schema.org',
@@ -206,7 +205,23 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
-      <html lang="en" className={cn("dark font-sans", poppins.variable)}>
+      <html
+        lang="en"
+        className={cn("dark font-sans", poppins.variable)}
+        suppressHydrationWarning
+      >
+        <head>
+          {/*
+            Applies the saved theme before first paint. Without this the page
+            renders dark, hydrates, and only then switches — a visible flash for
+            every light-mode visitor on every navigation.
+          */}
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `try{if(localStorage.getItem('astro-theme')==='light'){document.documentElement.classList.remove('dark')}}catch(e){}`,
+            }}
+          />
+        </head>
         <body>
           <script
             type="application/ld+json"

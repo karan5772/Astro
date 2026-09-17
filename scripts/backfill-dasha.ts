@@ -9,6 +9,15 @@
 import mongoose from 'mongoose';
 import * as dotenv from 'dotenv';
 
+type BackfillUser = {
+  _id: unknown;
+  clerkId?: string;
+  birthDate?: string;
+  birthTime?: string;
+  birthTimezone?: string;
+  birthLocation?: string;
+};
+
 dotenv.config({ path: '.env.local' });
 
 const MONGODB_URI = process.env.MONGODB_URI!;
@@ -72,12 +81,13 @@ async function run() {
 
   let success = 0, failed = 0;
 
-  for (const user of users as any[]) {
-    if (!user.birthDate || !user.birthTime || !user.birthTimezone || !user.birthLocation) {
+  for (const user of users as BackfillUser[]) {
+    const { birthDate, birthTime, birthTimezone, birthLocation } = user;
+    if (!birthDate || !birthTime || !birthTimezone || !birthLocation) {
       failed++;
       continue;
     }
-    const dasha = await fetchDasha(user);
+    const dasha = await fetchDasha({ birthDate, birthTime, birthTimezone, birthLocation });
     if (dasha) {
       await User.updateOne({ _id: user._id }, { $set: { currentDasha: dasha } });
       console.log(`✓ ${user.clerkId} → ${dasha.mahadasha}-${dasha.bhukti}`);

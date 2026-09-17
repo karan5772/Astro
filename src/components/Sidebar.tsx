@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useSidebarCollapsed } from '@/lib/use-sidebar-collapsed';
+import type { AppUser } from '@/lib/types';
 import { UserButton, useAuth } from '@clerk/nextjs';
 import {
   Home,
@@ -10,7 +12,6 @@ import {
   MessageCircle,
   Mic,
   CreditCard,
-  Sparkles,
   Menu,
   X,
   ChevronLeft,
@@ -23,6 +24,7 @@ import {
 } from 'lucide-react';
 import { getChatStorage, type ConversationMeta } from '@/lib/chat-storage';
 import { useTheme } from './ThemeProvider';
+import Image from 'next/image';
 
 const MAIN_NAV = [
   { href: '/', label: 'Home', icon: Home },
@@ -49,22 +51,19 @@ export default function Sidebar() {
   const router = useRouter();
   const { userId } = useAuth();
   const { theme, toggle } = useTheme();
-  const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [dbUser, setDbUser] = useState<any>(null);
+  const [collapsed, setCollapsed] = useSidebarCollapsed();
+  const [dbUser, setDbUser] = useState<AppUser | null>(null);
+
+  // The mobile drawer belongs to the route it was opened on, so navigating
+  // closes it by derivation instead of via an effect that fires after paint.
+  const [mobileOpenAt, setMobileOpenAt] = useState<string | null>(null);
+  const mobileOpen = mobileOpenAt === pathname;
+  const setMobileOpen = (open: boolean) => setMobileOpenAt(open ? pathname : null);
 
   // Conversation list (only used on /chat)
   const [conversations, setConversations] = useState<ConversationMeta[]>([]);
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
   const isOnChat = pathname.startsWith('/chat');
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setCollapsed(localStorage.getItem('sidebar-collapsed') === 'true');
-    }
-  }, []);
-
-  useEffect(() => { setMobileOpen(false); }, [pathname]);
 
   useEffect(() => {
     if (userId) {
@@ -100,21 +99,14 @@ export default function Sidebar() {
     return () => window.removeEventListener('chat:active-changed', handler);
   }, []);
 
-  const toggleCollapsed = () => {
-    const next = !collapsed;
-    setCollapsed(next);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('sidebar-collapsed', String(next));
-      window.dispatchEvent(new Event('sidebar-collapse-change'));
-    }
-  };
+  const toggleCollapsed = () => setCollapsed(!collapsed);
 
   const isActive = (href: string) => href === '/' ? pathname === '/' : pathname.startsWith(href);
 
   const getPlanLabel = () => {
     if (!dbUser) return 'Free Plan';
     if (dbUser.isPro) return 'Pro Member';
-    if (dbUser.payments?.length > 0) return `${dbUser.payments[0].durationInMinutes}m Pass`;
+    if (dbUser.payments?.length) return `${dbUser.payments[0].durationInMinutes}m Pass`;
     return 'Free Tier';
   };
 
@@ -156,7 +148,7 @@ export default function Sidebar() {
       {/* Mobile Top Bar */}
       <div className="flex lg:hidden items-center justify-between px-6 py-4 bg-sidebar border-b border-sidebar-border fixed top-0 left-0 right-0 z-40 h-[64px]">
         <Link href="/" className="flex items-center gap-2 text-xl font-bold text-foreground">
-          <img src="/logo.png" alt="Logo" className="w-6 h-6 object-contain" />
+          <Image src="/logo.png" alt="Logo" width={24} height={24} className="w-6 h-6 object-contain" />
           <span className="font-bold">Astro.AI</span>
         </Link>
         <div className="flex items-center gap-3">
@@ -193,7 +185,7 @@ export default function Sidebar() {
           {!collapsed && (
             <Link href="/" className="flex items-center gap-2">
               <div className="rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
-                <img src="/logo.png" alt="Astraeus Logo" className="w-7 h-7 object-contain" />
+                <Image src="/logo.png" alt="Astraeus Logo" width={28} height={28} className="w-7 h-7 object-contain" />
               </div>
               <span className="text-sm font-bold text-sidebar-foreground tracking-tight">Astro AI</span>
             </Link>

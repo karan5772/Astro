@@ -1,17 +1,19 @@
 "use client";
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import { useSidebarCollapsed } from '@/lib/use-sidebar-collapsed';
 import { User, Copy, Check, Loader2 } from 'lucide-react';
 import OnboardingFlow from '@/components/OnboardingFlow';
-import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { useUser, useAuth } from '@clerk/nextjs';
 import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from '@/components/Sidebar';
 import QuestionCard from '@/components/QuestionCard';
-import { getChatStorage, type ConversationMeta, type StoredMessage } from '@/lib/chat-storage';
+import { getChatStorage, type StoredMessage } from '@/lib/chat-storage';
 import { FREE_MESSAGE_LIMIT } from '@/lib/plans';
+import type { AppUser } from '@/lib/types';
 
 type Message = { id: string; role: 'user' | 'assistant'; content: string };
 
@@ -159,24 +161,25 @@ function tryParseQuestion(raw: string): { question: string; options: string[] } 
   }
 
   // Schema validation
-  if (
-    parsed !== null &&
-    typeof parsed === 'object' &&
-    'question' in parsed &&
-    'options' in parsed &&
-    typeof (parsed as any).question === 'string' &&
-    (parsed as any).question.trim().length > 0 &&
-    Array.isArray((parsed as any).options) &&
-    (parsed as any).options.length >= 2 &&
-    (parsed as any).options.length <= 6 &&
-    (parsed as any).options.every((o: unknown) => typeof o === 'string' && o.trim().length > 0)
-  ) {
-    return {
-      question: ((parsed as any).question as string).trim(),
-      options: ((parsed as any).options as string[]).map((o) => o.trim()),
-    };
-  }
-  return null;
+  if (parsed === null || typeof parsed !== 'object') return null;
+
+  const { question, options } = parsed as { question?: unknown; options?: unknown };
+
+  if (typeof question !== 'string' || question.trim().length === 0) return null;
+  if (!Array.isArray(options) || options.length < 2 || options.length > 6) return null;
+  if (!options.every((o): o is string => typeof o === 'string' && o.trim().length > 0)) return null;
+
+  return {
+    question: question.trim(),
+    options: options.map(o => o.trim()),
+  };
+}
+
+// Module scope so the counter is never read or advanced during render.
+let readingCounter = 0;
+function nextReadingId() {
+  readingCounter += 1;
+  return `ai-limit-reading-${readingCounter}`;
 }
 
 function parseMessageContent(content: string): ContentPart[] {
@@ -210,35 +213,12 @@ function parseMessageContent(content: string): ContentPart[] {
   return parts;
 }
 
-function relativeTime(iso: string) {
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60000);
-  const h = Math.floor(diff / 3600000);
-  const d = Math.floor(diff / 86400000);
-  if (m < 1) return 'just now';
-  if (m < 60) return `${m}m ago`;
-  if (h < 24) return `${h}h ago`;
-  if (d < 7) return `${d}d ago`;
-  return new Date(iso).toLocaleDateString();
-}
-
 
 export default function ChatPage() {
   const { user } = useUser();
   const { userId } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
-  useEffect(() => {
-    const handleSync = () => {
-      if (typeof window !== 'undefined') {
-        setSidebarCollapsed(localStorage.getItem('sidebar-collapsed') === 'true');
-      }
-    };
-    handleSync();
-    window.addEventListener('sidebar-collapse-change', handleSync);
-    return () => window.removeEventListener('sidebar-collapse-change', handleSync);
-  }, []);
+  const [sidebarCollapsed] = useSidebarCollapsed();
 
   const [localInput, setLocalInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -250,8 +230,8 @@ export default function ChatPage() {
   const [questionAnswers, setQuestionAnswers] = useState<{ question: string; answer: string | null }[]>([]);
   const [isInQuestionMode, setIsInQuestionMode] = useState(false);
 
-  // Conversation (channel) state
-  const [conversations, setConversations] = useState<ConversationMeta[]>([]);
+  // Conversation (channel) state. The list itself lives in the Sidebar, which
+  // re-reads storage on the 'chat:list-changed' event dispatched below.
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
   const activeConvIdRef = useRef<string | null>(null);
   useEffect(() => { activeConvIdRef.current = activeConvId; }, [activeConvId]);
@@ -260,7 +240,6 @@ export default function ChatPage() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const parsedCache = useRef<Map<string, { len: number; parts: ReturnType<typeof parseMessageContent> }>>(new Map());
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -275,7 +254,7 @@ export default function ChatPage() {
   const [showOnboardingForm, setShowOnboardingForm] = useState(false);
   const [showTrialModal, setShowTrialModal] = useState(false);
   const [showInlineUpgrade, setShowInlineUpgrade] = useState(false);
-  const [dbUser, setDbUser] = useState<any>(null);
+  const [dbUser, setDbUser] = useState<AppUser | null>(null);
 
 
   useEffect(() => {
@@ -332,7 +311,6 @@ export default function ChatPage() {
   useEffect(() => {
     if (!checkingDetails && !showOnboardingForm && userId) {
       getChatStorage(userId).listConversations().then(list => {
-        setConversations(list);
         const pending = localStorage.getItem('sidebar:pending-conv');
         if (pending) {
           localStorage.removeItem('sidebar:pending-conv');
@@ -406,7 +384,6 @@ export default function ChatPage() {
       const meta = await getChatStorage(userId || 'anon').createConversation(title);
       convId = meta.id;
       setActiveConvId(meta.id);
-      setConversations(prev => [meta, ...prev]);
       window.dispatchEvent(new CustomEvent('chat:list-changed', { detail: { activeId: meta.id } }));
       window.dispatchEvent(new CustomEvent('chat:active-changed', { detail: { id: meta.id } }));
     }
@@ -458,11 +435,6 @@ export default function ChatPage() {
           { role: 'assistant', content: aiContent },
         ];
         getChatStorage(userId || 'anon').saveMessages(convId, finalMessages).then(() => {
-          setConversations(prev =>
-            prev
-              .map(c => c.id === convId ? { ...c, updatedAt: new Date().toISOString() } : c)
-              .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-          );
           window.dispatchEvent(new CustomEvent('chat:list-changed', { detail: { activeId: convId } }));
         });
       }
@@ -498,7 +470,7 @@ export default function ChatPage() {
         return;
       }
 
-      const readingId = `ai-limit-reading-${Date.now()}`;
+      const readingId = nextReadingId();
       setMessages(prev => [...prev, { id: readingId, role: 'assistant', content: '' }]);
 
       const reader = res.body.getReader();
@@ -522,11 +494,6 @@ export default function ChatPage() {
           { role: 'assistant' as const, content: fullContent },
         ];
         getChatStorage(userId || 'anon').saveMessages(convId, toSave).then(() => {
-          setConversations(prev =>
-            prev
-              .map(c => c.id === convId ? { ...c, updatedAt: new Date().toISOString() } : c)
-              .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-          );
           window.dispatchEvent(new CustomEvent('chat:list-changed', { detail: { activeId: convId } }));
         });
       }
@@ -537,13 +504,13 @@ export default function ChatPage() {
     }
   };
 
-  const onFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!localInput.trim()) return;
-    const text = localInput;
-    setLocalInput('');
-    submitMessage(text);
-  };
+  // Parsing the <q> blocks is the only non-trivial work per message, so it is
+  // memoised on the message list rather than cached in a ref read during render.
+  const parsedByMessageId = useMemo(() => {
+    const map = new Map<string, ContentPart[]>();
+    for (const m of messages) map.set(m.id, parseMessageContent(m.content));
+    return map;
+  }, [messages]);
 
   const isExhausted = !!dbUser &&
     (dbUser.messageCount ?? 0) >= FREE_MESSAGE_LIMIT &&
@@ -569,9 +536,14 @@ export default function ChatPage() {
   if (showOnboardingForm) {
     return (
       <OnboardingFlow
-        onComplete={(data) => {
-          setDbUser(data);
+        onComplete={() => {
           setShowOnboardingForm(false);
+          // Re-read the full record: onboarding only echoes back the birth
+          // fields, not balances or Dasha.
+          fetch('/api/user')
+            .then(res => (res.ok ? res.json() : null))
+            .then((data: AppUser | null) => { if (data) setDbUser(data); })
+            .catch(() => {});
         }}
       />
     );
@@ -594,7 +566,7 @@ export default function ChatPage() {
             </div>
             <h2 className="text-lg font-semibold text-foreground tracking-tight">Your free reading is complete</h2>
             <p className="text-sm text-foreground/55 leading-relaxed">
-              You've used all {FREE_MESSAGE_LIMIT} free messages. Upgrade to continue the conversation — more messages, voice sessions, and deeper astrological insights await.
+              You&apos;ve used all {FREE_MESSAGE_LIMIT} free messages. Upgrade to continue the conversation — more messages, voice sessions, and deeper astrological insights await.
             </p>
             <button
               onClick={() => router.push('/pricing')}
@@ -627,7 +599,7 @@ export default function ChatPage() {
             {messages.length === 0 && (
               <div className="flex-1 flex flex-col items-center justify-center text-center p-6 gap-4 my-auto">
                 <div className="w-12 h-12 bg-primary/10 border border-primary/20 text-primary rounded-full flex items-center justify-center mb-2">
-                  <img src="logo.png" />
+                  <Image src="/logo.png" alt="" width={28} height={28} className="object-contain" />
                 </div>
                 <h2 className="text-lg font-bold text-foreground">Ask Astraeus anything.</h2>
                 <p className="text-sm text-gray-500 dark:text-foreground/50 max-w-sm">Start with your career, love life, timing, or a general reading.</p>
@@ -650,12 +622,7 @@ export default function ChatPage() {
             {messages.map((m) => {
               if (m.role === 'assistant' && m.content.length === 0) return null;
 
-              // Cache parse result by message id + content length — only re-parses when content changes
-              const cached = parsedCache.current.get(m.id);
-              if (!cached || cached.len !== m.content.length) {
-                parsedCache.current.set(m.id, { len: m.content.length, parts: parseMessageContent(m.content) });
-              }
-              const textParts = parsedCache.current.get(m.id)!.parts.filter((p) => p.type === 'text');
+              const textParts = (parsedByMessageId.get(m.id) ?? []).filter((p) => p.type === 'text');
 
               return (
                 <motion.div
@@ -671,13 +638,13 @@ export default function ChatPage() {
                         <MarkdownText text={m.content} isUser />
                       </div>
                       <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 border border-gray-200 dark:border-border overflow-hidden shadow-sm">
-                        {user?.imageUrl ? <img src={user.imageUrl} alt="You" className="w-full h-full object-cover" /> : <User size={16} className="text-gray-400" />}
+                        {user?.imageUrl ? <Image src={user.imageUrl} alt="You" width={32} height={32} className="w-full h-full object-cover" /> : <User size={16} className="text-gray-400" />}
                       </div>
                     </div>
                   ) : (
                     <>
                       <div className="w-8 h-8 rounded-full bg-card border border-gray-200 dark:border-border flex items-center justify-center shrink-0 shadow-sm">
-                        <img src="/logo.png" alt="Astro" className="object-contain" />
+                        <Image src="/logo.png" alt="Astro" width={32} height={32} className="object-contain" />
                       </div>
                       <div className="bg-card border border-border text-foreground/90 px-5 py-3.5 rounded-2xl text-sm leading-relaxed max-w-xl shadow-sm">
                         {textParts.map((part, pi) => (
@@ -700,7 +667,7 @@ export default function ChatPage() {
                 className="flex items-start gap-3.5 max-w-[85%] self-start"
               >
                 <div className="w-8 h-8 rounded bg-card border border-gray-200 dark:border-border flex items-center justify-center shrink-0 shadow-sm">
-                  <img src="/logo.png" alt="Astro" className="w-5 h-5 object-contain" />
+                  <Image src="/logo.png" alt="Astro" width={20} height={20} className="w-5 h-5 object-contain" />
                 </div>
                 <div className="p-4 bg-card border border-border text-foreground/90 rounded-2xl flex items-center gap-3 shadow-sm">
                   <div className="flex items-center gap-1">
@@ -738,7 +705,7 @@ export default function ChatPage() {
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-foreground">Your cosmic reading is complete</p>
-                      <p className="text-xs text-foreground/45 mt-0.5">You've used all {FREE_MESSAGE_LIMIT} free messages</p>
+                      <p className="text-xs text-foreground/45 mt-0.5">You&apos;ve used all {FREE_MESSAGE_LIMIT} free messages</p>
                     </div>
                   </div>
 

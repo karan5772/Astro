@@ -1,4 +1,6 @@
-import mongoose, { Schema, model, models } from 'mongoose';
+import mongoose from 'mongoose';
+
+const { Schema, model, models } = mongoose;
 
 const MessageSchema = new Schema(
   { role: { type: String, enum: ['user', 'assistant'], required: true }, content: { type: String, required: true } },

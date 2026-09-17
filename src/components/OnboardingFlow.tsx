@@ -7,6 +7,7 @@ import SpinningZodiacWheel from '@/components/SpinningZodiacWheel';
 import { DatePicker } from '@/components/ui/date-time-picker';
 import { TimePicker } from '@/components/ui/date-time-picker';
 import toast from 'react-hot-toast';
+import type { OnboardingResult } from '@/lib/types';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -24,10 +25,18 @@ const stepVariants = {
   exit:  (d: number) => ({ x: d > 0 ? -56 : 56, opacity: 0 }),
 };
 
+// The browser's current UTC offset, formatted the way the API expects (+05:30).
+function detectTimezoneOffset(): string {
+  const offset = -new Date().getTimezoneOffset();
+  const sign = offset >= 0 ? '+' : '-';
+  const abs = Math.abs(offset);
+  return `${sign}${String(Math.floor(abs / 60)).padStart(2, '0')}:${String(abs % 60).padStart(2, '0')}`;
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 interface Props {
-  onComplete: (data: any) => void;
+  onComplete: (data: OnboardingResult) => void;
 }
 
 export default function OnboardingFlow({ onComplete }: Props) {
@@ -42,24 +51,17 @@ export default function OnboardingFlow({ onComplete }: Props) {
   const [selectedLocation, setSelectedLocation] = useState('');
   const [latitude, setLatitude]               = useState<number | null>(null);
   const [longitude, setLongitude]             = useState<number | null>(null);
-  const [timezone, setTimezone]               = useState('+05:30');
+  const [timezone, setTimezone]               = useState(detectTimezoneOffset);
   const [suggestions, setSuggestions]         = useState<GeocodeResult[]>([]);
   const [searching, setSearching]             = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
-  // Auto-detect timezone
-  useEffect(() => {
-    const offset = -new Date().getTimezoneOffset();
-    const sign = offset >= 0 ? '+' : '-';
-    const abs = Math.abs(offset);
-    setTimezone(`${sign}${String(Math.floor(abs / 60)).padStart(2, '0')}:${String(abs % 60).padStart(2, '0')}`);
-  }, []);
-
   // Location search debounce
+  const shouldSearchLocation =
+    !!locationQuery && locationQuery !== selectedLocation && locationQuery.trim().length >= 2;
+
   useEffect(() => {
-    if (!locationQuery || locationQuery === selectedLocation || locationQuery.trim().length < 2) {
-      setSuggestions([]); return;
-    }
+    if (!shouldSearchLocation) return;
     const t = setTimeout(async () => {
       setSearching(true);
       try {
@@ -69,7 +71,7 @@ export default function OnboardingFlow({ onComplete }: Props) {
       finally { setSearching(false); }
     }, 380);
     return () => clearTimeout(t);
-  }, [locationQuery, selectedLocation]);
+  }, [locationQuery, shouldSearchLocation]);
 
   // Click outside
   useEffect(() => {
@@ -118,9 +120,9 @@ export default function OnboardingFlow({ onComplete }: Props) {
       const data = await res.json();
       setStatus('Your chart is ready ✨');
       setTimeout(() => onComplete(data), 900);
-    } catch (err: any) {
+    } catch (err) {
       clearInterval(iv);
-      toast.error(`Failed: ${err.message}`);
+      toast.error(`Failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
       go(2, -1);
     }
   };
@@ -219,7 +221,7 @@ export default function OnboardingFlow({ onComplete }: Props) {
                   </div>
 
                   <AnimatePresence>
-                    {suggestions.length > 0 && (
+                    {shouldSearchLocation && suggestions.length > 0 && (
                       <motion.div
                         className="absolute top-[calc(100%+6px)] left-0 right-0 bg-[#16171e] border border-white/[0.08] rounded-xl z-50 max-h-48 overflow-y-auto shadow-2xl"
                         initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}

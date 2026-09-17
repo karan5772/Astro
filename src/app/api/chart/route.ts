@@ -1,73 +1,66 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
+import { parseBirthDetails, toVedAstroStdTime } from '@/lib/validate-birth';
+import { rateLimit, tooManyRequests } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
   try {
     const { userId } = await auth();
     if (!userId) return new NextResponse('Unauthorized', { status: 401 });
 
-    const body = await req.json();
-    const {
-      date, // YYYY-MM-DD
-      time, // HH:MM
-      timezoneOffset, // e.g., "+05:30", "-08:00"
-      locationName,
-      latitude,
-      longitude,
-    } = body;
+    // Every call is a request against a free third-party service on our behalf.
+    const limit = rateLimit(`chart:${userId}`, 10, 60_000);
+    if (!limit.ok) return tooManyRequests(limit);
 
-    // Validate required fields
-    if (!date || !time || !timezoneOffset || !locationName || latitude === undefined || longitude === undefined) {
-      return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
+    const body = await req.json().catch(() => null);
+
+    // The page uses its own field names; normalise before validating.
+    const parsed = parseBirthDetails({
+      birthDate: body?.date,
+      birthTime: body?.time,
+      birthTimezone: body?.timezoneOffset,
+      birthLocation: body?.locationName,
+      birthLatitude: body?.latitude,
+      birthLongitude: body?.longitude,
+    });
+
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
+    const details = parsed.value;
 
-    // Format Date from YYYY-MM-DD to DD/MM/YYYY
-    const [year, month, day] = date.split('-');
-    const formattedDate = `${day}/${month}/${year}`;
-
-    // Format StdTime to match: "HH:MM DD/MM/YYYY +HH:MM"
-    const stdTime = `${time} ${formattedDate} ${timezoneOffset}`;
-
-    // Construct VedAstro payload
-    const payload = {
-      Time: {
-        StdTime: stdTime,
-        Location: {
-          Name: locationName,
-          Latitude: parseFloat(latitude),
-          Longitude: parseFloat(longitude),
-        },
-      },
-      ChartType: 'RasiD1',
-      Ayanamsa: 'RAMAN',
-    };
-
-    console.log('Sending payload to VedAstro:', JSON.stringify(payload, null, 2));
-
-    // Request chart from VedAstro API
     const response = await fetch('https://api.vedastro.org/api/Calculate/SouthIndianChart', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        Time: {
+          StdTime: toVedAstroStdTime(details),
+          Location: {
+            Name: details.birthLocation,
+            Latitude: details.birthLatitude,
+            Longitude: details.birthLongitude,
+          },
+        },
+        ChartType: 'RasiD1',
+        Ayanamsa: 'RAMAN',
+      }),
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`VedAstro API responded with status ${response.status}: ${errorText}`);
+      console.error('[chart] VedAstro error', response.status, await response.text());
+      return NextResponse.json({ error: 'Could not calculate the chart right now' }, { status: 502 });
     }
 
     const svgString = await response.text();
 
     if (!svgString || !svgString.includes('<svg')) {
-      // Sometimes APIs might return empty responses or invalid formats
-      throw new Error('Invalid SVG returned from chart calculator');
+      console.error('[chart] VedAstro returned a non-SVG payload');
+      return NextResponse.json({ error: 'Could not calculate the chart right now' }, { status: 502 });
     }
 
     return NextResponse.json({ svg: svgString });
-  } catch (error: any) {
-    console.error('Birth Chart API error:', error);
-    return NextResponse.json({ error: error.message || 'Failed to calculate birth chart' }, { status: 500 });
+  } catch (error) {
+    console.error('[chart]', error);
+    return NextResponse.json({ error: 'Failed to calculate birth chart' }, { status: 500 });
   }
 }

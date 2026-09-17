@@ -16,7 +16,13 @@ const isProtectedRoute = createRouteMatcher([
   '/api/admin(.*)',
 ]);
 
+// Webhooks are called by Razorpay and Clerk, not by a signed-in browser, so
+// they must never require a session. They authenticate themselves by verifying
+// the signature over the raw request body inside each handler.
+const isWebhookRoute = createRouteMatcher(['/api/webhooks(.*)']);
+
 export default clerkMiddleware(async (auth, req) => {
+  if (isWebhookRoute(req)) return;
   if (isProtectedRoute(req)) await auth.protect();
 });
 

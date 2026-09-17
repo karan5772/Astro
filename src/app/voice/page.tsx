@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useSidebarCollapsed } from '@/lib/use-sidebar-collapsed';
 import { Mic, Square, Loader2, Activity, Shield, Wifi } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
@@ -149,28 +150,14 @@ export default function VoicePage() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [checkingAccess, setCheckingAccess] = useState(true);
   const pcRef = useRef<RTCPeerConnection | null>(null);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed] = useSidebarCollapsed();
 
   const rashi = getRashiByName(rashiName);
 
+  // The counter is reset by startSession/stopSession; this effect only runs it.
   useEffect(() => {
-    const handleSync = () => {
-      if (typeof window !== 'undefined') {
-        setSidebarCollapsed(localStorage.getItem('sidebar-collapsed') === 'true');
-      }
-    };
-    handleSync();
-    window.addEventListener('sidebar-collapse-change', handleSync);
-    return () => window.removeEventListener('sidebar-collapse-change', handleSync);
-  }, []);
-
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (isSessionActive) {
-      timer = setInterval(() => setElapsedTime((prev) => prev + 1), 1000);
-    } else {
-      setElapsedTime(0);
-    }
+    if (!isSessionActive) return;
+    const timer = setInterval(() => setElapsedTime((prev) => prev + 1), 1000);
     return () => clearInterval(timer);
   }, [isSessionActive]);
 
@@ -189,6 +176,20 @@ export default function VoicePage() {
     document.body.classList.add('astraeus-active');
     return () => { document.body.classList.remove('astraeus-active'); };
   }, []);
+
+  // A closed or backgrounded tab still owes for the time it used. sendBeacon
+  // survives teardown where a normal fetch would be cancelled.
+  useEffect(() => {
+    if (!isSessionActive) return;
+    const settle = () => {
+      navigator.sendBeacon?.(
+        '/api/user/voice-heartbeat',
+        new Blob([JSON.stringify({ end: true })], { type: 'application/json' })
+      );
+    };
+    window.addEventListener('pagehide', settle);
+    return () => window.removeEventListener('pagehide', settle);
+  }, [isSessionActive]);
 
   // Access check — blocks the start button until resolved
   useEffect(() => {
@@ -246,7 +247,13 @@ export default function VoicePage() {
     if (isSessionActive) {
       t = setInterval(async () => {
         try {
-          const res = await fetch('/api/user/voice-heartbeat', { method: 'POST' });
+          // The server bills wall-clock time since it opened the session; this
+          // request only asks it to settle, it does not say how much to deduct.
+          const res = await fetch('/api/user/voice-heartbeat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({}),
+          });
           if (res.ok) {
             const data = await res.json();
             if (!data.success || data.voiceBalanceInSeconds <= 0) {
@@ -267,12 +274,19 @@ export default function VoicePage() {
   const startSession = async () => {
     try {
       setIsLoading(true);
+      setElapsedTime(0);
       setStatus("Requesting microphone access...");
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
       setStatus("Aligning cosmic frequencies...");
-      const tokenResponse = await fetch("/api/realtime-session");
-      if (!tokenResponse.ok) throw new Error("Failed to authenticate realtime session");
+      const tokenResponse = await fetch("/api/realtime-session", { method: "POST" });
+      if (!tokenResponse.ok) {
+        if (tokenResponse.status === 402) {
+          setShowUpgradeModal(true);
+          throw new Error("No voice balance remaining");
+        }
+        throw new Error("Failed to authenticate realtime session");
+      }
 
       const data = await tokenResponse.json();
       const ephemeralKey = data.client_secret.value;
@@ -329,13 +343,29 @@ export default function VoicePage() {
   };
 
   function stopSession() {
+    const wasActive = !!pcRef.current;
+
     if (pcRef.current) {
       pcRef.current.close();
       pcRef.current = null;
     }
     if (audioElRef.current) audioElRef.current.srcObject = null;
     setIsSessionActive(false);
+    setElapsedTime(0);
     setStatus("Session ended. The portal is closed.");
+
+    // Final settlement. If this never lands, the server bills the full span
+    // the next time the account is read, so nothing is lost either way.
+    if (wasActive) {
+      fetch('/api/user/voice-heartbeat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ end: true }),
+      })
+        .then(res => res.ok ? res.json() : null)
+        .then(data => { if (data) setVoiceBalanceInSeconds(data.voiceBalanceInSeconds); })
+        .catch(() => { /* settled server-side on next read */ });
+    }
   }
 
   const glowStyle = isSessionActive && rashi

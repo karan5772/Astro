@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useSidebarCollapsed } from '@/lib/use-sidebar-collapsed';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, MapPin, Globe, Search, Loader2, ArrowRight, RotateCcw, Download, Printer } from 'lucide-react';
 import SpinningZodiacWheel from '@/components/SpinningZodiacWheel';
@@ -25,6 +26,14 @@ const stepVariants = {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
+// The browser's current UTC offset, formatted the way the API expects (+05:30).
+function detectTimezoneOffset(): string {
+  const offset = -new Date().getTimezoneOffset();
+  const sign = offset >= 0 ? '+' : '-';
+  const abs = Math.abs(offset);
+  return `${sign}${String(Math.floor(abs / 60)).padStart(2, '0')}:${String(abs % 60).padStart(2, '0')}`;
+}
+
 export default function BirthChartPage() {
   // Multi-step state
   const [step, setStep] = useState<1|2|3|4>(1);
@@ -34,7 +43,7 @@ export default function BirthChartPage() {
   // Form state (prefilled from user data)
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
-  const [timezoneOffset, setTimezoneOffset] = useState('+05:30');
+  const [timezoneOffset, setTimezoneOffset] = useState(detectTimezoneOffset);
   const [locationQuery, setLocationQuery] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('');
   const [latitude, setLatitude] = useState<number | null>(null);
@@ -47,26 +56,11 @@ export default function BirthChartPage() {
   const [svgData, setSvgData] = useState<string | null>(null);
 
   // Sidebar
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
-  useEffect(() => {
-    const handleSync = () => {
-      if (typeof window !== 'undefined')
-        setSidebarCollapsed(localStorage.getItem('sidebar-collapsed') === 'true');
-    };
-    handleSync();
-    window.addEventListener('sidebar-collapse-change', handleSync);
-    return () => window.removeEventListener('sidebar-collapse-change', handleSync);
-  }, []);
+  const [sidebarCollapsed] = useSidebarCollapsed();
 
   // Timezone auto-detect + user data prefill
   useEffect(() => {
     document.body.classList.add('astraeus-active');
-
-    const offset = -new Date().getTimezoneOffset();
-    const sign = offset >= 0 ? '+' : '-';
-    const abs = Math.abs(offset);
-    setTimezoneOffset(`${sign}${String(Math.floor(abs / 60)).padStart(2, '0')}:${String(abs % 60).padStart(2, '0')}`);
 
     fetch('/api/user')
       .then(r => r.json())
@@ -87,10 +81,11 @@ export default function BirthChartPage() {
   }, []);
 
   // Location search debounce
+  const shouldSearchLocation =
+    !!locationQuery && locationQuery !== selectedLocation && locationQuery.trim().length >= 2;
+
   useEffect(() => {
-    if (!locationQuery || locationQuery === selectedLocation || locationQuery.trim().length < 2) {
-      setSuggestions([]); return;
-    }
+    if (!shouldSearchLocation) return;
     const t = setTimeout(async () => {
       setSearching(true);
       try {
@@ -100,7 +95,7 @@ export default function BirthChartPage() {
       finally { setSearching(false); }
     }, 380);
     return () => clearTimeout(t);
-  }, [locationQuery, selectedLocation]);
+  }, [locationQuery, shouldSearchLocation]);
 
   // Click outside suggestions
   useEffect(() => {
@@ -149,9 +144,9 @@ export default function BirthChartPage() {
       setSvgData(data.svg);
       setCalcStatus('Your chart is ready ✨');
       setTimeout(() => go(4), 900);
-    } catch (err: any) {
+    } catch (err) {
       clearInterval(iv);
-      toast.error(`Chart failed: ${err.message}`);
+      toast.error(`Chart failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
       go(2, -1);
     }
   };
@@ -282,7 +277,7 @@ export default function BirthChartPage() {
                       </div>
                     </div>
                     <AnimatePresence>
-                      {suggestions.length > 0 && (
+                      {shouldSearchLocation && suggestions.length > 0 && (
                         <motion.div
                           className="absolute top-[calc(100%+6px)] left-0 right-0 bg-card border border-border rounded-xl z-50 max-h-48 overflow-y-auto shadow-2xl"
                           initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}

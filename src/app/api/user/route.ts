@@ -6,6 +6,11 @@ import Payment from '@/lib/models/Payment';
 import { logEvent } from '@/lib/log-event';
 import { fetchDasaForUser } from '@/lib/fetch-dasha';
 import { fetchRashiForUser } from '@/lib/fetch-rashi';
+import { parseBirthDetails, toVedAstroStdTime } from '@/lib/validate-birth';
+import { rateLimit, tooManyRequests } from '@/lib/rate-limit';
+import { settleVoiceSession, derivePro } from '@/lib/voice-session';
+
+type VedAstroPrediction = { Name?: string; Description?: string; Tags?: string[] };
 
 export async function GET() {
   try {
@@ -17,26 +22,36 @@ export async function GET() {
     await connectToDatabase();
 
     let dbUser = await User.findOne({ clerkId: userId });
-    
+
     if (!dbUser) {
       const user = await currentUser();
       if (!user) return new NextResponse('User not found', { status: 404 });
-      
-      const email = user.emailAddresses[0]?.emailAddress || '';
-      
+
+      const email = user.emailAddresses[0]?.emailAddress;
+      if (!email) return new NextResponse('An email address is required', { status: 400 });
+
       dbUser = await User.create({
         clerkId: userId,
-        email: email,
+        email,
         firstName: user.firstName || '',
         lastName: user.lastName || '',
         isPro: false,
       });
     }
 
-    // Downgrade pro only when ALL balances are exhausted
-    if (dbUser.isPro && (dbUser.voiceBalanceInSeconds || 0) <= 0 && (dbUser.messageBalance || 0) <= 0) {
-      User.updateOne({ clerkId: userId }, { $set: { isPro: false } }).catch(console.error);
-      dbUser.isPro = false;
+    // If a voice call was left open (tab closed, network dropped), bill it now
+    // rather than letting the unreported time be free.
+    if (dbUser.voiceSessionStartedAt) {
+      await settleVoiceSession(userId);
+      dbUser = await User.findOne({ clerkId: userId });
+      if (!dbUser) return new NextResponse('User not found', { status: 404 });
+    }
+
+    // Pro means "has paid balance left", in voice or messages.
+    const shouldBePro = derivePro(dbUser);
+    if (dbUser.isPro !== shouldBePro) {
+      User.updateOne({ clerkId: userId }, { $set: { isPro: shouldBePro } }).catch(console.error);
+      dbUser.isPro = shouldBePro;
     }
 
     // Backfill Dasha + Rashi for existing users who don't have them yet
@@ -45,7 +60,7 @@ export async function GET() {
         !dbUser.currentDasha?.mahadasha ? fetchDasaForUser(dbUser) : Promise.resolve(null),
         !dbUser.rashiName ? fetchRashiForUser(dbUser) : Promise.resolve(null),
       ]);
-      const updates: Record<string, any> = {};
+      const updates: Record<string, unknown> = {};
       if (dasha) { updates.currentDasha = dasha; dbUser.currentDasha = dasha; }
       if (rashi) { updates.rashiName = rashi; dbUser.rashiName = rashi; }
       if (Object.keys(updates).length > 0) {
@@ -53,8 +68,7 @@ export async function GET() {
       }
     }
 
-    // Retrieve payments from separate Payment model
-    const payments = await Payment.find({ clerkId: userId }).sort({ date: -1 });
+    const payments = await Payment.find({ clerkId: userId }).sort({ date: -1 }).limit(50).lean();
 
     return NextResponse.json({
       clerkId: dbUser.clerkId,
@@ -67,8 +81,8 @@ export async function GET() {
       birthTime: dbUser.birthTime || null,
       birthTimezone: dbUser.birthTimezone || null,
       birthLocation: dbUser.birthLocation || null,
-      birthLatitude: dbUser.birthLatitude !== undefined ? dbUser.birthLatitude : null,
-      birthLongitude: dbUser.birthLongitude !== undefined ? dbUser.birthLongitude : null,
+      birthLatitude: dbUser.birthLatitude ?? null,
+      birthLongitude: dbUser.birthLongitude ?? null,
       hasBirthDetails: !!dbUser.birthDate,
       predictionsCount: (dbUser.predictions || []).length,
       currentDasha: dbUser.currentDasha || null,
@@ -76,7 +90,7 @@ export async function GET() {
       payments: payments || [],
     });
   } catch (error) {
-    console.error('Error fetching user:', error);
+    console.error('[user:GET]', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
@@ -88,112 +102,85 @@ export async function POST(req: NextRequest) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const body = await req.json();
-    const {
-      birthDate, // YYYY-MM-DD
-      birthTime, // HH:MM
-      birthTimezone, // e.g. "+05:30"
-      birthLocation, // e.g. "Pilani, Surajgarh, Rajasthan, India"
-      birthLatitude,
-      birthLongitude,
-    } = body;
+    // Each save fans out to three VedAstro calls, so it is throttled.
+    const limit = rateLimit(`onboard:${userId}`, 5, 60_000);
+    if (!limit.ok) return tooManyRequests(limit);
 
-    // Validate inputs
-    if (
-      !birthDate ||
-      !birthTime ||
-      !birthTimezone ||
-      !birthLocation ||
-      birthLatitude === undefined ||
-      birthLongitude === undefined
-    ) {
-      return NextResponse.json({ error: 'Missing required birth details parameters' }, { status: 400 });
+    const body = await req.json().catch(() => null);
+    const parsed = parseBirthDetails(body);
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
+    const details = parsed.value;
 
     await connectToDatabase();
 
-    // 1. Format date from YYYY-MM-DD to DD/MM/YYYY
-    const [year, month, day] = birthDate.split('-');
-    const formattedDate = `${day}/${month}/${year}`;
-    const stdTime = `${birthTime} ${formattedDate} ${birthTimezone}`;
+    // The account must already exist (GET /api/user creates it on first load).
+    // An upsert here could mint a User with no email, which the schema requires.
+    const existing = await User.findOne({ clerkId: userId }).select('_id');
+    if (!existing) {
+      return NextResponse.json({ error: 'Account not initialised' }, { status: 404 });
+    }
 
-    // 2. Query VedAstro Horoscope Predictions API
-    const predictionsUrl = 'https://api.vedastro.org/api/Calculate/HoroscopePredictions';
-    const apiPayload = {
-      BirthTime: {
-        StdTime: stdTime,
-        Location: {
-          Name: birthLocation,
-          Latitude: parseFloat(birthLatitude),
-          Longitude: parseFloat(birthLongitude),
-        },
-      },
-      FilterTags: [],
-      SortByWeight: false,
-    };
-
-    console.log('Fetching horoscope predictions from VedAstro for user:', userId);
-    
-    const response = await fetch(predictionsUrl, {
+    const response = await fetch('https://api.vedastro.org/api/Calculate/HoroscopePredictions', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(apiPayload),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        BirthTime: {
+          StdTime: toVedAstroStdTime(details),
+          Location: {
+            Name: details.birthLocation,
+            Latitude: details.birthLatitude,
+            Longitude: details.birthLongitude,
+          },
+        },
+        FilterTags: [],
+        SortByWeight: false,
+      }),
     });
 
     if (!response.ok) {
-      throw new Error(`VedAstro predictions API returned status ${response.status}`);
+      console.error('[user:POST] VedAstro predictions error', response.status);
+      return NextResponse.json(
+        { error: 'Could not calculate your chart right now. Please try again.' },
+        { status: 502 }
+      );
     }
 
     const resJson = await response.json();
-    
-    // Parse the Payload array
-    const rawPredictions = resJson.Payload || [];
-    console.log(`Fetched ${rawPredictions.length} predictions from VedAstro.`);
+    const rawPredictions: VedAstroPrediction[] = Array.isArray(resJson?.Payload) ? resJson.Payload : [];
 
-    // Map to our schema format: keep it clean and lightweight
-    const mappedPredictions = rawPredictions.map((item: any) => ({
+    const mappedPredictions = rawPredictions.map(item => ({
       name: item.Name || '',
       description: item.Description ? item.Description.trim() : '',
-      tags: item.Tags || [],
+      tags: Array.isArray(item.Tags) ? item.Tags : [],
     }));
 
-    // 3. Fetch Dasha + Rashi from VedAstro in parallel (non-critical — proceed without on failure)
-    const userBirthData = {
-      birthDate, birthTime, birthTimezone, birthLocation,
-      birthLatitude: parseFloat(birthLatitude),
-      birthLongitude: parseFloat(birthLongitude),
-    };
+    // Dasha + Rashi are enrichment — proceed without them on failure.
     const [fetchedDasha, fetchedRashi] = await Promise.all([
-      fetchDasaForUser(userBirthData).catch(() => null),
-      fetchRashiForUser(userBirthData).catch(() => null),
+      fetchDasaForUser(details).catch(() => null),
+      fetchRashiForUser(details).catch(() => null),
     ]);
 
-    if (fetchedDasha) console.log(`Dasha for ${userId}: ${fetchedDasha.mahadasha}/${fetchedDasha.bhukti}`);
-    if (fetchedRashi) console.log(`Rashi for ${userId}: ${fetchedRashi}`);
-
-    // 4. Update the user in the database
     const updatedUser = await User.findOneAndUpdate(
       { clerkId: userId },
       {
         $set: {
-          birthDate,
-          birthTime,
-          birthTimezone,
-          birthLocation,
-          birthLatitude: parseFloat(birthLatitude),
-          birthLongitude: parseFloat(birthLongitude),
+          ...details,
           predictions: mappedPredictions,
           ...(fetchedDasha ? { currentDasha: fetchedDasha } : {}),
           ...(fetchedRashi ? { rashiName: fetchedRashi } : {}),
         },
       },
-      { returnDocument: 'after', upsert: true }
+      { returnDocument: 'after' }
     );
 
+    if (!updatedUser) {
+      return NextResponse.json({ error: 'Account not initialised' }, { status: 404 });
+    }
+
     logEvent(userId, 'onboarding_completed', {
-      birthLocation,
+      birthLocation: details.birthLocation,
       predictionsCount: mappedPredictions.length,
     });
 
@@ -207,8 +194,8 @@ export async function POST(req: NextRequest) {
       hasBirthDetails: true,
       rashiName: updatedUser.rashiName || null,
     });
-  } catch (error: any) {
-    console.error('Error saving birth details and predictions:', error);
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+  } catch (error) {
+    console.error('[user:POST]', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

@@ -1,42 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import connectToDatabase from '@/lib/mongodb';
-import User from '@/lib/models/User';
+import { settleVoiceSession } from '@/lib/voice-session';
+import { logEvent } from '@/lib/log-event';
 
+/**
+ * Settles the caller's in-flight voice session against the server clock.
+ *
+ * The client used to decide how much to deduct (a flat 10s per tick), which
+ * meant a blocked request or a throttled background timer was free airtime.
+ * Now the browser only *asks* for a settlement — the amount is always
+ * `now - voiceSessionStartedAt` minus what has already been billed.
+ *
+ * Send `{ "end": true }` when the call is torn down to close the session.
+ */
 export async function POST(req: NextRequest) {
   try {
     const { userId } = await auth();
-    if (!userId) {
-      return new NextResponse('Unauthorized', { status: 401 });
+    if (!userId) return new NextResponse('Unauthorized', { status: 401 });
+
+    const body = await req.json().catch(() => null);
+    const close = body?.end === true;
+
+    const balance = await settleVoiceSession(userId, { close });
+    if (!balance) return new NextResponse('User not found', { status: 404 });
+
+    if (close) {
+      logEvent(userId, 'voice_session_ended', {
+        voiceBalanceInSeconds: balance.voiceBalanceInSeconds,
+      });
     }
-
-    await connectToDatabase();
-
-    const dbUser = await User.findOne({ clerkId: userId });
-    if (!dbUser) {
-      return new NextResponse('User not found', { status: 404 });
-    }
-
-    const decrementSeconds = 10;
-    const newBalance = Math.max(0, (dbUser.voiceBalanceInSeconds || 0) - decrementSeconds);
-
-    dbUser.voiceBalanceInSeconds = newBalance;
-    dbUser.totalVoiceSecondsConsumed = (dbUser.totalVoiceSecondsConsumed || 0) + decrementSeconds;
-    dbUser.lastActiveAt = new Date();
-
-    if (newBalance <= 0) {
-      dbUser.isPro = false;
-    }
-
-    await dbUser.save();
 
     return NextResponse.json({
-      success: newBalance > 0,
-      voiceBalanceInSeconds: newBalance,
-      isPro: dbUser.isPro,
+      success: balance.voiceBalanceInSeconds > 0,
+      voiceBalanceInSeconds: balance.voiceBalanceInSeconds,
+      isPro: balance.isPro,
     });
   } catch (error) {
-    console.error('Error in voice-heartbeat:', error);
+    console.error('[voice-heartbeat]', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }

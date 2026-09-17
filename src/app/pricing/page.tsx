@@ -8,6 +8,33 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { PLANS, FREE_PLAN, FREE_MESSAGE_LIMIT } from "@/lib/plans";
 
+// Minimal shape of the Razorpay checkout script loaded from their CDN.
+type RazorpayCheckoutResponse = {
+  razorpay_payment_id: string;
+  razorpay_order_id: string;
+  razorpay_signature: string;
+};
+
+type RazorpayOptions = {
+  key: string;
+  amount: number | string;
+  currency: string;
+  name: string;
+  description: string;
+  order_id: string;
+  handler: (response: RazorpayCheckoutResponse) => void | Promise<void>;
+  theme?: { color?: string };
+};
+
+type RazorpayConstructor = new (options: RazorpayOptions) => { open: () => void };
+
+declare global {
+  interface Window {
+    // Injected by the checkout script; absent until it has loaded.
+    Razorpay?: RazorpayConstructor;
+  }
+}
+
 export default function PricingPage() {
   const [loading, setLoading] = useState<string | null>(null);
   const [userData, setUserData] = useState<{ messageCount: number; messageBalance: number; voiceBalanceInSeconds: number } | null>(null);
@@ -20,7 +47,7 @@ export default function PricingPage() {
   }, []);
 
   const loadRazorpay = () => new Promise<boolean>(resolve => {
-    if (typeof window !== "undefined" && (window as any).Razorpay) return resolve(true);
+    if (typeof window !== "undefined" && window.Razorpay) return resolve(true);
     const s = document.createElement("script");
     s.src = "https://checkout.razorpay.com/v1/checkout.js";
     s.onload = () => resolve(true);
@@ -37,22 +64,34 @@ export default function PricingPage() {
       const ok = await loadRazorpay();
       if (!ok) { toast.error("Payment SDK failed to load."); return; }
 
+      const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+      if (!razorpayKey) {
+        console.error("NEXT_PUBLIC_RAZORPAY_KEY_ID is not set");
+        toast.error("Payments are not configured. Please try again later.");
+        return;
+      }
+
       const res = await fetch("/api/razorpay", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: plan.price, plan: plan.id }),
+        // Only the plan id travels: the price is resolved server-side.
+        body: JSON.stringify({ plan: plan.id }),
       });
       const data = await res.json();
       if (!data.orderId) throw new Error("Order creation failed");
 
-      const rzp = new (window as any).Razorpay({
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+      if (!window.Razorpay) throw new Error("Razorpay checkout is unavailable");
+
+      const rzp = new window.Razorpay({
+        key: razorpayKey,
         amount: data.amount,
         currency: data.currency || "INR",
         name: "Astro AI",
         description: `${plan.name} — ${plan.messagesGranted} messages + ${plan.voiceMinutes} min voice`,
         order_id: data.orderId,
-        handler: async (response: any) => {
+        handler: async (response: RazorpayCheckoutResponse) => {
+          // Only the signed identifiers are sent. What was bought is read back
+          // from Razorpay's copy of the order, never from this callback.
           const verifyRes = await fetch("/api/verify-payment", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -60,15 +99,15 @@ export default function PricingPage() {
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_order_id: response.razorpay_order_id,
               razorpay_signature: response.razorpay_signature,
-              amount: plan.price,
-              plan: plan.id,
             }),
           });
           if (verifyRes.ok) {
             toast.success("Payment successful — credits added.");
             window.location.href = "/chat";
           } else {
-            toast.error("Payment verification failed.");
+            // The webhook is the authoritative path, so a failure here usually
+            // means "not credited yet" rather than "payment lost".
+            toast.error("Payment received — credits are being applied. Refresh in a moment.");
           }
         },
         theme: { color: "#c8962c" },

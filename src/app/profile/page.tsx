@@ -12,6 +12,7 @@ import { DatePicker } from '@/components/ui/date-time-picker';
 import { TimePicker } from '@/components/ui/date-time-picker';
 import Navbar from '@/components/Navbar';
 import toast from 'react-hot-toast';
+import type { PaymentRecord } from '@/lib/types';
 import { FREE_MESSAGE_LIMIT } from '@/lib/plans';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -31,9 +32,18 @@ interface UserData {
   messageCount: number; messageBalance: number; voiceBalanceInSeconds: number;
   currentDasha: CurrentDasha | null;
   rashiName: string | null;
-  payments: any[];
+  payments: PaymentRecord[];
 }
 interface GeocodeResult { name: string; latitude: number; longitude: number }
+
+// Payment rows predate a consistent date field, so fall back across both.
+function formatPaymentDate(value: string | null | undefined): string {
+  if (!value) return '—';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? '—'
+    : date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+}
 
 // ── Vedic Rashi data ──────────────────────────────────────────────────────────
 
@@ -170,7 +180,6 @@ export default function ProfilePage() {
 
   const voiceMinsRemaining = Math.max(0, Math.ceil(((userData?.voiceBalanceInSeconds) || 0) / 60));
   const totalVoicePurchased = (userData?.payments ?? []).reduce((a, p) => a + (p.durationInMinutes || 0), 0);
-  const totalMsgsPurchased = (userData?.payments ?? []).reduce((a, p) => a + (p.messagesGranted || 0), 0);
 
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
@@ -185,28 +194,48 @@ export default function ProfilePage() {
   const [isEditingBirth, setIsEditingBirth] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
+  const applyUserData = (data: UserData) => {
+    setUserData(data);
+    if (data.hasBirthDetails) {
+      setDate(data.birthDate || '');
+      setTime(data.birthTime || '');
+      setTimezoneOffset(data.birthTimezone || '+05:30');
+      setLocationQuery(data.birthLocation || '');
+      setSelectedLocationName(data.birthLocation || '');
+      setLatitude(data.birthLatitude);
+      setLongitude(data.birthLongitude);
+    }
+  };
+
+  // Used for the manual refresh after birth details are edited.
   const fetchUserData = async () => {
     try {
       const res = await fetch('/api/user');
-      if (res.ok) {
-        const data = await res.json();
-        setUserData(data);
-        if (data.hasBirthDetails) {
-          setDate(data.birthDate || '');
-          setTime(data.birthTime || '');
-          setTimezoneOffset(data.birthTimezone || '+05:30');
-          setLocationQuery(data.birthLocation || '');
-          setSelectedLocationName(data.birthLocation || '');
-          setLatitude(data.birthLatitude);
-          setLongitude(data.birthLongitude);
-        }
-      }
-    } catch { toast.error('Failed to load profile.'); }
-    finally { setLoading(false); }
+      if (res.ok) applyUserData(await res.json());
+    } catch {
+      toast.error('Failed to load profile.');
+    } finally {
+      setLoading(false);
+    }
   };
 
+  // The initial load settles state from promise callbacks rather than
+  // synchronously in the effect body, so it costs one render instead of two.
   useEffect(() => {
-    fetchUserData();
+    let cancelled = false;
+    fetch('/api/user')
+      .then(res => (res.ok ? res.json() : null))
+      .then((data: UserData | null) => {
+        if (cancelled || !data) return;
+        applyUserData(data);
+      })
+      .catch(() => { if (!cancelled) toast.error('Failed to load profile.'); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Dismiss the location dropdown on an outside click.
+  useEffect(() => {
     const outside = (e: MouseEvent) => {
       if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node))
         setSuggestions([]);
@@ -215,10 +244,11 @@ export default function ProfilePage() {
     return () => window.removeEventListener('mousedown', outside);
   }, []);
 
+  const shouldSearchLocation =
+    !!locationQuery && locationQuery !== selectedLocationName && locationQuery.trim().length >= 2;
+
   useEffect(() => {
-    if (!locationQuery || locationQuery === selectedLocationName || locationQuery.trim().length < 2) {
-      setSuggestions([]); return;
-    }
+    if (!shouldSearchLocation) return;
     const t = setTimeout(async () => {
       setIsSearchingLocation(true);
       try {
@@ -228,7 +258,7 @@ export default function ProfilePage() {
       finally { setIsSearchingLocation(false); }
     }, 400);
     return () => clearTimeout(t);
-  }, [locationQuery, selectedLocationName]);
+  }, [locationQuery, shouldSearchLocation]);
 
   const handleSelectLocation = (loc: GeocodeResult) => {
     setLocationQuery(loc.name); setSelectedLocationName(loc.name);
@@ -258,13 +288,13 @@ export default function ProfilePage() {
         await fetchUserData();
         setIsEditingBirth(false);
         resolve();
-      } catch (err: any) { reject(err); }
+      } catch (err) { reject(err); }
       finally { setIsUpdating(false); }
     });
     toast.promise(p, {
       loading: 'Recalculating destiny…',
       success: 'Birth chart updated!',
-      error: (err) => `Failed: ${err.message || 'Unknown error'}`,
+      error: (err: Error) => `Failed: ${err.message || 'Unknown error'}`,
     });
   };
 
@@ -415,7 +445,7 @@ export default function ProfilePage() {
                       </div>
                     </div>
                     <AnimatePresence>
-                      {suggestions.length > 0 && (
+                      {shouldSearchLocation && suggestions.length > 0 && (
                         <motion.div
                           className="absolute top-[calc(100%+6px)] left-0 right-0 bg-card border border-border rounded-lg z-50 max-h-48 overflow-y-auto shadow-2xl"
                           initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}>
@@ -638,29 +668,29 @@ export default function ProfilePage() {
           <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
             <p className={SECTION}>Billing</p>
             <div className="border border-border rounded-xl overflow-hidden bg-card shadow-sm">
-              {userData!.payments.map((p: any, i: number) => (
+              {userData!.payments.map((p, i) => (
                 <div key={i} className="flex justify-between items-center px-5 py-4 border-b border-border last:border-0 hover:bg-foreground/[0.02] transition-colors">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <p className="text-sm text-foreground font-medium capitalize">{p.plan || 'Bundle'}</p>
                     </div>
                     <div className="flex items-center gap-3">
-                      {p.messagesGranted > 0 && (
+                      {(p.messagesGranted ?? 0) > 0 && (
                         <span className="text-[11px] text-foreground/40 flex items-center gap-1">
                           <MessageCircle size={10} /> {p.messagesGranted} msgs
                         </span>
                       )}
-                      {p.durationInMinutes > 0 && (
+                      {(p.durationInMinutes ?? 0) > 0 && (
                         <span className="text-[11px] text-foreground/40 flex items-center gap-1">
                           <Mic size={10} /> {p.durationInMinutes} min
                         </span>
                       )}
                       <span className="text-[11px] text-foreground/30">
-                        {p.date || p.createdAt ? new Date(p.date || p.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                        {formatPaymentDate(p.date ?? p.createdAt)}
                       </span>
                     </div>
                   </div>
-                  <p className="text-sm font-semibold text-foreground">${p.amount}</p>
+                  <p className="text-sm font-semibold text-foreground">${p.amount ?? 0}</p>
                 </div>
               ))}
             </div>

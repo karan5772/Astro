@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 
-const UserSchema = new mongoose.Schema({
+const { Schema, model, models } = mongoose;
+
+const UserSchema = new Schema({
   clerkId: { type: String, required: true, unique: true },
   email: { type: String, required: true },
   firstName: { type: String },
@@ -12,6 +14,12 @@ const UserSchema = new mongoose.Schema({
   voiceBalanceInSeconds: { type: Number, default: 0 },
   totalVoiceSecondsConsumed: { type: Number, default: 0 },
   voiceSessionCount: { type: Number, default: 0 },
+  // Server-side record of the voice call currently in flight. Billing is
+  // settled against `voiceSessionStartedAt` wall-clock, not client heartbeats,
+  // so a client that stops reporting still gets charged for the time it used.
+  voiceSessionId: { type: String, default: null },
+  voiceSessionStartedAt: { type: Date, default: null },
+  voiceSessionBilledSeconds: { type: Number, default: 0 },
   lastActiveAt: { type: Date },
   birthDate: { type: String },
   birthTime: { type: String },
@@ -37,4 +45,4 @@ const UserSchema = new mongoose.Schema({
   limitReadingClaimedAt: { type: Date },
 }, { timestamps: true });
 
-export default mongoose.models.User || mongoose.model('User', UserSchema);
+export default models.User || model('User', UserSchema);

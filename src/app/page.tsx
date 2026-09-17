@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
 import { motion } from "framer-motion";
-import { ArrowRight, Mic, BarChart3, MessageCircle, Shield } from "lucide-react";
+import { ArrowRight, Mic, BarChart3, MessageCircle } from "lucide-react";
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -244,7 +244,7 @@ export default function HomePage() {
           >
             <p className="text-[10px] uppercase tracking-[0.18em] text-foreground/40 font-bold mb-5">✦ Get started</p>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight mb-4 max-w-lg mx-auto">
-              Ask the question you've been carrying.
+              Ask the question you&apos;ve been carrying.
             </h2>
             <p className="text-foreground/45 text-base mb-10 max-w-md mx-auto">
               5 free messages. No credit card. No commitment. Just your chart and the question you actually want answered.

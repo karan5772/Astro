@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useAuth } from '@clerk/nextjs';
+import Image from 'next/image';
 
 export default function Footer() {
   const { userId } = useAuth();
@@ -14,7 +15,7 @@ export default function Footer() {
           {/* Brand Block */}
           <div className="col-span-2 lg:col-span-1 flex flex-col gap-4">
             <div className="flex items-center gap-2 text-xl font-bold text-foreground">
-              <img src="/logo.png" alt="Astro AI Logo" className="w-6 h-6 object-contain" />
+              <Image src="/logo.png" alt="Astro AI Logo" width={24} height={24} className="w-6 h-6 object-contain" />
               <span>Astro AI</span>
             </div>
             <p className="text-sm text-foreground/50 leading-relaxed max-w-[280px]">
@@ -59,9 +60,11 @@ export default function Footer() {
 
       {/* Faint constellation background */}
       <div className="absolute -bottom-20 -right-20 w-80 h-80 opacity-[0.04] select-none pointer-events-none">
-        <img
+        <Image
           alt=""
           src="/logo.png"
+          width={320}
+          height={320}
           className="w-full h-full object-contain"
         />
       </div>
