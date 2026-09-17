@@ -37,8 +37,14 @@ export default function SpinningZodiacWheel({ status }: { status: string }) {
             return (
               <g key={i}>
                 <path d={arc(i)} fill={COLORS[i]} opacity={0.45 + (i % 3) * 0.12} />
+                {/*
+                  U+FE0E forces the text glyph. Without it these codepoints
+                  default to emoji presentation on Apple platforms, and the
+                  wheel renders as coloured blobs instead of the astrological
+                  symbols.
+                */}
                 <text x={gx} y={gy} textAnchor="middle" dominantBaseline="middle"
-                  fontSize="11" fill="rgba(255,255,255,0.55)">{g}</text>
+                  fontSize="11" fill="rgba(255,255,255,0.55)">{`${g}\uFE0E`}</text>
               </g>
             );
           })}
