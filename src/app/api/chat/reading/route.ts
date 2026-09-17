@@ -65,10 +65,7 @@ Hard rules:
 - Output simple, tableless markdown with short paragraphs and a few bullet points.
 - Today's date: ${currentMonthYear()}`;
 
-    systemPrompt += buildBirthContext(claimed, {
-      includeDashaDescriptions: true,
-      includeRashi: true,
-    });
+    systemPrompt += buildBirthContext(claimed);
 
     const result = streamText({
       model: openai.chat('gpt-4.1-nano'),

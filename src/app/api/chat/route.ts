@@ -160,7 +160,7 @@ Today's date is ${currentMonthYear()}. Below you are given this person's Dasha p
       if (moon !== null) user.moonSiderealLongitude = moon;
     }
 
-    systemPrompt += buildBirthContext(user, { includeDashaDescriptions: true });
+    systemPrompt += buildBirthContext(user);
 
     const result = streamText({
       model: openai.chat('gpt-4.1-nano'),

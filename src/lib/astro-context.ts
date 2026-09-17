@@ -50,10 +50,7 @@ function safeCoord(value: unknown): string {
 const MAX_PREDICTIONS = 40;
 const MAX_KNOWN_FACTS = 25;
 
-export function buildBirthContext(
-  user: ChartUser,
-  opts: { includeDashaDescriptions?: boolean; includeRashi?: boolean } = {}
-): string {
+export function buildBirthContext(user: ChartUser): string {
   if (!user?.birthDate) return '';
 
   let context = `\n\nUser's Birth Details (Vedic/Jyotish parameters):
@@ -61,10 +58,6 @@ export function buildBirthContext(
 - Time of Birth: ${safeField(user.birthTime, 10)}
 - Location: ${safeField(user.birthLocation)} (Latitude: ${safeCoord(user.birthLatitude)}°, Longitude: ${safeCoord(user.birthLongitude)}°)
 - Timezone Offset: ${safeField(user.birthTimezone, 10)}`;
-
-  if (opts.includeRashi && user.rashiName) {
-    context += `\n- Chandra Rashi (Moon Sign): ${safeField(user.rashiName, 20)}`;
-  }
 
   const predictions = (user.predictions ?? []).slice(0, MAX_PREDICTIONS);
   if (predictions.length > 0) {
@@ -85,7 +78,13 @@ export function buildBirthContext(
     }
   }
 
-  context += buildDashaContext(user);
+  const dasha = buildDashaContext(user);
+  if (dasha) {
+    context += dasha;
+  } else if (user.rashiName) {
+    // No Moon longitude stored, so no periods — but the sign is still known.
+    context += `\n- Chandra Rashi (Moon Sign): ${safeField(user.rashiName, 20)}`;
+  }
 
   return context;
 }
