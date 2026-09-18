@@ -1,16 +1,10 @@
 import { NextResponse } from 'next/server';
-import { auth, currentUser } from '@clerk/nextjs/server';
 import connectToDatabase from '@/lib/mongodb';
+import { checkAdmin, adminDenialStatus } from '@/lib/admin-auth';
 import User from '@/lib/models/User';
 import Payment from '@/lib/models/Payment';
 import Event from '@/lib/models/Event';
-
-// No default: an unset ADMIN_EMAILS locks the dashboard rather than quietly
-// granting access to whatever address happens to be baked into the source.
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? '')
-  .split(',')
-  .map(e => e.trim().toLowerCase())
-  .filter(Boolean);
+import { FREE_MESSAGE_LIMIT } from '@/lib/plans';
 
 // 'message_limit_hit' is the historical name; 'trial_limit_hit' is what the
 // chat route emits now. Count both so the figure spans all of time.
@@ -29,25 +23,11 @@ function serialise(doc: Lean, dateFields: string[]) {
 
 export async function GET() {
   try {
-    const { userId } = await auth();
-    if (!userId) return new NextResponse('Unauthorized', { status: 401 });
-
-    if (ADMIN_EMAILS.length === 0) {
-      console.error('[admin/stats] ADMIN_EMAILS is not configured');
-      return new NextResponse('Forbidden', { status: 403 });
-    }
-
-    // Authorise against Clerk's copy of the email, not our mirror of it —
-    // the identity provider is the source of truth.
-    type ClerkEmail = { id: string; emailAddress: string };
-    const clerkUser = await currentUser();
-    const addresses: ClerkEmail[] = clerkUser?.emailAddresses ?? [];
-    const email =
-      addresses.find(a => a.id === clerkUser?.primaryEmailAddressId)?.emailAddress ??
-      addresses[0]?.emailAddress;
-
-    if (!email || !ADMIN_EMAILS.includes(email.toLowerCase())) {
-      return new NextResponse('Forbidden', { status: 403 });
+    const admin = await checkAdmin();
+    if (!admin.ok) {
+      return new NextResponse(admin.reason === 'unauthenticated' ? 'Unauthorized' : 'Forbidden', {
+        status: adminDenialStatus(admin.reason),
+      });
     }
 
     await connectToDatabase();
@@ -68,6 +48,11 @@ export async function GET() {
       recentEvents,
       eventCounts,
       revenueResult,
+      usersWhoMessaged,
+      usersWhoExhaustedFree,
+      payingClerkIds,
+      ordersCreated,
+      paymentsCompleted,
     ] = await Promise.all([
       User.countDocuments(),
       User.countDocuments({ isPro: true }),
@@ -97,6 +82,15 @@ export async function GET() {
           totalInr: { $sum: { $ifNull: ['$amountInr', 0] } },
         }
       }]),
+      // Funnel: how far each signup actually got.
+      User.countDocuments({
+        $or: [{ messageCount: { $gt: 0 } }, { totalChatMessages: { $gt: 0 } }],
+      }),
+      User.countDocuments({ messageCount: { $gte: FREE_MESSAGE_LIMIT } }),
+      Payment.distinct('clerkId'),
+      // Checkout health: orders opened vs payments that actually landed.
+      Event.countDocuments({ type: 'order_created' }),
+      Payment.countDocuments(),
     ]);
 
     const eventCountsMap: Record<string, number> = {};
@@ -120,6 +114,20 @@ export async function GET() {
         totalRevenueUsd: revenue?.totalUsd ?? 0,
         totalRevenueInr: revenue?.totalInr ?? 0,
       },
+      funnel: {
+        signedUp: totalUsers,
+        enteredBirthDetails: birthChartsGenerated,
+        sentAMessage: usersWhoMessaged,
+        usedAllFree: usersWhoExhaustedFree,
+        paid: (payingClerkIds as string[]).length,
+      },
+      checkout: {
+        ordersCreated,
+        paymentsCompleted,
+        // The gap between these two is what a broken checkout looks like.
+        completionRate: ordersCreated > 0 ? paymentsCompleted / ordersCreated : null,
+      },
+      freeMessageLimit: FREE_MESSAGE_LIMIT,
       eventCounts: eventCountsMap,
       recentUsers: (recentUsers as unknown as Lean[]).map(u => serialise(u, ['createdAt', 'lastActiveAt'])),
       recentPayments: (recentPayments as unknown as Lean[]).map(p => serialise(p, ['date', 'createdAt'])),

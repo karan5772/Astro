@@ -5,6 +5,7 @@ const isProtectedRoute = createRouteMatcher([
   '/voice(.*)',
   '/chart(.*)',
   '/profile(.*)',
+  '/admin(.*)',
   '/api/chat(.*)',
   '/api/chart(.*)',
   '/api/geocode(.*)',
