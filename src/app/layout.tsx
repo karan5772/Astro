@@ -5,7 +5,7 @@ import { ToastProvider } from '@/components/ToastProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { Poppins } from "next/font/google";
 import { cn } from "@/lib/utils";
-import { FREE_MESSAGE_LIMIT, PLANS } from '@/lib/plans';
+import { PLANS } from '@/lib/plans';
 
 const poppins = Poppins({ subsets: ['latin'], weight: ['300','400','500','600','700'], variable: '--font-sans' });
 
@@ -111,9 +111,9 @@ const jsonLd = [
     ],
     offers: {
       '@type': 'Offer',
-      price: '0',
+      price: String(PLANS[0].price),
       priceCurrency: 'INR',
-      description: `Free tier with ${FREE_MESSAGE_LIMIT} messages. Paid plans from \u20B9${PLANS[0].price}.`,
+      description: `One-time message and voice bundles, from \u20B9${PLANS[0].price}. No subscription.`,
     },
     // No aggregateRating here until there are real, collected reviews to back
     // it: inventing one violates Google's structured data policy and is a

@@ -28,7 +28,7 @@ type Stats = {
 };
 type Funnel = {
   signedUp: number; enteredBirthDetails: number; sentAMessage: number;
-  usedAllFree: number; paid: number;
+  paid: number;
 };
 type Checkout = { ordersCreated: number; paymentsCompleted: number; completionRate: number | null };
 type AdminUser = {
@@ -46,7 +46,7 @@ type AdminEvent = {
   metadata?: Record<string, unknown>; createdAt: string | null;
 };
 type StatsResponse = {
-  stats: Stats; funnel: Funnel; checkout: Checkout; freeMessageLimit: number;
+  stats: Stats; funnel: Funnel; checkout: Checkout;
   eventCounts: Record<string, number>;
   recentUsers: AdminUser[]; recentPayments: AdminPayment[]; recentEvents: AdminEvent[];
 };
@@ -166,12 +166,11 @@ function DailyBars({ points, field, unit }: { points: Point[]; field: keyof Poin
 }
 
 /** Funnel as horizontal bars, each labelled with its count and drop-off. */
-function FunnelBars({ funnel, freeLimit }: { funnel: Funnel; freeLimit: number }) {
+function FunnelBars({ funnel }: { funnel: Funnel }) {
   const steps = [
     { label: 'Signed up', value: funnel.signedUp },
     { label: 'Entered birth details', value: funnel.enteredBirthDetails },
     { label: 'Sent a message', value: funnel.sentAMessage },
-    { label: `Used all ${freeLimit} free`, value: funnel.usedAllFree },
     { label: 'Paid', value: funnel.paid },
   ];
   const top = Math.max(funnel.signedUp, 1);
@@ -291,7 +290,7 @@ export default function AdminPage() {
     );
   }
 
-  const { stats, funnel, checkout, eventCounts, recentPayments, recentEvents, freeMessageLimit } = data;
+  const { stats, funnel, checkout, eventCounts, recentPayments, recentEvents } = data;
   const completion = checkout.completionRate;
   const checkoutLooksBroken = completion !== null && checkout.ordersCreated >= 5 && completion < 0.35;
 
@@ -346,7 +345,7 @@ export default function AdminPage() {
             <Tile icon={Crown} label="With balance" value={nf.format(stats.proUsers)} />
             <Tile icon={Sparkles} label="Charts built" value={nf.format(stats.birthChartsGenerated)} />
             <Tile icon={MessageCircle} label="Messages" value={nf.format(stats.totalMessages)} />
-            <Tile icon={UserPlus} label="Hit free limit" value={nf.format(stats.trialLimitHits)} sub={`cap is ${freeMessageLimit}`} />
+            <Tile icon={UserPlus} label="Hit paywall" value={nf.format(stats.trialLimitHits)} sub="all time" />
             <Tile icon={Mic} label="Voice sessions" value={nf.format(stats.voiceSessions)} />
             <Tile icon={IndianRupee} label="Revenue" value={`₹${nf.format(Math.round(stats.totalRevenueInr))}`} sub="all time" />
             <Tile icon={CheckCircle2} label="Paying users" value={nf.format(funnel.paid)} tone={funnel.paid > 0 ? 'good' : undefined} />
@@ -364,7 +363,7 @@ export default function AdminPage() {
 
         <div className="grid lg:grid-cols-2 gap-8">
           <Section title="Funnel" hint="all time">
-            <FunnelBars funnel={funnel} freeLimit={freeMessageLimit} />
+            <FunnelBars funnel={funnel} />
           </Section>
           <Section title="Events by type" hint="all time">
             <EventBreakdown counts={eventCounts} />

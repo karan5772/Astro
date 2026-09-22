@@ -6,7 +6,7 @@ import { NextRequest } from 'next/server';
 import connectToDatabase from '@/lib/mongodb';
 import User from '@/lib/models/User';
 import { logEvent } from '@/lib/log-event';
-import { FREE_MESSAGE_LIMIT, FREE_ANSWER_ROUNDS_ON_SIGNUP } from '@/lib/plans';
+import { FREE_ANSWER_ROUNDS_ON_SIGNUP } from '@/lib/plans';
 import { backfillMoonLongitude } from '@/lib/backfill-moon';
 import { buildBirthContext, currentMonthYear } from '@/lib/astro-context';
 import { rateLimit, tooManyRequests } from '@/lib/rate-limit';
@@ -60,16 +60,14 @@ function jailbreakStream(): Response {
  * Charging for a reading the user did not receive is worse than the rare
  * double-refund a crash between these two writes could cause.
  */
-async function refundMessage(userId: string, kind: 'free' | 'paid') {
+async function refundMessage(userId: string) {
   try {
     await User.updateOne(
       { clerkId: userId },
-      kind === 'free'
-        ? { $inc: { messageCount: -1, totalChatMessages: -1 } }
-        : { $inc: { messageBalance: 1, totalChatMessages: -1 } }
+      { $inc: { messageBalance: 1, totalChatMessages: -1 } }
     );
   } catch (err) {
-    console.error('[chat] refund failed', userId, kind, err);
+    console.error('[chat] refund failed', userId, err);
   }
 }
 
@@ -88,10 +86,10 @@ async function streamReading(
   userId: string,
   user: ChatUserDoc,
   messages: { role: 'user' | 'assistant'; content: string }[],
-  consumedKind: 'free' | 'paid' | null,
+  charged: boolean,
 ): Promise<Response> {
   const refund = () => {
-    if (consumedKind) void refundMessage(userId, consumedKind);
+    if (charged) void refundMessage(userId);
   };
 
   try {
@@ -266,6 +264,7 @@ export async function POST(req: NextRequest) {
       const consumedRound = await User.findOneAndUpdate(
         {
           clerkId: userId,
+          totalChatMessages: { $gt: 0 },
           $or: [
             { freeAnswerRounds: { $gt: 0 } },
             { freeAnswerRounds: null },
@@ -292,41 +291,25 @@ export async function POST(req: NextRequest) {
           consumedRound.knownFacts = [...(consumedRound.knownFacts ?? []), ...answers];
         }
         logEvent(userId, 'answer_round_used', { remaining: consumedRound.freeAnswerRounds });
-        return streamReading(userId, consumedRound, messages, null);
+        return streamReading(userId, consumedRound, messages, false);
       }
       // Allowance exhausted — fall through and bill it as a normal message.
     }
 
-    // Atomically consume one free message (race-condition safe)
-    const consumedFree = await User.findOneAndUpdate(
-      { clerkId: userId, messageCount: { $lt: FREE_MESSAGE_LIMIT } },
-      { $inc: { messageCount: 1, totalChatMessages: 1 }, $set: { lastActiveAt: new Date() } },
+    // Every message comes out of a purchased balance; there is no free branch.
+    const dbUser = await User.findOneAndUpdate(
+      { clerkId: userId, messageBalance: { $gt: 0 } },
+      { $inc: { messageBalance: -1, totalChatMessages: 1 }, $set: { lastActiveAt: new Date() } },
       { returnDocument: 'after' },
     );
 
-    let dbUser = consumedFree;
-    let consumedKind: 'free' | 'paid' = 'free';
-
-    if (!consumedFree) {
-      // Atomically consume one paid message
-      const consumedPaid = await User.findOneAndUpdate(
-        { clerkId: userId, messageBalance: { $gt: 0 } },
-        { $inc: { messageBalance: -1, totalChatMessages: 1 }, $set: { lastActiveAt: new Date() } },
-        { returnDocument: 'after' },
-      );
-
-      if (!consumedPaid) {
-        // Neither free nor paid credits remain
-        const snap = await User.findOne({ clerkId: userId });
-        logEvent(userId, 'trial_limit_hit', {
-          messageCount: snap?.messageCount,
-          messageBalance: snap?.messageBalance,
-        });
-        return new Response('TRIAL_LIMIT_REACHED', { status: 403 });
-      }
-
-      dbUser = consumedPaid;
-      consumedKind = 'paid';
+    if (!dbUser) {
+      const snap = await User.findOne({ clerkId: userId }).select('messageBalance totalChatMessages');
+      logEvent(userId, 'paywall_hit', {
+        messageBalance: snap?.messageBalance ?? 0,
+        totalChatMessages: snap?.totalChatMessages ?? 0,
+      });
+      return new Response('NO_BALANCE', { status: 402 });
     }
 
     logEvent(userId, 'chat_message_sent', {
@@ -335,7 +318,7 @@ export async function POST(req: NextRequest) {
       totalChatMessages: dbUser.totalChatMessages,
     });
 
-    return streamReading(userId, dbUser, messages, consumedKind);
+    return streamReading(userId, dbUser, messages, true);
   } catch (error) {
     // Never surface the raw error: driver and provider messages can carry
     // connection strings, keys and internal hostnames.

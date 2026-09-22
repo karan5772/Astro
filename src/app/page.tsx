@@ -8,7 +8,7 @@ import { ArrowRight, Mic, BarChart3, MessageCircle } from "lucide-react";
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { FREE_MESSAGE_LIMIT } from "@/lib/plans";
+import { CURRENCY_SYMBOL, PLANS } from "@/lib/plans";
 import { useTheme } from "@/components/ThemeProvider";
 
 const FEATURES = [
@@ -247,7 +247,7 @@ export default function HomePage() {
               Your chart is already written. Come and read it.
             </h2>
             <p className="text-foreground/45 text-base mb-10 max-w-md mx-auto">
-              {FREE_MESSAGE_LIMIT} free messages. No credit card. No commitment. Just your chart and the question you actually want answered.
+              Bundles from {CURRENCY_SYMBOL}{PLANS[0].price}. No subscription, credits never expire. Just your chart and the question you actually want answered.
             </p>
             <Link
               href={userId ? "/chat" : "/sign-up"}

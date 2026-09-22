@@ -4,11 +4,11 @@ import { checkAdmin, adminDenialStatus } from '@/lib/admin-auth';
 import User from '@/lib/models/User';
 import Payment from '@/lib/models/Payment';
 import Event from '@/lib/models/Event';
-import { FREE_MESSAGE_LIMIT } from '@/lib/plans';
 
-// 'message_limit_hit' is the historical name; 'trial_limit_hit' is what the
-// chat route emits now. Count both so the figure spans all of time.
-const LIMIT_HIT_EVENT_TYPES = ['trial_limit_hit', 'message_limit_hit'];
+
+// The event has been renamed twice as the free tier changed shape; count all
+// three so the all-time figure is not split across the renames.
+const LIMIT_HIT_EVENT_TYPES = ['paywall_hit', 'trial_limit_hit', 'message_limit_hit'];
 
 type Lean = Record<string, unknown> & { _id: unknown };
 
@@ -49,7 +49,6 @@ export async function GET() {
       eventCounts,
       revenueResult,
       usersWhoMessaged,
-      usersWhoExhaustedFree,
       payingClerkIds,
       ordersCreated,
       paymentsCompleted,
@@ -80,7 +79,6 @@ export async function GET() {
       User.countDocuments({
         $or: [{ messageCount: { $gt: 0 } }, { totalChatMessages: { $gt: 0 } }],
       }),
-      User.countDocuments({ messageCount: { $gte: FREE_MESSAGE_LIMIT } }),
       Payment.distinct('clerkId'),
       // Checkout health: orders opened vs payments that actually landed.
       Event.countDocuments({ type: 'order_created' }),
@@ -111,7 +109,6 @@ export async function GET() {
         signedUp: totalUsers,
         enteredBirthDetails: birthChartsGenerated,
         sentAMessage: usersWhoMessaged,
-        usedAllFree: usersWhoExhaustedFree,
         paid: (payingClerkIds as string[]).length,
       },
       checkout: {
@@ -120,7 +117,6 @@ export async function GET() {
         // The gap between these two is what a broken checkout looks like.
         completionRate: ordersCreated > 0 ? paymentsCompleted / ordersCreated : null,
       },
-      freeMessageLimit: FREE_MESSAGE_LIMIT,
       eventCounts: eventCountsMap,
       recentUsers: (recentUsers as unknown as Lean[]).map(u => serialise(u, ['createdAt', 'lastActiveAt'])),
       recentPayments: (recentPayments as unknown as Lean[]).map(p => serialise(p, ['date', 'createdAt'])),

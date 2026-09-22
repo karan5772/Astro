@@ -7,23 +7,6 @@
 export const CURRENCY = 'INR' as const;
 export const CURRENCY_SYMBOL = '\u20B9';
 
-export const FREE_PLAN = {
-  id: 'free',
-  name: 'Free',
-  price: 0,
-  messagesGranted: 3,
-  voiceMinutes: 0,
-  badge: null,
-  featured: false,
-  description: 'Try Astraeus with no card required.',
-  features: [
-    '3 text messages',
-    'No voice',
-    'Full Vedic chart context',
-    'No card required',
-  ],
-} as const;
-
 export const PLANS = [
   {
     id: 'starter',
@@ -77,7 +60,8 @@ export const PLANS = [
 
 export type PlanId = typeof PLANS[number]['id'];
 
-export const FREE_MESSAGE_LIMIT = FREE_PLAN.messagesGranted;
+/** The cheapest way in, used wherever the app quotes a starting price. */
+export const ENTRY_PLAN = PLANS[0];
 
 /**
  * Answering the astrologer's own follow-up questions does not spend a message.

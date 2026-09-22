@@ -12,7 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from '@/components/Sidebar';
 import QuestionCard from '@/components/QuestionCard';
 import { getChatStorage, type StoredMessage } from '@/lib/chat-storage';
-import { FREE_MESSAGE_LIMIT } from '@/lib/plans';
+
 import type { AppUser } from '@/lib/types';
 
 type Message = { id: string; role: 'user' | 'assistant'; content: string };
@@ -175,13 +175,6 @@ function tryParseQuestion(raw: string): { question: string; options: string[] } 
   };
 }
 
-// Module scope so the counter is never read or advanced during render.
-let readingCounter = 0;
-function nextReadingId() {
-  readingCounter += 1;
-  return `ai-limit-reading-${readingCounter}`;
-}
-
 // The prompt asks for at most 3 questions; this is what actually guarantees it.
 const MAX_QUESTIONS_PER_REPLY = 3;
 
@@ -277,9 +270,8 @@ export default function ChatPage() {
           if (!data.hasBirthDetails) {
             setShowOnboardingForm(true);
           }
-          // Lock input immediately if user has no credits left
-          const exhausted = (data.messageCount ?? 0) >= FREE_MESSAGE_LIMIT && (data.messageBalance ?? 0) <= 0;
-          if (exhausted) setShowInlineUpgrade(true);
+          // Lock the input immediately when there is nothing left to spend.
+          if ((data.messageBalance ?? 0) <= 0) setShowInlineUpgrade(true);
         }
       } catch (err) {
         console.error('Failed to fetch user metadata:', err);
@@ -422,12 +414,7 @@ export default function ChatPage() {
       });
 
       if (!res.ok) {
-        if (res.status === 403) {
-          const errText = await res.text();
-          if (errText === 'TRIAL_LIMIT_REACHED') {
-            throw new Error('TRIAL_LIMIT_REACHED');
-          }
-        }
+        if (res.status === 402) throw new Error('NO_BALANCE');
         throw new Error(`Server returned ${res.status}`);
       }
 
@@ -473,57 +460,14 @@ export default function ChatPage() {
       }
     } catch (e) {
       const err = e instanceof Error ? e : new Error(String(e));
-      if (err.message === 'TRIAL_LIMIT_REACHED') {
-        // Pass newMessages so the last user turn is saved alongside the reading
-        await streamLimitReading(convId, newMessages);
+      if (err.message === 'NO_BALANCE') {
+        setShowInlineUpgrade(true);
+        setShowTrialModal(true);
       } else {
         setError(err.message);
       }
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const streamLimitReading = async (convId: string | null, priorMessages: Message[]) => {
-    try {
-      const res = await fetch('/api/chat/reading', { method: 'POST' });
-      if (!res.ok || !res.body) {
-        // NOT_ELIGIBLE: credits still available, or reading already claimed
-        setShowInlineUpgrade(true);
-        return;
-      }
-
-      const readingId = nextReadingId();
-      setMessages(prev => [...prev, { id: readingId, role: 'assistant', content: '' }]);
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let fullContent = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        fullContent += chunk;
-        setMessages(prev =>
-          prev.map(m => m.id === readingId ? { ...m, content: m.content + chunk } : m)
-        );
-      }
-
-      // Save: priorMessages (includes the triggering user turn) + reading
-      if (convId && fullContent) {
-        const toSave: StoredMessage[] = [
-          ...priorMessages.map(({ role, content }) => ({ role, content } as StoredMessage)),
-          { role: 'assistant' as const, content: fullContent },
-        ];
-        getChatStorage(userId || 'anon').saveMessages(convId, toSave).then(() => {
-          window.dispatchEvent(new CustomEvent('chat:list-changed', { detail: { activeId: convId } }));
-        });
-      }
-    } catch {
-      // swallow — inline upgrade still shows
-    } finally {
-      setShowInlineUpgrade(true);
     }
   };
 
@@ -535,9 +479,7 @@ export default function ChatPage() {
     return map;
   }, [messages]);
 
-  const isExhausted = !!dbUser &&
-    (dbUser.messageCount ?? 0) >= FREE_MESSAGE_LIMIT &&
-    (dbUser.messageBalance ?? 0) <= 0;
+  const isExhausted = !!dbUser && (dbUser.messageBalance ?? 0) <= 0;
 
   const showTypingIndicator = isLoading && (
     messages.length === 0 ||
@@ -587,9 +529,9 @@ export default function ChatPage() {
                 <path d="M16 4L19.09 12.26L28 13.27L21.5 19.64L23.18 28L16 24L8.82 28L10.5 19.64L4 13.27L12.91 12.26L16 4Z" fill="currentColor" className="text-primary" />
               </svg>
             </div>
-            <h2 className="text-lg font-semibold text-foreground tracking-tight">Your free reading is complete</h2>
+            <h2 className="text-lg font-semibold text-foreground tracking-tight">You&apos;re out of messages</h2>
             <p className="text-sm text-foreground/55 leading-relaxed">
-              You&apos;ve used all {FREE_MESSAGE_LIMIT} free messages. Upgrade to continue the conversation — more messages, voice sessions, and deeper astrological insights await.
+              You&apos;re out of messages. Top up to keep going — more messages, voice sessions, and deeper readings.
             </p>
             <button
               onClick={() => router.push('/pricing')}
@@ -727,8 +669,8 @@ export default function ChatPage() {
                       </svg>
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-foreground">Your cosmic reading is complete</p>
-                      <p className="text-xs text-foreground/45 mt-0.5">You&apos;ve used all {FREE_MESSAGE_LIMIT} free messages</p>
+                      <p className="text-sm font-semibold text-foreground">Out of messages</p>
+                      <p className="text-xs text-foreground/45 mt-0.5">You&apos;re out of messages</p>
                     </div>
                   </div>
 

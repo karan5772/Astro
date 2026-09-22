@@ -13,7 +13,7 @@ import { TimePicker } from '@/components/ui/date-time-picker';
 import Navbar from '@/components/Navbar';
 import toast from 'react-hot-toast';
 import type { PaymentRecord } from '@/lib/types';
-import { FREE_MESSAGE_LIMIT } from '@/lib/plans';
+
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -321,10 +321,7 @@ export default function ProfilePage() {
   }
 
   const rashi = getRashiByName(userData?.rashiName ?? null);
-  const freeUsed = Math.min(userData?.messageCount || 0, FREE_MESSAGE_LIMIT);
-  const freeLeft = Math.max(0, FREE_MESSAGE_LIMIT - freeUsed);
   const paidMsgs = userData?.messageBalance || 0;
-  const onFree = freeLeft > 0;
   const hasVoice = voiceMinsRemaining > 0;
   const hasPaidMsgs = paidMsgs > 0;
 
@@ -611,19 +608,7 @@ export default function ProfilePage() {
                 <MessageCircle size={13} className="text-foreground/35" />
                 <p className="text-[10px] uppercase tracking-widest text-foreground/40 font-semibold">Messages</p>
               </div>
-              {onFree ? (
-                <>
-                  <p className="text-2xl font-bold text-foreground">{freeLeft}</p>
-                  <p className="text-[11px] text-foreground/40 mt-0.5">free remaining</p>
-                  <div className="mt-4 h-1 rounded-full bg-foreground/[0.07] overflow-hidden">
-                    <motion.div className="h-full rounded-full bg-primary/60"
-                      initial={{ width: '0%' }}
-                      animate={{ width: `${(freeUsed / FREE_MESSAGE_LIMIT) * 100}%` }}
-                      transition={{ duration: 0.9, ease: 'easeOut', delay: 0.3 }} />
-                  </div>
-                  <p className="text-[10px] text-foreground/30 mt-1.5">{freeUsed} of {FREE_MESSAGE_LIMIT} used</p>
-                </>
-              ) : hasPaidMsgs ? (
+              {hasPaidMsgs ? (
                 <>
                   <p className="text-2xl font-bold text-foreground">{paidMsgs}</p>
                   <p className="text-[11px] text-foreground/40 mt-0.5">paid credits left</p>
@@ -664,25 +649,18 @@ export default function ProfilePage() {
           </div>
 
           {/* Low balance nudge */}
-          {!onFree && !hasPaidMsgs ? (
+          {!hasPaidMsgs && (
             <div className="border border-border rounded-xl p-4 text-center bg-secondary/50 mb-6">
               <p className="text-[11px] text-foreground/50 mb-2">No message credits left</p>
               <a href="/pricing" className="text-[11px] font-semibold text-foreground/65 hover:text-foreground transition-colors">Top up →</a>
             </div>
-          ) : onFree && freeLeft <= 2 && !hasPaidMsgs ? (
-            <div className="border border-border rounded-xl p-4 text-center bg-secondary/50 mb-6">
-              <p className="text-[11px] text-foreground/50 mb-2">
-                {freeLeft === 1 ? '1 free message left.' : '2 free messages left.'}
-              </p>
-              <a href="/pricing" className="text-[11px] font-semibold text-foreground/65 hover:text-foreground transition-colors">Top up →</a>
-            </div>
-          ) : null}
+          )}
 
           {/* Stat cells */}
           <div className="grid grid-cols-2 gap-2.5">
             {[
               { label: 'Predictions', value: String(userData?.predictionsCount || 0), sub: 'generated' },
-              { label: 'Free Used', value: `${freeUsed} / ${FREE_MESSAGE_LIMIT}`, sub: 'messages' },
+              { label: 'Messages Sent', value: String(userData?.messageCount || 0), sub: 'all time' },
               { label: 'Voice Used', value: `${totalVoicePurchased - voiceMinsRemaining}m`, sub: 'consumed' },
               { label: 'Purchases', value: String(userData?.payments?.length || 0), sub: 'total' },
             ].map(({ label, value, sub }) => (

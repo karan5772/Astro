@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Check, MessageCircle, Mic, Sparkles } from "lucide-react";
+import { Check, MessageCircle, Mic } from "lucide-react";
 import toast from "react-hot-toast";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { PLANS, FREE_PLAN, FREE_MESSAGE_LIMIT, CURRENCY_SYMBOL } from "@/lib/plans";
+import { PLANS, CURRENCY_SYMBOL } from "@/lib/plans";
 
 const inr = new Intl.NumberFormat("en-IN");
 
@@ -123,8 +123,6 @@ export default function PricingPage() {
     }
   };
 
-  const freeUsed = Math.min(userData?.messageCount ?? 0, FREE_MESSAGE_LIMIT);
-  const freeLeft = Math.max(FREE_MESSAGE_LIMIT - freeUsed, 0);
   const paidMessages = userData?.messageBalance ?? 0;
   const voiceMins = Math.ceil((userData?.voiceBalanceInSeconds ?? 0) / 60);
 
@@ -141,12 +139,12 @@ export default function PricingPage() {
             Pay for what you use.<br />Nothing more.
           </h1>
           <p className="text-foreground/50 text-base leading-relaxed">
-            Start free with {FREE_MESSAGE_LIMIT} messages. Top up with bundles — messages and voice together, no subscriptions.
+            Buy a bundle of messages and voice minutes. They never expire, and there is no subscription.
           </p>
         </div>
 
         {/* Current balance banner */}
-        {userData && (paidMessages > 0 || voiceMins > 0 || freeLeft > 0) && (
+        {userData && (paidMessages > 0 || voiceMins > 0) && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -156,7 +154,7 @@ export default function PricingPage() {
             <div className="flex gap-6">
               <div className="flex items-center gap-2">
                 <MessageCircle size={14} className="text-foreground/35" />
-                <span className="text-sm font-semibold text-foreground">{freeLeft > 0 ? `${freeLeft} free` : `${paidMessages} paid`}</span>
+                <span className="text-sm font-semibold text-foreground">{paidMessages}</span>
                 <span className="text-xs text-foreground/40">messages</span>
               </div>
               <div className="flex items-center gap-2">
@@ -167,20 +165,6 @@ export default function PricingPage() {
             </div>
           </motion.div>
         )}
-
-        {/* Free tier */}
-        <div className="max-w-[700px] mx-auto mb-6">
-          <div className="flex items-center gap-4 px-6 py-4 bg-card/50 border border-border rounded-2xl">
-            <div className="w-8 h-8 rounded-lg bg-foreground/[0.05] border border-border flex items-center justify-center shrink-0">
-              <Sparkles size={14} className="text-foreground/35" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-foreground">{FREE_PLAN.name}</p>
-              <p className="text-xs text-foreground/45 mt-0.5">{FREE_PLAN.features.join(' · ')}</p>
-            </div>
-            <span className="text-lg font-semibold text-foreground/60">{CURRENCY_SYMBOL}0</span>
-          </div>
-        </div>
 
         {/* Paid plans */}
         <div className="max-w-[700px] mx-auto flex flex-col gap-4">
