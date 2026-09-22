@@ -73,15 +73,9 @@ export async function GET() {
       Payment.find().sort({ createdAt: -1 }).limit(25).lean(),
       Event.find().sort({ createdAt: -1 }).limit(60).lean(),
       Event.aggregate([{ $group: { _id: '$type', count: { $sum: 1 } } }]),
-      // `amount` holds the plan's USD list price; `amountInr` is what was
-      // actually charged at that day's FX rate (absent on pre-fix records).
-      Payment.aggregate([{
-        $group: {
-          _id: null,
-          totalUsd: { $sum: '$amount' },
-          totalInr: { $sum: { $ifNull: ['$amountInr', 0] } },
-        }
-      }]),
+      // `amount` is rupees for every row; the handful of legacy USD records
+      // were converted by scripts/migrate-pricing-to-inr.ts.
+      Payment.aggregate([{ $group: { _id: null, totalInr: { $sum: '$amount' } } }]),
       // Funnel: how far each signup actually got.
       User.countDocuments({
         $or: [{ messageCount: { $gt: 0 } }, { totalChatMessages: { $gt: 0 } }],
@@ -98,7 +92,7 @@ export async function GET() {
       eventCountsMap[e._id] = e.count;
     }
 
-    const revenue = revenueResult[0] as { totalUsd?: number; totalInr?: number } | undefined;
+    const revenue = revenueResult[0] as { totalInr?: number } | undefined;
 
     return NextResponse.json({
       stats: {
@@ -111,7 +105,6 @@ export async function GET() {
         birtChartsGenerated: birthChartsGenerated,
         trialLimitHits: trialHitsCount,
         voiceSessions: (voiceSessionsResult[0] as { total?: number } | undefined)?.total ?? 0,
-        totalRevenueUsd: revenue?.totalUsd ?? 0,
         totalRevenueInr: revenue?.totalInr ?? 0,
       },
       funnel: {

@@ -112,8 +112,8 @@ const jsonLd = [
     offers: {
       '@type': 'Offer',
       price: '0',
-      priceCurrency: 'USD',
-      description: `Free tier with ${FREE_MESSAGE_LIMIT} messages. Paid plans from $${PLANS[0].price}.`,
+      priceCurrency: 'INR',
+      description: `Free tier with ${FREE_MESSAGE_LIMIT} messages. Paid plans from \u20B9${PLANS[0].price}.`,
     },
     // No aggregateRating here until there are real, collected reviews to back
     // it: inventing one violates Google's structured data policy and is a

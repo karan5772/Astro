@@ -2,7 +2,7 @@ import connectToDatabase from './mongodb';
 import User from './models/User';
 import Payment from './models/Payment';
 import { logEvent } from './log-event';
-import { PLANS, FREE_ANSWER_ROUNDS_PER_PURCHASE } from './plans';
+import { PLANS, FREE_ANSWER_ROUNDS_PER_PURCHASE, CURRENCY } from './plans';
 import type { TrustedOrder } from './razorpay';
 
 export type GrantResult =
@@ -38,9 +38,7 @@ export async function grantCreditsForPayment(params: {
       orderId: order.orderId,
       plan: planDef.id,
       amount: planDef.price,
-      amountInr: order.amountInr,
-      exchangeRate: order.exchangeRate,
-      currency: 'INR',
+      currency: CURRENCY,
       messagesGranted: planDef.messagesGranted,
       durationInMinutes: planDef.voiceMinutes,
       source,
@@ -80,8 +78,8 @@ export async function grantCreditsForPayment(params: {
     paymentId,
     orderId: order.orderId,
     plan: planDef.id,
-    amountUsd: planDef.price,
-    amountInr: order.amountInr,
+    amount: planDef.price,
+    currency: CURRENCY,
     source,
   });
 

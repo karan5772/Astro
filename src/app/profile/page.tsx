@@ -722,7 +722,7 @@ export default function ProfilePage() {
                       </span>
                     </div>
                   </div>
-                  <p className="text-sm font-semibold text-foreground">${p.amount ?? 0}</p>
+                  <p className="text-sm font-semibold text-foreground">₹{new Intl.NumberFormat("en-IN").format(Math.round(p.amount ?? 0))}</p>
                 </div>
               ))}
             </div>

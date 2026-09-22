@@ -2,8 +2,8 @@
 export type PaymentRecord = {
   _id?: string;
   plan?: string | null;
+  /** Rupees. */
   amount?: number;
-  amountInr?: number;
   currency?: string;
   messagesGranted?: number;
   durationInMinutes?: number;

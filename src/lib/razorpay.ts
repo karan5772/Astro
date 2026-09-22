@@ -66,9 +66,8 @@ export type TrustedOrder = {
   orderId: string;
   clerkId: string;
   planId: string;
-  amountUsd: number;
-  amountInr: number;
-  exchangeRate: number;
+  /** Rupees, as charged. */
+  amount: number;
   status: string;
 };
 
@@ -104,9 +103,9 @@ export async function fetchTrustedOrder(orderId: string): Promise<TrustedOrder |
     orderId: order.id,
     clerkId,
     planId,
-    amountUsd: Number(notes.amountUsd ?? 0),
-    amountInr: Number(order.amount) / 100,
-    exchangeRate: Number(notes.exchangeRate ?? 0),
+    // Taken from the order itself rather than the notes: this is the figure
+    // Razorpay actually billed.
+    amount: Number(order.amount) / 100,
     status: order.status,
   };
 }

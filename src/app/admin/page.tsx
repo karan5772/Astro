@@ -24,7 +24,7 @@ type Stats = {
   totalUsers: number; proUsers: number; newTodayUsers: number;
   totalMessages: number; birthChartsGenerated: number;
   trialLimitHits: number; voiceSessions: number;
-  totalRevenueUsd: number; totalRevenueInr: number;
+  totalRevenueInr: number;
 };
 type Funnel = {
   signedUp: number; enteredBirthDetails: number; sentAMessage: number;
@@ -38,7 +38,7 @@ type AdminUser = {
 };
 type AdminPayment = {
   _id: string; clerkId: string; paymentId: string; plan?: string;
-  amount?: number; amountInr?: number; durationInMinutes?: number;
+  amount?: number; durationInMinutes?: number;
   messagesGranted?: number; source?: string; createdAt: string | null;
 };
 type AdminEvent = {
@@ -52,7 +52,7 @@ type StatsResponse = {
 };
 type Point = {
   date: string; signups: number; payments: number;
-  revenueUsd: number; messages: number; orders: number;
+  revenueInr: number; messages: number; orders: number;
 };
 
 // ── Formatting ───────────────────────────────────────────────────────────────
@@ -348,7 +348,7 @@ export default function AdminPage() {
             <Tile icon={MessageCircle} label="Messages" value={nf.format(stats.totalMessages)} />
             <Tile icon={UserPlus} label="Hit free limit" value={nf.format(stats.trialLimitHits)} sub={`cap is ${freeMessageLimit}`} />
             <Tile icon={Mic} label="Voice sessions" value={nf.format(stats.voiceSessions)} />
-            <Tile icon={IndianRupee} label="Revenue" value={`$${nf.format(stats.totalRevenueUsd)}`} sub={stats.totalRevenueInr ? `₹${nf.format(Math.round(stats.totalRevenueInr))} charged` : 'USD list price'} />
+            <Tile icon={IndianRupee} label="Revenue" value={`₹${nf.format(Math.round(stats.totalRevenueInr))}`} sub="all time" />
             <Tile icon={CheckCircle2} label="Paying users" value={nf.format(funnel.paid)} tone={funnel.paid > 0 ? 'good' : undefined} />
           </div>
         </Section>
@@ -435,8 +435,7 @@ export default function AdminPage() {
                   <tr key={p._id} className="border-t border-border">
                     <td className="px-4 py-3 capitalize text-foreground/85">{p.plan || '—'}</td>
                     <td className="px-4 py-3 tabular-nums text-foreground/55">
-                      ${nf.format(p.amount ?? 0)}
-                      {p.amountInr ? <span className="text-foreground/30"> · ₹{nf.format(Math.round(p.amountInr))}</span> : null}
+                      ₹{nf.format(Math.round(p.amount ?? 0))}
                     </td>
                     <td className="px-4 py-3 tabular-nums text-foreground/55">
                       {nf.format(p.messagesGranted ?? 0)} msg · {nf.format(p.durationInMinutes ?? 0)}m

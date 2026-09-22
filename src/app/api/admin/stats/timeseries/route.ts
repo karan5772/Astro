@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
 
     const series: {
       date: string; signups: number; payments: number;
-      revenueUsd: number; messages: number; orders: number;
+      revenueInr: number; messages: number; orders: number;
     }[] = [];
 
     for (let i = 0; i < days; i++) {
@@ -80,7 +80,7 @@ export async function GET(req: NextRequest) {
         date: key,
         signups: signupMap.get(key)?.n ?? 0,
         payments: paymentMap.get(key)?.n ?? 0,
-        revenueUsd: paymentMap.get(key)?.amount ?? 0,
+        revenueInr: paymentMap.get(key)?.amount ?? 0,
         messages: messageMap.get(key)?.n ?? 0,
         orders: orderMap.get(key)?.n ?? 0,
       });

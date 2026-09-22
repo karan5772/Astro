@@ -1,3 +1,12 @@
+/**
+ * All prices are in Indian rupees. Razorpay charges INR, so pricing in INR is
+ * the only way the number on the pricing page is the number on the bank
+ * statement — the previous USD list price was converted at a live rate, which
+ * meant "$5" became an unpredictable rupee amount at the moment of payment.
+ */
+export const CURRENCY = 'INR' as const;
+export const CURRENCY_SYMBOL = '\u20B9';
+
 export const FREE_PLAN = {
   id: 'free',
   name: 'Free',
@@ -19,7 +28,7 @@ export const PLANS = [
   {
     id: 'starter',
     name: 'Starter',
-    price: 5,
+    price: 399,
     messagesGranted: 30,
     voiceMinutes: 10,
     badge: null,
@@ -35,7 +44,7 @@ export const PLANS = [
   {
     id: 'growth',
     name: 'Growth',
-    price: 12,
+    price: 999,
     messagesGranted: 100,
     voiceMinutes: 30,
     badge: 'Most popular',
@@ -51,7 +60,7 @@ export const PLANS = [
   {
     id: 'deep',
     name: 'Deep',
-    price: 20,
+    price: 1599,
     messagesGranted: 200,
     voiceMinutes: 60,
     badge: null,

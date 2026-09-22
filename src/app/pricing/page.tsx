@@ -6,7 +6,9 @@ import { Check, MessageCircle, Mic, Sparkles } from "lucide-react";
 import toast from "react-hot-toast";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { PLANS, FREE_PLAN, FREE_MESSAGE_LIMIT } from "@/lib/plans";
+import { PLANS, FREE_PLAN, FREE_MESSAGE_LIMIT, CURRENCY_SYMBOL } from "@/lib/plans";
+
+const inr = new Intl.NumberFormat("en-IN");
 
 // Minimal shape of the Razorpay checkout script loaded from their CDN.
 type RazorpayCheckoutResponse = {
@@ -176,7 +178,7 @@ export default function PricingPage() {
               <p className="text-sm font-semibold text-foreground">{FREE_PLAN.name}</p>
               <p className="text-xs text-foreground/45 mt-0.5">{FREE_PLAN.features.join(' · ')}</p>
             </div>
-            <span className="text-lg font-semibold text-foreground/60">$0</span>
+            <span className="text-lg font-semibold text-foreground/60">{CURRENCY_SYMBOL}0</span>
           </div>
         </div>
 
@@ -216,7 +218,7 @@ export default function PricingPage() {
               {/* Right: price + CTA */}
               <div className="flex items-center gap-4 shrink-0 w-full sm:w-auto justify-between sm:justify-start border-t sm:border-t-0 border-border pt-4 sm:pt-0 mt-1 sm:mt-0">
                 <div>
-                  <p className="text-2xl font-semibold text-foreground">${plan.price}</p>
+                  <p className="text-2xl font-semibold text-foreground">{CURRENCY_SYMBOL}{inr.format(plan.price)}</p>
                   <p className="text-[10px] text-foreground/35 mt-0.5">one-time</p>
                 </div>
                 <button
@@ -237,7 +239,7 @@ export default function PricingPage() {
 
         {/* Footer note */}
         <p className="text-center text-[11px] text-foreground/30 mt-10">
-          Credits never expire · Secure payments via Razorpay · All prices in USD
+          Credits never expire · Secure payments via Razorpay · All prices in {CURRENCY_SYMBOL} INR, inclusive
         </p>
 
       </main>

@@ -10,10 +10,9 @@ const PaymentSchema = new Schema(
     paymentId: { type: String, required: true, unique: true },
     orderId: { type: String, required: true, index: true },
     plan: { type: String },
-    // `amount` is the plan's USD list price (this is what it has always held).
+    // Rupees. Historical rows recorded a USD list price and were converted by
+    // scripts/migrate-pricing-to-inr.ts, so this column is INR throughout.
     amount: { type: Number, required: true },
-    amountInr: { type: Number },
-    exchangeRate: { type: Number },
     currency: { type: String, default: 'INR' },
     messagesGranted: { type: Number, default: 0 },
     durationInMinutes: { type: Number, required: true },
