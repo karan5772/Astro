@@ -1,15 +1,15 @@
-import { openai } from '@ai-sdk/openai';
-import { streamText } from 'ai';
-import { auth } from '@clerk/nextjs/server';
-import { NextRequest } from 'next/server';
+import { openai } from "@ai-sdk/openai";
+import { streamText } from "ai";
+import { auth } from "@clerk/nextjs/server";
+import { NextRequest } from "next/server";
 
-import connectToDatabase from '@/lib/mongodb';
-import User from '@/lib/models/User';
-import { logEvent } from '@/lib/log-event';
-import { FREE_ANSWER_ROUNDS_ON_SIGNUP } from '@/lib/plans';
-import { backfillMoonLongitude } from '@/lib/backfill-moon';
-import { buildBirthContext, currentMonthYear } from '@/lib/astro-context';
-import { rateLimit, tooManyRequests } from '@/lib/rate-limit';
+import connectToDatabase from "@/lib/mongodb";
+import User from "@/lib/models/User";
+import { logEvent } from "@/lib/log-event";
+import { FREE_ANSWER_ROUNDS_ON_SIGNUP } from "@/lib/plans";
+import { backfillMoonLongitude } from "@/lib/backfill-moon";
+import { buildBirthContext, currentMonthYear } from "@/lib/astro-context";
+import { rateLimit, tooManyRequests } from "@/lib/rate-limit";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -40,11 +40,12 @@ const JAILBREAK_PATTERNS = [
 ];
 
 function isJailbreak(text: string): boolean {
-  return JAILBREAK_PATTERNS.some(re => re.test(text));
+  return JAILBREAK_PATTERNS.some((re) => re.test(text));
 }
 
 function jailbreakStream(): Response {
-  const msg = "The stars do not bend to such requests, dear seeker. I am Astraeus — bound to the cosmic truth. Ask me what truly weighs on your heart and I shall read the heavens for you.";
+  const msg =
+    "The stars do not bend to such requests, dear seeker. I am Astraeus — bound to the cosmic truth. Ask me what truly weighs on your heart and I shall read the heavens for you.";
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     start(controller) {
@@ -52,7 +53,9 @@ function jailbreakStream(): Response {
       controller.close();
     },
   });
-  return new Response(stream, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+  return new Response(stream, {
+    headers: { "Content-Type": "text/plain; charset=utf-8" },
+  });
 }
 
 /**
@@ -64,10 +67,10 @@ async function refundMessage(userId: string) {
   try {
     await User.updateOne(
       { clerkId: userId },
-      { $inc: { messageBalance: 1, totalChatMessages: -1 } }
+      { $inc: { messageBalance: 1, totalChatMessages: -1 } },
     );
   } catch (err) {
-    console.error('[chat] refund failed', userId, err);
+    console.error("[chat] refund failed", userId, err);
   }
 }
 
@@ -85,7 +88,7 @@ type ChatUserDoc = Parameters<typeof buildBirthContext>[0] & {
 async function streamReading(
   userId: string,
   user: ChatUserDoc,
-  messages: { role: 'user' | 'assistant'; content: string }[],
+  messages: { role: "user" | "assistant"; content: string }[],
   charged: boolean,
 ): Promise<Response> {
   const refund = () => {
@@ -153,7 +156,7 @@ Today's date is ${currentMonthYear()}. Below you are given this person's Dasha p
 ✗ "Expect this around March 2029." (banned — no period boundary you were given falls there)`;
 
     // Backfill the Moon longitude for accounts predating it (rate-limited).
-    if (user.birthDate && typeof user.moonSiderealLongitude !== 'number') {
+    if (user.birthDate && typeof user.moonSiderealLongitude !== "number") {
       const moon = await backfillMoonLongitude(userId, user);
       if (moon !== null) user.moonSiderealLongitude = moon;
     }
@@ -161,11 +164,11 @@ Today's date is ${currentMonthYear()}. Below you are given this person's Dasha p
     systemPrompt += buildBirthContext(user);
 
     const result = streamText({
-      model: openai.chat('gpt-4.1-nano'),
+      model: openai.chat("gpt-6-luna"),
       system: systemPrompt,
       messages,
       onError: ({ error }) => {
-        console.error('[chat] stream error', error);
+        console.error("[chat] stream error", error);
         refund();
       },
     });
@@ -182,21 +185,29 @@ Today's date is ${currentMonthYear()}. Below you are given this person's Dasha p
  * so repeated rounds update rather than pile up. Fire-and-forget: losing a
  * fact is not worth failing a reading over.
  */
-function rememberFacts(clerkId: string, facts: { question: string; answer: string }[]): void {
+function rememberFacts(
+  clerkId: string,
+  facts: { question: string; answer: string }[],
+): void {
   User.findOne({ clerkId })
-    .then(doc => {
+    .then((doc) => {
       if (!doc) return;
-      const existing: { question?: string; answer?: string }[] = doc.knownFacts ?? [];
+      const existing: { question?: string; answer?: string }[] =
+        doc.knownFacts ?? [];
       const merged = existing.filter(
-        f => !facts.some(n => n.question.toLowerCase() === (f.question ?? '').toLowerCase()),
+        (f) =>
+          !facts.some(
+            (n) =>
+              n.question.toLowerCase() === (f.question ?? "").toLowerCase(),
+          ),
       );
-      merged.push(...facts.map(f => ({ ...f, at: new Date() })));
+      merged.push(...facts.map((f) => ({ ...f, at: new Date() })));
       return User.updateOne(
         { clerkId },
         { $set: { knownFacts: merged.slice(-MAX_STORED_FACTS) } },
       );
     })
-    .catch(err => console.error('[chat] rememberFacts', err));
+    .catch((err) => console.error("[chat] rememberFacts", err));
 }
 
 export async function POST(req: NextRequest) {
@@ -204,7 +215,7 @@ export async function POST(req: NextRequest) {
     const { userId } = await auth();
 
     if (!userId) {
-      return new Response('Unauthorized', { status: 401 });
+      return new Response("Unauthorized", { status: 401 });
     }
 
     const limit = rateLimit(`chat:${userId}`, 20, 60_000);
@@ -219,18 +230,21 @@ export async function POST(req: NextRequest) {
     const MAX_CONTENT_LENGTH = 4000;
     const messages = (Array.isArray(rawMessages) ? rawMessages : [])
       .filter((m: unknown): m is { role: string; content: unknown } => {
-        if (!m || typeof m !== 'object') return false;
+        if (!m || typeof m !== "object") return false;
         const role = (m as { role?: unknown }).role;
-        return role === 'user' || role === 'assistant';
+        return role === "user" || role === "assistant";
       })
       .slice(-MAX_MESSAGES)
-      .map(m => ({
-        role: m.role as 'user' | 'assistant',
-        content: typeof m.content === 'string' ? m.content.slice(0, MAX_CONTENT_LENGTH) : '',
+      .map((m) => ({
+        role: m.role as "user" | "assistant",
+        content:
+          typeof m.content === "string"
+            ? m.content.slice(0, MAX_CONTENT_LENGTH)
+            : "",
       }));
 
     if (messages.length === 0) {
-      return new Response('No messages provided', { status: 400 });
+      return new Response("No messages provided", { status: 400 });
     }
 
     // Answering the astrologer's own follow-up questions is not a new question,
@@ -238,20 +252,25 @@ export async function POST(req: NextRequest) {
     // The allowance is held server-side precisely because this flag is not
     // trustworthy: the worst a forged one can do is burn the account's own
     // rounds, after which it is billed like any other message.
-    const claimsAnswerRound = rawBody?.kind === 'answers';
-    const answers: { question: string; answer: string }[] = Array.isArray(rawBody?.answers)
+    const claimsAnswerRound = rawBody?.kind === "answers";
+    const answers: { question: string; answer: string }[] = Array.isArray(
+      rawBody?.answers,
+    )
       ? rawBody.answers
-          .filter((a: unknown) => a && typeof a === 'object')
+          .filter((a: unknown) => a && typeof a === "object")
           .map((a: { question?: unknown; answer?: unknown }) => ({
-            question: typeof a.question === 'string' ? a.question.slice(0, 300) : '',
-            answer: typeof a.answer === 'string' ? a.answer.slice(0, 500) : '',
+            question:
+              typeof a.question === "string" ? a.question.slice(0, 300) : "",
+            answer: typeof a.answer === "string" ? a.answer.slice(0, 500) : "",
           }))
-          .filter((a: { question: string; answer: string }) => a.question && a.answer)
+          .filter(
+            (a: { question: string; answer: string }) => a.question && a.answer,
+          )
           .slice(0, 5)
       : [];
 
     // Check last user message for jailbreak attempts — no credit consumed on detection
-    const lastUserMsg = [...messages].reverse().find(m => m.role === 'user');
+    const lastUserMsg = [...messages].reverse().find((m) => m.role === "user");
     if (lastUserMsg && isJailbreak(lastUserMsg.content)) {
       return jailbreakStream();
     }
@@ -271,16 +290,26 @@ export async function POST(req: NextRequest) {
             { freeAnswerRounds: { $exists: false } },
           ],
         },
-        [{
-          $set: {
-            freeAnswerRounds: {
-              $subtract: [{ $ifNull: ['$freeAnswerRounds', FREE_ANSWER_ROUNDS_ON_SIGNUP] }, 1],
+        [
+          {
+            $set: {
+              freeAnswerRounds: {
+                $subtract: [
+                  {
+                    $ifNull: [
+                      "$freeAnswerRounds",
+                      FREE_ANSWER_ROUNDS_ON_SIGNUP,
+                    ],
+                  },
+                  1,
+                ],
+              },
+              lastActiveAt: "$$NOW",
             },
-            lastActiveAt: '$$NOW',
           },
-        }],
+        ],
         // Mongoose 9 requires opting in explicitly to pipeline-style updates.
-        { returnDocument: 'after', updatePipeline: true },
+        { returnDocument: "after", updatePipeline: true },
       );
 
       if (consumedRound) {
@@ -288,9 +317,14 @@ export async function POST(req: NextRequest) {
         // start by asking it all over again.
         if (answers.length > 0) {
           rememberFacts(userId, answers);
-          consumedRound.knownFacts = [...(consumedRound.knownFacts ?? []), ...answers];
+          consumedRound.knownFacts = [
+            ...(consumedRound.knownFacts ?? []),
+            ...answers,
+          ];
         }
-        logEvent(userId, 'answer_round_used', { remaining: consumedRound.freeAnswerRounds });
+        logEvent(userId, "answer_round_used", {
+          remaining: consumedRound.freeAnswerRounds,
+        });
         return streamReading(userId, consumedRound, messages, false);
       }
       // Allowance exhausted — fall through and bill it as a normal message.
@@ -299,20 +333,25 @@ export async function POST(req: NextRequest) {
     // Every message comes out of a purchased balance; there is no free branch.
     const dbUser = await User.findOneAndUpdate(
       { clerkId: userId, messageBalance: { $gt: 0 } },
-      { $inc: { messageBalance: -1, totalChatMessages: 1 }, $set: { lastActiveAt: new Date() } },
-      { returnDocument: 'after' },
+      {
+        $inc: { messageBalance: -1, totalChatMessages: 1 },
+        $set: { lastActiveAt: new Date() },
+      },
+      { returnDocument: "after" },
     );
 
     if (!dbUser) {
-      const snap = await User.findOne({ clerkId: userId }).select('messageBalance totalChatMessages');
-      logEvent(userId, 'paywall_hit', {
+      const snap = await User.findOne({ clerkId: userId }).select(
+        "messageBalance totalChatMessages",
+      );
+      logEvent(userId, "paywall_hit", {
         messageBalance: snap?.messageBalance ?? 0,
         totalChatMessages: snap?.totalChatMessages ?? 0,
       });
-      return new Response('NO_BALANCE', { status: 402 });
+      return new Response("NO_BALANCE", { status: 402 });
     }
 
-    logEvent(userId, 'chat_message_sent', {
+    logEvent(userId, "chat_message_sent", {
       isPro: dbUser.isPro,
       messageCount: dbUser.messageCount,
       totalChatMessages: dbUser.totalChatMessages,
@@ -322,7 +361,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     // Never surface the raw error: driver and provider messages can carry
     // connection strings, keys and internal hostnames.
-    console.error('[chat]', error);
-    return new Response('Internal Server Error', { status: 500 });
+    console.error("[chat]", error);
+    return new Response("Internal Server Error", { status: 500 });
   }
 }
